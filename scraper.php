@@ -1,16 +1,76 @@
 <?php
 
+//
+//
+// Scraper
+//
+//
+
+
+
+//
+// Includes
+//
+
 require_once ROOT . '/include/curl.php';
 require_once ROOT . '/include/echo.php';
 require_once ROOT . '/include/phpuri.php';
+require_once ROOT . '/include/strings.php';
 require_once ROOT . '/include/arguments.php';
+
+
+
+//
+// Globals
+//
 
 $g_ScrapeCache = false;
 $g_ScrapeVisited = [];
+$g_ScrapeInfo = false;
 
-ScrapeCache();
 
-function Scrape( $root, $filterFn, $preFilterFn = null )
+
+//
+// Initialize
+//
+
+ScrapeCacheInitMaybe(); // shell args are inspected for cache enable/disable
+
+
+
+//
+// ScrapeInfo
+//
+// Provide info on the terminal during scraping
+// @url @count @memory parameters can be
+// used in the info string
+//
+
+function ScrapeInfo( $info )
+{
+    global $g_ScrapeInfo;
+    $g_ScrapeInfo = $info;
+}
+
+
+
+
+//
+// Scrape
+//
+// Parse the site from `$root` then go (only) deeper with recursion.
+//
+// `$processFn` is called after a URL is retrieved and defined as
+// function processFn( $url, $html, $headers, $dom )
+// `$dom` is false if the content is not html
+//
+// `$filterFn` (opt.) is called before retrieving a URL and defined as
+// function filterFn( $url ) -> $url | false
+// will return `false` if the URL must not be parsed, `true` otherwise,
+// a string representing a URL if a different URL should be retrieved
+//
+
+function Scrape( $root, $processFn, $filterFn = null )
 {
     // Array of visited pages
 
@@ -43,7 +103,7 @@ function Scrape( $root, $filterFn, $preFilterFn = null )
 
     // Start recursive scraping
 
-    ScrapeUrl( $root, $root, $site, $filterFn, $preFilterFn, 1 );
+    ScrapeUrl( $root, $root, $site, $processFn, $filterFn, 1 );
 
 
     // Done
@@ -52,9 +112,15 @@ function Scrape( $root, $filterFn, $preFilterFn = null )
 }
 
 
-function ScrapeUrl( $url, $root, $site, $filterFn, $preFilterFn, $level )
+
+//
+// PRIVATE
+//
+
+function ScrapeUrl( $url, $root, $site, $processFn, $filterFn, $level )
 {
     global $g_ScrapeVisited;
+    global $g_ScrapeInfo;
 
 
     // Add URL to visited pages
@@ -63,11 +129,17 @@ function ScrapeUrl( $url, $root, $site, $filterFn, $preFilterFn, $level )
     $n = count( $g_ScrapeVisited );
 
 
-    // Provide some info
+    // Provide info during parsing
 
     $memory = round( memory_get_usage() / ( 1024 * 1024 ), 0 );
 
-    EchoCR( "($n L$level {$memory}MB) $url" );
+    $info = $g_ScrapeInfo === false ? '( N=@count L=@level M=@memoryMB ) URL: @url' : $g_ScrapeInfo;
+    $info = str_replace( '@count',  $n,     $info );
+    $info = str_replace( '@level',  $level, $info );
+    $info = str_replace( '@memory', $memory,$info );
+    $info = str_replace( '@url',    $url,   $info );
+
+    EchoCR( $info );
 
 
     // Retrieve page contents
@@ -75,10 +147,11 @@ function ScrapeUrl( $url, $root, $site, $filterFn, $preFilterFn, $level )
     $result = ScrapeCurlCache( $url );
     if( $result['status'] >= 300 || $result['error'] != '' )
     {
-        EchoNL( "Scrape(): $url - Status: " . $result['status'] . " - Error: " . $result['error'] );
+        EchoNL( "Failed loading $url - Status: " . $result['status'] . " - Error: " . $result['error'] );
         return;
     }
-    $html = $result['response'];
+    $response = $result['response'];
+    $headers  = $result['headers'];
 
 
     // Got a redirect?
@@ -92,21 +165,48 @@ function ScrapeUrl( $url, $root, $site, $filterFn, $preFilterFn, $level )
 
     // Parse Html
 
-    $dom = new DOMDocument();
-    @$success = $dom->loadHtml( mb_convert_encoding( $html, 'HTML-ENTITIES', "UTF-8" ) );
-    if( $success === false )
+    $isHtml = false;
+
+    if( isset( $headers['content-type'] )
     {
-        EchoNL( "Scrape(): failed parsing " . $url );
-        return;
+        $isHtml = StringBegins( $headers['content-type'], 'text/html' );
+    }
+    else
+    {
+        $isHtml = StringBeginsCI( $response, '<!DOCTYPE html>' ) || StringBeginsCI( $response, '<html' ) || StringBeginsCI( $response, '<head>' ) || StringBeginsCI( $response, '<body>' );
+    }
+
+    if( $isHtml )
+    {
+        $dom = new DOMDocument();
+        @$success = $dom->loadHtml( mb_convert_encoding( $response, 'HTML-ENTITIES', "UTF-8" ) );
+        if( $success === false )
+        {
+            EchoNL( "Failed parsing $url" );
+            return;
+        }
+    }
+    else
+    {
+        $dom = false;
     }
 
 
-    // Call provided filter function
+    // Call provided contents processing function
 
-    $filterFn( $url, $html, $dom );
+    $processFn( $url, $response, $headers, $dom );
 
 
-    // Retrieve and parse URLs
+    // If not html there are no links to parse
+
+    if( ! $isHtml )
+    {
+        return;
+        /*--- EXIT POINT ---*/
+    }
+
+
+    // Retrieve links and parse the linked pages
 
     $hrefs = array();
     foreach( $dom->getElementsByTagName( 'a' ) as $node )
@@ -132,22 +232,26 @@ function ScrapeUrl( $url, $root, $site, $filterFn, $preFilterFn, $level )
             continue;
         }
 
-        if( $preFilterFn !== null )
+        if( $filterFn !== null )
         {
-            $href = $preFilterFn( $href );
-            if( $href === false )
+            $flt = $filterFn( $href );
+            if( $flt === false )
             {
                 continue;
             }
+            if( is_string( $flt ) )
+            {
+                $href = $flt;
+            }
         }
 
-        ScrapeUrl( $href, $root, $site, $filterFn, $preFilterFn, $level + 1 );
+        ScrapeUrl( $href, $root, $site, $processFn, $filterFn, $level + 1 );
     }
 }
 
 
 
-function ScrapeCache()
+function ScrapeCacheInitMaybe()
 {
     global $g_ScrapeCache;
 
@@ -178,23 +282,37 @@ function ScrapeCurlCache( $url )
     {
         $result = array();
         $result['response'] = file_get_contents( $cacheFile );
+        $result['headers'] = file_get_contents( "$cacheFile.headers" );
         $result['error'] = '';
         $result['status'] = 200;
         $result['errnum'] = 0;
         $result['url'] = $url;
+
+        return $result;
+        /*--- EXIT POINT ---*/
     }
-    else
+
+    for( $attempts = 0; $attempts < 3; $attempts++ )
     {
         $result = Curl( $url );
         if( $result['status'] < 300 && $result['error'] == '' )
         {
             file_put_contents( $cacheFile, $result['response'] );
+            file_put_contents( "$cacheFile.headers", $result['headers'] );
             if( $result['url'] != $url )
             {
                 $url = $result['url'];
                 $cacheFile = ScrapeCurlCacheFile( $url );
                 file_put_contents( $cacheFile, $result['response'] );
+                file_put_contents( "$cacheFile.headers", $result['headers'] );
             }
+            break;
+        }
+
+        for( $i = 30; $i > 0; $i-- )
+        {
+            EchoCR( "Failed loading $url - Status: " . $result['status'] . " - Error: " . $result['error'] . " - pause... $i" );
+            sleep(1);
         }
     }
 
@@ -202,6 +320,10 @@ function ScrapeCurlCache( $url )
 }
 
 
+
+//
+// Return path to cache file for a given URL
+//
 
 function ScrapeCurlCacheFile( $url )
 {
