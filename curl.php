@@ -24,7 +24,6 @@ define( 'CURL_COOKIES',   ROOT . "/cookies.txt" );
 //
 
 $g_CurlDebug = false;
-$g_CurlGetHeaders = false;
 
 
 
@@ -34,26 +33,11 @@ $g_CurlGetHeaders = false;
 // Set debug mode
 //
 
-function CurlDebug( $d, $h )
+function CurlDebug( $d )
 {
     global $g_CurlDebug;
-    global $g_CurlGetHeaders;
 
     $g_CurlDebug = $d;
-    $g_CurlGetHeaders = $h;
-}
-
-
-
-//
-// CurlDiscardCookies
-//
-// Delete cookies file
-//
-
-function CurlDiscardCookies()
-{
-    unlink( CURL_COOKIES );
 }
 
 
@@ -90,14 +74,26 @@ function CurlEncode( $params )
 // Execute a request via CURL
 // `$post` can be associative array, url-encoded string or `true`
 // `$headers` can be an array or a string of "\n" separated values
+// Call without parameters to discard cookies file
 //
 
-function Curl( $url, $post = null, $headers = null )
+function Curl( $url = false, $post = null, $headers = null )
 {
-    // Debug ?
+    // Just discard cookies?
+
+    if( $url === false )
+    {
+        if( is_file( CURL_COOKIES ) )
+        {
+            unlink( CURL_COOKIES );
+        }
+        return;
+        /*--- EXIT POINT ---*/
+    }
+
+    // Debug?
 
     global $g_CurlDebug;
-    global $g_CurlGetHeaders;
 
 
     // Init curl
@@ -122,9 +118,9 @@ function Curl( $url, $post = null, $headers = null )
 
     $h = array();
 
-    $h = CurlSetHeader( $h, CURL_USERAGENT );
-    $h = CurlSetHeader( $h, CURL_LANGUAGE );
-    $h = CurlSetHeader( $h, CURL_ACCEPT );
+    $h = CurlSetHeaderPrivate( $h, CURL_USERAGENT );
+    $h = CurlSetHeaderPrivate( $h, CURL_LANGUAGE );
+    $h = CurlSetHeaderPrivate( $h, CURL_ACCEPT );
 
     $n = count( $headers );
     for( $i = 0; $i < $n; $i++ )
@@ -140,7 +136,6 @@ function Curl( $url, $post = null, $headers = null )
     curl_setopt( $handle, CURLOPT_FOLLOWLOCATION,   true );
     curl_setopt( $handle, CURLOPT_AUTOREFERER,      true );
     curl_setopt( $handle, CURLOPT_MAXREDIRS,        3 );
-    curl_setopt( $handle, CURLOPT_HEADER,           $g_CurlGetHeaders );
     curl_setopt( $handle, CURLOPT_HTTPHEADER,       $h );
     curl_setopt( $handle, CURLOPT_COOKIEFILE,       CURL_COOKIES );
     curl_setopt( $handle, CURLOPT_COOKIEJAR,        CURL_COOKIES );
@@ -150,18 +145,35 @@ function Curl( $url, $post = null, $headers = null )
 
     curl_setopt( $handle, CURLOPT_TIMEOUT,          30);
 
+
+    // Pass `$post` as true to make a POST request without sending data
+
     if( $post !== null && $post !== false )
     {
         curl_setopt( $handle, CURLOPT_POST,         true );
     }
 
-
-    // Pass `$post` as true to make a POST request without sending data
-
     if( $post !== true && $post !== false )
     {
         curl_setopt( $handle, CURLOPT_POSTFIELDS,   $post );
     }
+
+
+    // Retrieve headers
+
+    $response_headers = [];
+
+    curl_setopt( $handle, CURLOPT_HEADERFUNCTION,
+        function( $curl, $header ) use ( &$response_headers )
+        {
+            $len = strlen( $header );
+            $header = explode(':', $header, 2);
+            if( count( $header ) < 2 ) { return $len; } // ignore invalid headers
+            $response_headers[ strtolower( trim( $header[0] ) ) ] = trim( $header[1] );
+            return $len;
+        }
+    );
+
 
 
     // Send request, get response
@@ -187,10 +199,7 @@ function Curl( $url, $post = null, $headers = null )
 
     // Cleanup
 
-    if( $myHandle === null )
-    {
-        curl_close( $handle );
-    }
+    curl_close( $handle );
 
 
     // Debug
@@ -211,8 +220,9 @@ function Curl( $url, $post = null, $headers = null )
 
     // Build and return result
 
-    $result = array();
+    $result = [];
     $result[ 'response' ] = $response;
+    $result[ 'headers'  ] = $response_headers;
     $result[ 'status'   ] = $status;
     $result[ 'errnum'   ] = $errnum;
     $result[ 'error'    ] = $error;
