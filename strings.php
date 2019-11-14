@@ -9,6 +9,8 @@ function StringHas( $str, $has )
 
 function StringBetween( $str, $sm, $em, $include = false )
 {
+    if( $str === false || $str === null ) { return false; }
+
     $r = StringsBetween( $str, $sm, $em, $include, true );
     if( count( $r ) == 0 )
     {
@@ -25,6 +27,8 @@ function StringBetween( $str, $sm, $em, $include = false )
 function StringsBetween( $str, $sm, $em, $include = false, $onlyFirst = false )
 {
     $results = array();
+
+    if( $str === false || $str === null ) { return $results; }
 
     $i = 0;
 
@@ -89,17 +93,35 @@ function StringTruncateAround( $s, $l )
 
 
 
-function StringBegins( $s, $with )
+function StringBegins( $text, $with )
 {
-    $l = strlen( $with );
+    $len = strlen( $with );
 
-    if( strlen( $s ) >= $l && substr( $s, 0, $l ) == $with )
+    if( strlen( $text ) >= $len && substr( $text, 0, $len ) == $with )
     {
         return true;
     }
 
     return false;
 }
+
+
+
+function StringBeginsCI( $text, $with )
+{
+    $len = strlen( $with );
+
+    if( strlen( $text ) < $len )
+    {
+        return false;
+    }
+
+    $text = mb_strtolower( substr( $text, 0, $len ) );
+    $with = mb_strtolower( $with );
+
+    return ( $with === $text );
+}
+
 
 
 //
