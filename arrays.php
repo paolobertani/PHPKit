@@ -6,12 +6,48 @@
 
 function ArraySortByKeyAsc( &$array, $key )
 {
-    usort( $array, function( $a, $b ) use ($key) { return ( ( $a[$key] < $b[$key] ) ? -1 : 1 ); } );
+    if( is_array( $key ) )
+    {
+        usort( $array, function( $a, $b ) use ($key)
+        {
+            foreach( $key as $k )
+            {
+                if( $a[$k] == $b[$k] )
+                {
+                    continue;
+                }
+                return ( ( $a[$k] < $b[$k] ) ? -1 : 1 );
+            }
+            return -1;
+        } );
+    }
+    else
+    {
+        usort( $array, function( $a, $b ) use ($key) { return ( ( $a[$key] < $b[$key] ) ? -1 : 1 ); } );
+    }
 }
 
 function ArraySortByKeyDesc( &$array, $key )
 {
-    usort( $array, function( $a, $b ) use ($key) { return ( ( $a[$key] > $b[$key] ) ? -1 : 1 ); } );
+    if( is_array( $key ) )
+    {
+        usort( $array, function( $a, $b ) use ($key)
+        {
+            foreach( $key as $k )
+            {
+                if( $a[$k] == $b[$k] )
+                {
+                    continue;
+                }
+                return ( ( $a[$k] > $b[$k] ) ? -1 : 1 );
+            }
+            return -1;
+        } );
+    }
+    else
+    {
+        usort( $array, function( $a, $b ) use ($key) { return ( ( $a[$key] > $b[$key] ) ? -1 : 1 ); } );
+    }
 }
 
 //
