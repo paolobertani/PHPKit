@@ -35,12 +35,19 @@ define( 'STRING_NOT',          16 );
 //
 // unless  otherwise  specified,   all   functions
 // accept as first parameter a string, an array of
-// strings or `false`. Passing `false` will result
-// in the function returning `false`; if an  array
-// is passed then the function iterates  over  all
-// the strings into the array.
+// strings or `false`.
+//
+// Passing `false` will  result  in  the  function
+// returning `false`; if an array is  passed  then
+// the function iterates over all the strings into
+// the array.
+//
+// When  passed  an  array  of  strings  as  first
+// parameter  the  function  will  always   return
+// `false` or an array of strings (never a string)
+//
 // Functions that  output  an  array  will  return
-// `false`  (not  an  empty  array)  in  case  the
+// `false` (not an empty array) in case the output
 // array's item count is 0 (zero)
 //
 
@@ -249,17 +256,17 @@ function StringHasPrivate( $str, $has, $not )
 // start marker and end marker `$sm`, `$em`
 //
 // the start marker is searched  FIRST,  then  the
-// end marker  is  searched.  Then  the  iteration
-// proceeds after the found end marker; if  a  end
-// marker is present before the start marker it is
-// ignored
+// end marker is searched AFTER the start  marker.
+// Then the iteration proceeds after the found end
+// marker; if a end marker is present  before  the
+// start marker it is ignored
 //
 // in  case  there  are  no  matches  `false`   is
 // returned (instead of an empty array)
 //
-// an array of strings can be passed as first
+// an array of strings  can  be  passed  as  first
 // parameter in which case the  function  operates
-// on every item and returns the union of the
+// on every item and  returns  the  union  of  the
 // results found for each item
 //
 // `$sm`  as  empty  string  means  beginning   of
@@ -267,7 +274,7 @@ function StringHasPrivate( $str, $has, $not )
 // `$string
 //
 // option STRING_MARKERS let  the  start  and  end
-// markers be included in the results
+// markers be included in the result(s)
 // option STRING_FIRST let  the  function  returns
 // only the first occurrence
 //
@@ -540,10 +547,12 @@ function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 //
 // StringBegins
 //
-// Returns true if `$string` begins with `$with`;
-// `$with` can be  an  array  in  which  case  the
-// function returns true if `$string` begins  with
+// Returns true if `$string` begins  with  `$with`;
+// `$with` can  be  an  array  in  which  case  the
+// function returns true if `$string`  begins  with
 // at least one of the items of `$with`
+//
+// `$strig` must be a string or `false
 //
 // allowed options:
 // STRING_CI
@@ -684,6 +693,16 @@ function StringReplaceAtBeginning( $string, $src, $rep )
 //
 // StringParser
 //
+//
+// a parser can be initialized either with a
+// string, an array of strings or `false`
+//
+// The output will be either `false` or an array
+// of strings with at least one item
+//
+// every parser operator will return the parser
+// object allowing methods chains
+//
 
 class StringParser
 {
@@ -692,9 +711,19 @@ class StringParser
 
 
 
+    //
+    // CONSTRUCTOR
+    //
+
+
+
     function __construct( $result )
     {
-        if( is_string( $result ) )
+        if( $result === false )
+        {
+            // this is allowed
+        }
+        elseif( is_string( $result ) )
         {
             $result = [ $result ];
         }
@@ -720,14 +749,20 @@ class StringParser
 
 
 
-    function result()
+    //
+    // GETTING OUTPUT
+    //
+
+
+
+    public function result() // <array> | false
     {
         return $this->result;
     }
 
 
 
-    function first()
+    public function first() // <string> | false
     {
         if( $this->result === false )
         {
@@ -741,7 +776,21 @@ class StringParser
 
 
 
-    function count()
+    public function string() // <string>
+    {
+        if( $this->result === false )
+        {
+            return "";
+        }
+        else
+        {
+            return $this->result[0];
+        }
+    }
+
+
+
+    public function count() // <int>
     {
         if( $this->result === false )
         {
@@ -755,7 +804,13 @@ class StringParser
 
 
 
-    function has( $what, $options = STRING_NO_OPTIONS )
+    //
+    // CHAINABLE OPERATORS
+    //
+
+
+
+    public function has( $what, $options = STRING_NO_OPTIONS )
     {
         $this->result = StringHas( $this->result, $what, $options );
         return $this;
@@ -763,7 +818,7 @@ class StringParser
 
 
 
-    function between( $sm, $em, $options = STRING_NO_OPTIONS )
+    public function between( $sm, $em, $options = STRING_NO_OPTIONS )
     {
         $this->result = StringsBetween( $this->result, $sm, $em, $options );
         return $this;
@@ -771,11 +826,11 @@ class StringParser
 
 
 
-    function trim( $mask = " \t\n\r\0\x0B" )
+    public function trim( $mask = " \t\n\r\0\x0B" )
     {
-        if( ! is_string( $what ) )
+        if( ! is_string( $mask ) )
         {
-            Error( "Parser->trim: `mask` must be string" );
+            Error( "StringParser: `mask` must be string" );
             /*--- QUIT POINT ---*/
         }
 
@@ -792,11 +847,11 @@ class StringParser
 
 
 
-    function append( $what )
+    public function append( $what ) // note: append to `false` results in `false`
     {
         if( ! is_string( $what ) )
         {
-            Error( "Parser->append: parameter must be string" );
+            Error( "StringParser: parameter must be string" );
             /*--- QUIT POINT ---*/
         }
 
@@ -813,11 +868,11 @@ class StringParser
 
 
 
-    function prepend( $what )
+    public function prepend( $what ) // note: prepend to `false` results in `false`
     {
         if( ! is_string( $what ) )
         {
-            Error( "Parser->prepend: parameter must be string" );
+            Error( "StringParser: parameter must be string" );
             /*--- QUIT POINT ---*/
         }
 
@@ -834,14 +889,20 @@ class StringParser
 
 
 
-    function lowercase()
+    public function replace( $search, $replace )
     {
+        if( ! is_string( $search ) || ! is_string( $replace ) )
+        {
+            Error( "StringParser: parameters must be string" );
+            /*--- QUIT POINT ---*/
+        }
+
         if( $this->result === false ) { return $this; }
 
         $output = [];
         foreach( $this->result as $str )
         {
-            $output[] = mb_strtolower( $str );
+            $output[] = str_replace( $search, $replace, $str );
         }
         $this->result = $output;
         return $this;
@@ -849,16 +910,17 @@ class StringParser
 
 
 
-    function uppercase()
+    public function lowercase()
     {
-        if( $this->result === false ) { return $this; }
+        $this->result = StringLowercase( $this->result );
+        return $this;
+    }
 
-        $output = [];
-        foreach( $this->result as $str )
-        {
-            $output[] = mb_strtoupper( $str );
-        }
-        $this->result = $output;
+
+
+    public function uppercase()
+    {
+        $this->result = StringUppercase( $this->result );
         return $this;
     }
 
