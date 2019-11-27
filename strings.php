@@ -31,31 +31,114 @@ define( 'STRING_NOT',          16 );
 
 
 //
+// GENERAL RULES:
+//
+// unless  otherwise  specified,   all   functions
+// accept as first parameter a string, an array of
+// strings or `false`. Passing `false` will result
+// in the function returning `false`; if an  array
+// is passed then the function iterates  over  all
+// the strings into the array.
+// Functions that  output  an  array  will  return
+// `false`  (not  an  empty  array)  in  case  the
+// array's item count is 0 (zero)
+//
+
+
+
+//
+// StringLowercase
+//
+
+function StringLowercase( $string )
+{
+    if( $string === false )
+    {
+        return false;
+    }
+
+    if( is_string( $string ) )
+    {
+        return mb_strtolower( $string );
+    }
+
+    if( is_array( $string ) )
+    {
+        $out = [];
+        foreach( $string as $str )
+        {
+            if( ! is_string( $str ) )
+            {
+                Error( "string must be array of strings" );
+            }
+            $out[] = mb_strtolower( $str );
+        }
+        return $out;
+    }
+}
+
+
+
+//
+// StringUppercase
+//
+
+function StringUppercase( $string )
+{
+    if( $string === false )
+    {
+        return false;
+    }
+
+    if( is_string( $string ) )
+    {
+        return mb_strtoupper( $string );
+    }
+
+    if( is_array( $string ) )
+    {
+        $out = [];
+        foreach( $string as $str )
+        {
+            if( ! is_string( $str ) )
+            {
+                Error( "string must be array of strings" );
+            }
+            $out[] = mb_strtoupper( $str );
+        }
+        return $out;
+    }
+}
+
+
+
+//
 // StringHas
 //
 // returns true if `$string` contains `$has`
 //
-// an array can be  passed as  second  parameter
-// in which case  the  function  returns true if
-// the  string  contains  at  least  one  of the
-// strings in the array;
+// an array can be passed as second  parameter  in
+// which case the function  returns  true  if  the
+// string contains at least one of the strings  in
+// the array;
 //
-// if `$has` is an empty string returns true  if
+// if `$has` is an empty string  returns  true  if
 // `$string` is not empty
 //
-// an  array  of  strings can be passed as first
-// parameter:  in this case the function returns
-// the  original  array removing all the strings
-// that  do not meet the `$has` requirement;  in
-// case no items meet the requirement `false` is
+// an array of strings  can  be  passed  as  first
+// parameter: in this case  the  function  returns
+// the original array  removing  all  the  strings
+// that do not meet  the  `$has`  requirement;  in
+// case no items meet the requirement  `false`  is
 // returned (instead of an empty array)
 //
-// the  option  STRING_NOT  reverses  the logic:
-// `true`   is  returned if `$string`  does  not
+// the  option  STRING_NOT  reverses  the   logic:
+// `true`  is  returned  if  `$string`  does   not
 // contain `$has`
 //
 // allowed options:
 // STRING_NOT
+// STRING_CI
 //
 
 function StringHas( $string, $has, $options = STRING_NO_OPTIONS )
@@ -77,6 +160,14 @@ function StringHas( $string, $has, $options = STRING_NO_OPTIONS )
     {
         return false;
         /*--- EXIT POINT ---*/
+    }
+
+    // case insensitive
+
+    if( $options & STRING_CI )
+    {
+        $string = StringLowercase( $string );
+        $has = StringLowercase( $has );
     }
 
     // has not
@@ -153,31 +244,31 @@ function StringHasPrivate( $str, $has, $not )
 //
 // StringsBetween
 //
-// Given  the  input  string  `$str` an array is
-// returned  with  the  substrings surrounded by
-// the start marker and end marker `$sm`, `$em`
+// Given the  input  string  `$str`  an  array  is
+// returned with the substrings surrounded by  the
+// start marker and end marker `$sm`, `$em`
 //
-// the  start marker is searched FIRST, then the
-// end  marker  is  searched. Then the iteration
-// proceeds after the found end marker; if a end
-// marker  is present before the start marker it
-// is ignored
+// the start marker is searched  FIRST,  then  the
+// end marker  is  searched.  Then  the  iteration
+// proceeds after the found end marker; if  a  end
+// marker is present before the start marker it is
+// ignored
 //
-// in  case  there  are  no  matches  `false` is
+// in  case  there  are  no  matches  `false`   is
 // returned (instead of an empty array)
 //
 // an array of strings can be passed as first
-// parameter in which case the function operates
+// parameter in which case the  function  operates
 // on every item and returns the union of the
 // results found for each item
 //
-// `$sm`  as  empty  string  means beginning  of
-// `$string`. `$em` as empty string means end of
+// `$sm`  as  empty  string  means  beginning   of
+// `$string`. `$em` as empty string means  end  of
 // `$string
 //
-// option  STRING_MARKERS  let the start and end
+// option STRING_MARKERS let  the  start  and  end
 // markers be included in the results
-// option STRING_FIRST let the function  returns
+// option STRING_FIRST let  the  function  returns
 // only the first occurrence
 //
 // allowed options:
@@ -348,13 +439,13 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
 //
 // StringBetween
 //
-// operates like StringsBetween but only the
-// first  occurrence  is returned as string;
-// returns false in case of no match;
-// the  first  parameter must be a string or
-// an array of strings in wich case an array
-// of strings is returned or `false` in case
-// of no matches
+// operates like StringsBetween but only the first
+// occurrence is returned as string; returns false
+// in case of no match;
+// the first parameter must  be  a  string  or  an
+// array of strings  in  wich  case  an  array  of
+// strings is returned or `false` in  case  of  no
+// matches
 //
 // allowed options:
 // STRING_MARKERS
@@ -449,10 +540,10 @@ function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 //
 // StringBegins
 //
-// Returns true if `$string` begins with `$with`
-// `$with` can be an array in which case
-// the function returns true if `$string` begin
-// with at least one of the itmes of `$with`
+// Returns true if `$string` begins with `$with`;
+// `$with` can be  an  array  in  which  case  the
+// function returns true if `$string` begins  with
+// at least one of the items of `$with`
 //
 // allowed options:
 // STRING_CI
@@ -524,8 +615,8 @@ function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
 
     if( $options & STRING_CI )
     {
-        $string = mb_strtolower( $string );
-        $with   = mb_strtolower( $with );
+        $string = StringLowercase( $string );
+        $with   = StringLowercase( $with );
     }
 
 
@@ -586,72 +677,6 @@ function StringReplaceAtBeginning( $string, $src, $rep )
     $string = $rep . substr( $string, strlen( $src ) );
 
     return $string;
-}
-
-
-
-//
-// Lowercase
-//
-
-function Lowercase( $string )
-{
-    if( $string === false )
-    {
-        return false;
-    }
-
-    if( is_string( $string ) )
-    {
-        return mb_strtolower( $string );
-    }
-
-    if( is_array( $string ) )
-    {
-        $out = [];
-        foreach( $string as $str )
-        {
-            if( ! is_string( $str ) )
-            {
-                Error( "string must be array of strings" );
-            }
-            $out[] = mb_strtolower( $str );
-        }
-        return $out;
-    }
-}
-
-
-
-//
-// Uppercase
-//
-
-function Uppercase( $string )
-{
-    if( $string === false )
-    {
-        return false;
-    }
-
-    if( is_string( $string ) )
-    {
-        return mb_strtoupper( $string );
-    }
-
-    if( is_array( $string ) )
-    {
-        $out = [];
-        foreach( $string as $str )
-        {
-            if( ! is_string( $str ) )
-            {
-                Error( "string must be array of strings" );
-            }
-            $out[] = mb_strtoupper( $str );
-        }
-        return $out;
-    }
 }
 
 

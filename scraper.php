@@ -359,7 +359,7 @@ class Scraper
             $domain = StringBetween( $domain, '', '/' );
         }
 
-        $sd = Lowercase( StringBetween( $url, '', $domain, STRING_MARKERS ) );
+        $sd = StringLowercase( StringBetween( $url, '', $domain, STRING_MARKERS ) );
 
         $url = $sd . substr( $url, strlen( $sd ) );
 
