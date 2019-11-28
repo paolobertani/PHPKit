@@ -552,7 +552,7 @@ function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 // function returns true if `$string`  begins  with
 // at least one of the items of `$with`
 //
-// `$strig` must be a string or `false
+// `$string` must be a string or `false`
 //
 // allowed options:
 // STRING_CI
@@ -637,6 +637,85 @@ function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
 
 
 //
+// StringReplaceAtBeginning
+//
+// Replace `src` with `rep` at the beginning of `str`
+// Returns `false` if `str` does not begin with `src`
+// All parameters must be strings
+//
+// allowed options:
+// STRING_CI
+//
+
+
+function StringReplaceAtBeginning( $string, $src, $rep, $options = STRING_NO_OPTIONS )
+{
+    // check parameters
+
+    if( is_string( $string ) && is_string( $src ) && is_string( $rep ) && is_int( $options ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "Wrong parameters type: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+
+    // purge options from unsupported flags
+
+    $options = $options & STRING_CI;
+
+
+    if( ! StringBegins( $string, $src, $options ) )
+    {
+        return false;
+        /*--- EXIT POINT ---*/
+    }
+
+    $string = $rep . substr( $string, strlen( $src ) );
+
+    return $string;
+}
+
+
+
+//
+// StringsCompare
+//
+// compare the two strings passed  as  parameters;
+// both parameters must be string.
+//
+// allowed options:
+// STRING_CI
+//
+
+function StringsCompare( $a, $b, $options = STRING_NO_OPTIONS )
+{
+    if( is_string( $a ) && is_string( $b ) && is_int( $options ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "Wrong parameters type: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+
+    if( $options & STRING_CI )
+    {
+        $a = mb_strtolower( $a );
+        $b = mb_strtolower( $b );
+    }
+
+    return $a === $b;
+}
+
+
+
+//
 // StringFromFloat
 //
 // convert float to string ignoring locale
@@ -649,43 +728,6 @@ function StringFromFloat( $f, $p = null )
     $s = trim( number_format($f, 10, '.', ''), '0' );
     if( substr( $s, -1 ) == '.' ) $s .= '0';
     return $s;
-}
-
-
-
-//
-// StringReplaceAtBeginning
-//
-// Replace `src` with `rep` at the beginning of `str`
-// Returns `false` if `str` does not begin with `src`
-// All parameters must be strings
-//
-
-
-function StringReplaceAtBeginning( $string, $src, $rep )
-{
-    // check parameters
-
-    if( is_string( $string ) && is_string( $src ) && is_string( $rep ) )
-    {
-        // ok
-    }
-    else
-    {
-        Error( "Wrong parameters type: passed @types" );
-        /*--- QUIT POINT ---*/
-    }
-
-
-    if( ! StringBegins( $string, $src ) )
-    {
-        return false;
-        /*--- EXIT POINT ---*/
-    }
-
-    $string = $rep . substr( $string, strlen( $src ) );
-
-    return $string;
 }
 
 
