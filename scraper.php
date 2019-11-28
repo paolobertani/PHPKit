@@ -25,24 +25,31 @@ require_once ROOT . '/include/filesystem.php';
 class Scraper
 {
 
-    private $cachePath,
-            $visited;
+    private $cache_path,
+            $visited,
+            $domain,
+            $root,
+
+            $attempts,
+            $pause;
 
 
 
     public function __construct()
     {
-        $this->cachePath = false;
+        $this->cache_path = false;
         $this->visited = [];
+        $this->attempts = 3;
+        $this->pause = 10;
 
         if( ArgumentGet( '-nocache', ARGUMENT_BOOLEAN ) )
         {
-            $this->cachePath = false;
+            $this->cache_path = false;
         }
         else
         {
-            $this->cachePath = ROOT . "/cache.noindex";
-            MakeDir( $this->cachePath );
+            $this->cache_path = ROOT . "/cache.noindex";
+            MakeDir( $this->cache_path );
         }
     }
 
@@ -54,9 +61,9 @@ class Scraper
     // returns info to be displayed on the terminal during scraping
     //
 
-    protected function getInfo( $url, $count, $level, $memory )
+    protected function get_info( $url, $count, $level, $memory )
     {
-        return "(Visited: $count; Level: $level; Memory: $memory MB;) URL: $url";
+        return "(Visited: $count; Level: $level; Memory: $memory MB) URL: $url";
     }
 
 
@@ -92,30 +99,72 @@ class Scraper
 
 
     //
-    // Scrape
-    //
-    // parse the site from `$root` then go (only) deeper with recursion
+    // set "retry" values
     //
 
-    public function Scrape( $root, $href )
+    protected function set_retry( $attempts, $pause )
     {
-        $x = $this->lowercase( $root );
-        $url = phpUri::parse( $x )->join( $href );
-        echo "root: $root\ndomain: $x\nhref: $href\nurl: $url\n";
-        exit(0);
+        $this->attempts = $attempts;
+        $this->pause    = $pause;
+    }
 
-        // Check root url is good
 
-        if( ! $this->lowercase( $root ) );
+
+    //
+    // scrape
+    //
+    // parse the  site  from  `$root`  then  go
+    // (only) deeper with recursion
+    //
+
+    public function scrape( $root, $test = false )
+    {
+
+        // check root url is good
+
+        if( ! $this->url_is_good( $root ) )
         {
-            Error( "bad root URL" );
+            Error( "Scraper: bad root URL: $root" );
             /*--- QUIT POINT ---*/
         }
 
 
-        // Start recursive scraping
+        // check url is absolute
 
-        $this->ScrapeUrl( $root, $root, 1 );
+        if( ! $this->url_is_absolute( $root ) )
+        {
+            Error( "Scraper: relative root URL: $root" );
+            /*--- QUIT POINT ---*/
+        }
+
+
+        // make root lowercase
+
+        $root = StringLowercase( $root );
+
+
+        // root url is stored lowercase
+        // and subsequently compared ci
+
+        $this->root = $root;
+
+
+        // store domain (scheme+domain)
+
+        $this->domain = $this->domain_from_url( $root );
+
+
+        // testing the class? exit here
+
+        if( $test )
+        {
+            return;
+        }
+
+
+        // start recursive scraping
+
+        $this->scrape_url( $root, 1 );
 
 
         // Done
@@ -125,23 +174,28 @@ class Scraper
 
 
 
-    private function ScrapeUrl( $url, $root, $level )
+    // parse web pages recursively; the  passed
+    // url must have not been visited  yet  and
+    // must have the root part lowercase
+
+    private function scrape_url( $url, $level )
     {
-        // Add URL to visited pages
+        // add URL to visited pages
 
         $this->visited[] = $url;
         $n = count( $this->visited );
 
 
-        // Provide info during parsing
+        // provide info during parsing
 
         $memory = round( memory_get_usage() / ( 1024 * 1024 ), 0 );
-        EchoCR( $this->getInfo( $url, $count, $level, $memory ) );
+        $info = $this->get_info( $url, $count, $level, $memory );
+        EchoCR( $info );
 
 
-        // Retrieve page contents
+        // retrieve page contents
 
-        $result = $this->ScrapeCurlCache( $url );
+        $result = $this->curl_or_fetch_cache( $url );
         if( $result['status'] >= 300 || $result['error'] != '' )
         {
             EchoNL( "Failed loading $url - Status: " . $result['status'] . " - Error: " . $result['error'] );
@@ -151,37 +205,38 @@ class Scraper
         $headers  = $result['headers'];
 
 
-        // Got a redirect?
-        // Save the URL in the visited list
+        // redirected? save destination url in the visited list
 
-        $this->lowercase( $result['url'] );
         if( $result['url'] !== $url )
         {
-            $this->visited[] = $result['url'];
+            $this->save_in_visited( $result['url'] );
         }
 
 
-        // Parse Html
+        // is html?
 
-        $isHtml = false;
+        $is_html = false;
 
         if( isset( $headers['content-type'] ) )
         {
-            $isHtml = StringBegins( $headers['content-type'], 'text/html', STRING_CI );
+            $is_html = StringBegins( $headers['content-type'], 'text/html', STRING_CI );
         }
         else
         {
-            $isHtml = StringBegins( $response, [ '<!DOCTYPE html>', '<html', '<head>', '<body>' ], STRING_CI );
+            $is_html = StringBegins( $response, [ '<!DOCTYPE html>', '<html', '<head>', '<body>' ], STRING_CI );
         }
 
-        if( $isHtml )
+
+        // parse html with DOMDocument
+
+        if( $is_html )
         {
             $dom = new DOMDocument();
             @$success = $dom->loadHtml( mb_convert_encoding( $response, 'HTML-ENTITIES', "UTF-8" ) );
             if( $success === false )
             {
                 EchoNL( "Failed parsing $url" );
-                return;
+                $dom = false;
             }
         }
         else
@@ -190,90 +245,111 @@ class Scraper
         }
 
 
-        // Process/parse contents
+        // process/parse contents
 
         $this->process( $url, $response, $headers, $dom );
 
 
-        // If not html there are no links to parse
+        // if not html there are no links
+        // to parse: exit here
 
-        if( ! $isHtml )
+        if( ! $is_html )
         {
             return;
             /*--- EXIT POINT ---*/
         }
 
 
-        // Retrieve links and parse the linked pages
+        // retrieve links and go thru the linked pages
 
-        $hrefs = array();
+        $hrefs = [];
         foreach( $dom->getElementsByTagName( 'a' ) as $node )
         {
-            $hrefs[] = $node->getAttribute('href');
+            $hrefs[] = [ 'url' => trim( $node->getAttribute('href') ), 'pre_filter_url' => '' ];
         }
+
+
+        // free some memory
+
         unset( $node );
         unset( $dom );
 
-        foreach( $hrefs as $href )
+
+        // iterates over hyperlinks
+
+        $n = count( $hrefs );
+        for( $i = 0; $i < $n; $i++ )
         {
-            $href = trim( $href );
+            $href = $hrefs[ $i ];
 
-            $domain = $this->lowercase( $href, true );
+            $url = $href['url'];
 
-            if( $href === false )
+            if( ! $this->url_is_good( $url ) )
+            {
+                $this->warn_if_url_comes_from_filter( 'not good', $href['url'], $href['pre_filter_url'] );
+                continue;
+            }
+
+            if( ! $this->url_is_absolute( $url ) )
+            {
+                $url = $this->make_url_absolute( $url );
+            }
+
+            if( ! $this->url_is_below_root( $url ) )
+            {
+                $this->warn_if_url_comes_from_filter( 'below root', $href['url'], $href['pre_filter_url'] );
+                continue;
+            }
+
+            $url = $this->lowercase_root( $url );
+
+            if( in_array( $url, $this->visited ) )
             {
                 continue;
             }
 
-            $href = phpUri::parse( $domain )->join( $href );
-
-            if( ! StringBegins( $href, $root ) )
+            if( $href['pre_filter_url'] === '' )
             {
-                continue;
-            }
+                $filter = $this->filter( $url );
 
-            if( in_array( $href, $this->visited ) )
-            {
-                continue;
-            }
+                if( $filter === false )
+                {
+                    continue;
+                }
 
-            $filter = $this->filter();
+                if( is_string( $filter ) ) // replace  the  current entry  with  the  new  url  and   let   the   loop
+                {                          // iterate on it again making every check. On the new iteration the new url
+                    $hrefs[ $i ] = [ 'url' => $filter, 'pre_filter_url' => $url ];  //  will  not  be  filtered  again
+                    $i--;
+                    continue;
+                }
 
-            if( $filter === false )
-            {
-                continue;
-            }
-
-            if( is_string( $filter ) )
-            {
-                $href = $filter;
-                $this->lowercase( $href );
-                if( $href === false || in_array( $href, $this->visited ) )
+                if( $filter !== true )
                 {
                     continue;
                 }
             }
 
-            ScrapeUrl( $href, $root, $level + 1 );
+            $this->scrape_url( $url, $level + 1 );
         }
     }
 
 
 
-    private function ScrapeCurlCache( $url )
+    private function curl_or_fetch_cache( $url )
     {
-        if( $this->cachePath === false )
+        if( $this->cache_path === false )
         {
             return Curl( $url );
         }
 
-        $cacheFile = $this->cacheFileForUrl( $url );
+        $cache_file_path = $this->cache_file_path_for_url( $url );
 
-        if( is_file( $cacheFile ) )
+        if( is_file( $cache_file_path ) )
         {
-            $result = array();
-            $result['response'] = file_get_contents( $cacheFile );
-            $result['headers'] = file_get_contents( "$cacheFile.headers" );
+            $result = [];
+            $result['response'] = file_get_contents( "$cache_file_path.response.txt" );
+            $result['headers']  = file_get_contents( "$cache_file_path.headers.txt" );
             $result['error'] = '';
             $result['status'] = 200;
             $result['errnum'] = 0;
@@ -283,25 +359,16 @@ class Scraper
             /*--- EXIT POINT ---*/
         }
 
-        for( $attempts = 0; $attempts < 3; $attempts++ )
+        for( $attempts = 0; $attempts < $this->attempts; $attempts++ )
         {
             $result = Curl( $url );
             if( $result['status'] < 300 && $result['error'] == '' )
             {
-                file_put_contents( "$cacheFile.response.txt", $result['response'] );
-                file_put_contents( "$cacheFile.headers.txt", $result['headers'] );
-                $this->lowercase( $result['url'] );
-                if( $result['url'] !== false && $result['url'] !== $url )
-                {
-                    $url = $result['url'];
-                    $cacheFile = $this->cacheFileForUrl( $url );
-                    file_put_contents( "$cacheFile.response.txt", $result['response'] );
-                    file_put_contents( "$cacheFile.headers.txt", $result['headers'] );
-                }
-                break;
+                file_put_contents( "$cache_file_path.response.txt", $result['response'] );
+                file_put_contents( "$cache_file_path.headers.txt",  $result['headers'] );
             }
 
-            for( $i = 30; $i > 0; $i-- )
+            for( $i = $this->pause; $i > 0; $i-- )
             {
                 EchoCR( "Failed loading $url - Status: " . $result['status'] . " - Error: " . $result['error'] . " - pause... $i" );
                 sleep(1);
@@ -312,16 +379,14 @@ class Scraper
     }
 
 
+    // return path to cache file  for  a  given
+    // URL
+    // as URL may be case sensitive  while  the
+    // OS is not a hash is always appended
 
-    //
-    // return path to cache file for a given URL
-    // as URL may be case sensitive while the OS is not
-    // a hash is always appended
-    //
-
-    private function cacheFileForUrl( $url )
+    private function cache_file_path_for_url( $url )
     {
-        $this->lowercase( $url );
+        $url = $this->lowercase_root( $url );
         $filename = str_replace( "://", "-", $url );
         $filename = str_replace( ":", "_", $filename );
         $filename = str_replace( "/", "|", $filename );
@@ -330,39 +395,155 @@ class Scraper
             $filename = substr( $filename, 97 ) . '---';
         }
         $filename = $filename . " (" . md5( $url ) .")";
-        $cacheFile = $this->cachePath . "/" . $filename;
+        $cache_file_path = $this->cache_path . "/" . $filename;
 
-        return $cacheFile;
+        return $cache_file_path;
+    }
+
+
+
+    // save the url in the visited list
+
+    private function save_in_visited( $url )
+    {
+        $url = $this->lowercase_root( $url );
+        if( ! in_array ( $url, $this->visited ) )
+        {
+            $this->visited[] = $url;
+        }
+    }
+
+
+
+    // is the url absolute
+
+    private function url_is_absolute( $url )
+    {
+        return StringBegins( $url, [ 'https://', 'http://' ], STRING_CI );
+    }
+
+
+
+    // is the url good
+
+    private function url_is_good( $url )
+    {
+        $scheme = StringLowercase( StringBetween( $url, '', '://' ) );
+
+        if( $scheme === false )
+        {
+            return true; // relative url is ok
+        }
+
+        // check scheme is supported
+
+        return in_array( $scheme, [ 'http', 'https' ] );
+    }
+
+
+
+    // make relative path absolute
+
+    private function make_url_absolute( $relative )
+    {
+        return phpUri::parse( $this->domain )->join( $relative );
+    }
+
+
+
+    // returns the scheme+domain
+
+    private function domain_from_url( $url )
+    {
+        $url = StringLowercase( $url ) . "/";
+        $pos = strpos( $url, "/", 8 );
+        return substr( $url, 0, $pos );
+    }
+
+
+
+    // takes the absolute path  passed  and  if
+    // begins with  root  turn  the  root  part
+    // lowercase  otherwise  returns  the   url
+    // unmodified
+    // the absolute path passed may be  shorter
+    // than root: in this case if  root  begins
+    // with the url it is  returned  lowercase,
+    // if not is returned unmodified
+
+    private function lowercase_root( $url )
+    {
+        if( strlen( $url ) >= strlen( $this->root ) )
+        {
+            if( StringBegins( $url, $this->root, STRING_CI ) )
+            {
+                return StringReplaceAtBeginning( $url, $this->root, $this->root );
+            }
+            return $url;
+        }
+
+        // the url is shorter than root
+
+        if( StringBegins( $this->root, $url, STRING_CI ) )
+        {
+            return LowerCase( $url );
+        }
+        return $url;
+    }
+
+
+    // is the absolute url below root
+
+    private function url_is_below_root( $url )
+    {
+        return StringBegins( $url, $root, STRING_CI );
+    }
+
+
+
+    // warn if a url with issues comes from the filter function
+
+    private function warn_if_url_comes_from_filter( $warn, $new, $original )
+    {
+        if( $original === '' )
+        {
+            return;
+        }
+        EchoNL( "WARNING: filter function produced $warn url\n         original: $original\n         filtered: $new" );
     }
 
 
 
     //
-    // takes the url passed by reference and make
-    // scheme and domain lowercase
-    // if the url is not valid turn it into `false`
-    // returns the domain name with a trailing
-    // slash
+    // test
     //
 
-    private function lowercase( &$url )
+    public function test( $root )
     {
-        if( $url === '' || $url === false || ! StringBegins( $url, [ 'https://', 'http://' ], STRING_CI ) )
+        EchoNL( "Testing Scraper" );
+        EchoNL( "---------------" );
+        EchoNL( "root url: $root" );
+        $this->scrape( $root, true );
+        EchoNL( "Instance variablies:" );
+
+        EchoNL( "cache_path = $this->cache_path" );
+        EchoNL( "domain     = $this->domain    " );
+        EchoNL( "root       = $this->root      " );
+        EchoNL( "attempts   = $this->attempts  " );
+        EchoNL( "pause      = $this->pause     " );
+        if( is_array( $this->visited ) )
         {
-            $url = false;
-            return false;
+            EchoNL( "visited    = <array> " . count( $this->visited ) . " items" );
         }
-
-        $domain = StringBetween( $url, '://', '' );
-        if( StringHas( $domain, '/' ) )
+        else
         {
-            $domain = StringBetween( $domain, '', '/' );
+            EchoNL( "FAIL: visited is not array" );
         }
+        EchoNL( "---------------" );
 
-        $sd = StringLowercase( StringBetween( $url, '', $domain, STRING_MARKERS ) );
+        $this->set_retry( 1, 8 );
+        if( $this->attempts === 1 && $this->pause === 8 );
 
-        $url = $sd . substr( $url, strlen( $sd ) );
 
-        return "$sd/";
     }
 }
