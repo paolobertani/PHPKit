@@ -44,7 +44,9 @@ define( 'STRING_NOT',          16 );
 //
 // When  passed  an  array  of  strings  as  first
 // parameter  the  function  will  always   return
-// `false` or an array of strings (never a string)
+// `false` or an array of strings  (not a string);
+// a  notable  exception  to  this  rule  is   the
+// behaviour of StringBetween
 //
 // Functions that  output  an  array  will  return
 // `false` (not an empty array) in case the output
@@ -276,7 +278,10 @@ function StringHasPrivate( $str, $has, $not )
 //
 // StringsBetween
 //
-// Given the  input  string  `$str`  an  array  is
+// this  function  always  returns  an  array   of
+// strings with at least one item or `false`;
+//
+// given the  input  string  `$str`  an  array  is
 // returned with the substrings surrounded by  the
 // start marker and end marker `$sm`, `$em`
 //
@@ -319,7 +324,7 @@ function StringsBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
     }
     else
     {
-        Error( "Wrong parameters type: passed @types");
+        Error( "wrong parameters type: passed @types");
         /*--- QUIT POINT ---*/
     }
 
@@ -476,10 +481,10 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
 // operates like StringsBetween but only the first
 // occurrence is returned as string; returns false
 // in case of no match;
-// the first parameter must  be  a  string  or  an
-// array of strings  in  wich  case  an  array  of
-// strings is returned or `false` in  case  of  no
-// matches
+// DIFFERENTLY from StringsBetween, if  the  first
+// parameter is a string, a string (or `false`) is
+// returned; if the first parameter  is  an  array
+// then an array (or `false`) is returned
 //
 // allowed options:
 // STRING_MARKERS
@@ -496,7 +501,7 @@ function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
     }
     else
     {
-        Error( "Wrong parameters type: passed @types" );
+        Error( "wrong parameters type: passed @types" );
         /*--- QUIT POINT ---*/
     }
 
@@ -515,56 +520,23 @@ function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
     $options = $options | STRING_FIRST;
 
 
-    // standard mode, a string is returned in case of match
+    // use StringsBetween
 
-    if( is_string( $string ) )
-    {
-        $results = StringsBetweenPrivate( $string, $sm, $em, $options );
-        if( $results === false )
-        {
-            return false;
-            /*--- EXIT POINT ---*/
-        }
-        else
-        {
-            return $results[ 0 ];
-            /*--- EXIT POINT ---*/
-        }
-    }
+    $result = StringsBetween( $string, $sm, $em, $options);
 
-
-    // array mode, array | false is returned
-
-    $results = [];
-    foreach( $string as $str )
-    {
-        if( ! is_string( $str ) )
-        {
-            Error( "`string` array must contain strings" );
-            /*--- QUIT POINT ---*/
-        }
-
-        $res = StringsBetweenPrivate( $str, $sm, $em, $options );
-
-        if( $res !== false )
-        {
-            $results = array_merge( $results, $res );
-        }
-    }
-
-
-    // return `false` with no results
-
-    if( count( $results ) === 0 )
+    if( $result === false )
     {
         return false;
         /*--- EXIT POINT ---*/
     }
 
+    if( is_array( $string ) )
+    {
+        return $result;
+        /*--- EXIT POINT ---*/
+    }
 
-    // otherwise return matches array
-
-    return $results;
+    return $result[0];
 }
 
 
@@ -585,7 +557,8 @@ function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 
 function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
 {
-    // check parameters
+
+    // parameter type check
 
     if( ( $string === false || is_string( $string ) ) && ( is_array( $with ) || is_string( $with ) ) && is_int( $options ) )
     {
@@ -593,7 +566,7 @@ function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
     }
     else
     {
-        Error( "Wrong parameters type: passed @types" );
+        Error( "wrong parameters type: passed @types" );
         /*--- QUIT POINT ---*/
     }
 
@@ -677,7 +650,8 @@ function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
 
 function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
 {
-    // check parameters
+
+    // parameter type check
 
     if( ( $string === false || is_string( $string ) ) && ( is_array( $with ) || is_string( $with ) ) && is_int( $options ) )
     {
@@ -685,7 +659,7 @@ function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
     }
     else
     {
-        Error( "Wrong parameters type: passed @types" );
+        Error( "wrong parameters type: passed @types" );
         /*--- QUIT POINT ---*/
     }
 
@@ -767,7 +741,8 @@ function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
 
 function StringReplaceAtBeginning( $string, $src, $rep, $options = STRING_NO_OPTIONS )
 {
-    // check parameters
+
+    // parameter type check
 
     if( is_string( $string ) && is_string( $src ) && is_string( $rep ) && is_int( $options ) )
     {
@@ -775,7 +750,7 @@ function StringReplaceAtBeginning( $string, $src, $rep, $options = STRING_NO_OPT
     }
     else
     {
-        Error( "Wrong parameters type: passed @types" );
+        Error( "wrong parameters type: passed @types" );
         /*--- QUIT POINT ---*/
     }
 
@@ -816,7 +791,7 @@ function StringsCompare( $a, $b, $options = STRING_NO_OPTIONS )
     }
     else
     {
-        Error( "Wrong parameters type: passed @types" );
+        Error( "wrong parameters type: passed @types" );
         /*--- QUIT POINT ---*/
     }
 
@@ -838,25 +813,35 @@ function StringsCompare( $a, $b, $options = STRING_NO_OPTIONS )
 
 function StringReplace( $string, $search, $replace )
 {
+
+    // parameter type check
+
     if( ( $string === false || is_string( $string ) || is_array( $string ) ) && is_string( $search ) && is_string( $replace ) )
     {
         // ok
     }
     else
     {
-        Error( "Wrong parameters type: passed @types" );
+        Error( "wrong parameters type: passed @types" );
         /*--- QUIT POINT ---*/
     }
+
+    // `false`
 
     if( $string === false )
     {
         return false;
     }
 
+    // single string
+
     if( is_string( $string ) )
     {
         return str_replace( $search, $replace, $string );
+        /*--- EXIT POINT ---*/
     }
+
+    // array of strings
 
     $out = [];
     foreach( $string as $str )
@@ -879,25 +864,35 @@ function StringReplace( $string, $search, $replace )
 
 function StringTrim( $string, $mask = " \t\n\r\0\x0B" )
 {
+
+    // parameter type check
+
     if( ( $string === false || is_string( $string ) || is_array( $string ) ) && is_string( $mask ) )
     {
         // ok
     }
     else
     {
-        Error( "Wrong parameters type: passed @types" );
+        Error( "wrong parameters type: passed @types" );
         /*--- QUIT POINT ---*/
     }
+
+    // `false`
 
     if( $string === false )
     {
         return false;
     }
 
+    // single string
+
     if( is_string( $string ) )
     {
         return trim( $string, $mask );
+        /*--- EXIT POINT ---*/
     }
+
+    // array of strings
 
     $out = [];
     foreach( $string as $str )
