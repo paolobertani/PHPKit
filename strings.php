@@ -1029,6 +1029,66 @@ function StringSubstring( $string, $start, $len )
 
 
 //
+// StringPosition
+//
+// `string` can ba a  string,  in  this  case  the
+// function operates just as  mb_strpos;  `string`
+// can be false and the  function  returns  false;
+// `string` can be an array of  strings  in  which
+// case the function operates as mb_strpos on each
+// string returning an array  of  results  of  the
+// same size of `string`; the returned  array  may
+// contain integer values or `false`  (string  not
+// found)
+//                                              \x
+
+function StringPosition( $string, $search, $offset = 0 )
+{
+    if( ( is_string( $string ) || $string === false || is_array( $string ) ) && is_string( $search ) && is_int( $offset ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "wrong parameters type: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+    // false
+
+    if( $string === false )
+    {
+        return false;
+        /*--- EXIT POINT ---*/
+    }
+
+    // string
+
+    if( is_string( $string ) )
+    {
+        return mb_strpos( $string, $search, $offset );
+        /*--- EXIT POINT ---*/
+    }
+
+    // array
+
+    $out = [];
+    foreach( $string as $str )
+    {
+        if( ! is_string( $str ) )
+        {
+            Error( "`string` must be array of strings");
+            /*--- QUIT POINT ---*/
+        }
+
+        $out[] = mb_strpos( $str, $search, $offset );
+    }
+    return $out;
+}
+
+
+
+//
 // StringFromFloat
 //
 // convert float to string ignoring locale
