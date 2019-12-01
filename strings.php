@@ -912,6 +912,22 @@ function StringTrim( $string, $mask = " \t\n\r\0\x0B" )
 //
 // StringSubstring
 //
+// in the simplest form acts as mb_substr  on  the
+// passed  string  with  `start`  and  `len`;   if
+// `string` is `false` or `start` is `false`  then
+// `false` is returned. `string` can be  an  array
+// of strings (false not allowed), in this case an
+// array of strings of  the  same  length  of  the
+// input  array  is  returned;  each  string   get
+// substring applied; if  `start`  is  `false`  an
+// array of empty strings is returned; `start` and
+// `len` can be (both) arrays: the item  count  of
+// `string`, `start` and `len` must  match,  every
+// string get substring applied  using  the  start
+// and len value from `start` and `len` arrays  at
+// the same index. Again if start is `false`  then
+// the corresponding string is turned into a empty
+// string                                       \x
 
 function StringSubstring( $string, $start, $len )
 {
@@ -926,15 +942,15 @@ function StringSubstring( $string, $start, $len )
 
     // parameter type check
 
-    if( is_string( $string ) && is_int( $start ) && is_int( $len ) )
+    /**/if( is_string( $string ) && ( is_int( $start ) || $start === false) && is_int( $len ) )
     {
         // ok
     }
-    elseif( is_array( $string ) && is_int( $start ) && is_int( $len ) )
+    elseif( is_array ( $string ) && ( is_int( $start ) || $start === false) && is_int( $len ) )
     {
         // ok
     }
-    elseif( is_array( $string ) && is_array( $start ) && is_array( $len ) && count( $string ) === count( $start ) && count( $start ) === count( $end ) )
+    elseif( is_array ( $string ) && is_array( $start ) && is_array( $len ) && count( $string ) === count( $start ) && count( $start ) === count( $len ) )
     {
         // ok
     }
@@ -948,13 +964,19 @@ function StringSubstring( $string, $start, $len )
 
     if( is_string( $string ) )
     {
+        if( $start === false )
+        {
+            return false;
+            /*--- EXIT POINT ---*/
+        }
+
         return mb_substr( $string, $start, $len );
         /*--- EXIT POINT ---*/
     }
 
     // array of strings with single `start`, `len`
 
-    if( is_int( $start ) )
+    if( is_int( $start ) || $start === false )
     {
         $out = [];
         foreach( $string as $str )
@@ -965,7 +987,14 @@ function StringSubstring( $string, $start, $len )
                 /*--- QUIT POINT ---*/
             }
 
-            $out[] = mb_substr( $str, $start, $len );
+            if( $start === false )
+            {
+                $out[] = "";
+            }
+            else
+            {
+                $out[] = mb_substr( $str, $start, $len );
+            }
         }
         return $out;
         /*--- EXIT POINT ---*/
@@ -975,17 +1004,24 @@ function StringSubstring( $string, $start, $len )
 
     $out = [];
     $n = count( $string );
-    foreach( $i = 0; $i < $n; $i++ )
+    for( $i = 0; $i < $n; $i++ )
     {
         $str = $string[ $i ];
         $s = $start[ $i ];
         $l = $len[ $i ];
 
-        if( ! is_string( $str ) ) { Error( '`string` must be array of strings' ); } /*--- QUIT POINT ---*/
-        if( ! is_int( $s ) ) { Error( '`start` must be array of ints' ); }          /*--- QUIT POINT ---*/
-        if( ! is_int( $l ) ) { Error( '`len` must be array of ints' ); }            /*--- QUIT POINT ---*/
+        if( ! is_string( $str ) ) { Error( '`string` must be array of strings' ); }                         /*--- QUIT POINT ---*/
+        if( ! is_int( $s ) && $s !== false ) { Error( 'items in array `start` must be int or false' ); }    /*--- QUIT POINT ---*/
+        if( ! is_int( $l ) ) { Error( '`len` must be array of ints' ); }                                    /*--- QUIT POINT ---*/
 
-        $out[] = mb_substr( $str, $s, $l );
+        if( $s === false )
+        {
+            $out[] = '';
+        }
+        else
+        {
+            $out[] = mb_substr( $str, $s, $l );
+        }
     }
     return $out;
 }
