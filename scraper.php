@@ -42,13 +42,21 @@ class Scraper
         $this->attempts = 3;
         $this->pause = 10;
 
-        if( ArgumentGet( '-nocache', ARGUMENT_BOOLEAN ) )
+        $cache_arg = ArgumentGet( 'cache', ARGUMENT_OPTIONAL );
+
+        if( $cache_arg === false )
+        {
+            $this->cache_path = ROOT . "/cache.noindex";
+            MakeDir( $this->cache_path );
+        }
+        elseif( StringsCompare( $cache_arg, 'no', STRING_CI ) )
         {
             $this->cache_path = false;
         }
-        else
+        elseif( StringsCompare( $cache_arg, 'clear', STRING_CI ) )
         {
             $this->cache_path = ROOT . "/cache.noindex";
+            RemoveDirectory( $this->cache_path );
             MakeDir( $this->cache_path );
         }
     }
@@ -58,7 +66,8 @@ class Scraper
     // --- Override to provide a custom info string
 
     //
-    // returns info to be displayed on the terminal during scraping
+    // returns info to be displayed on the terminal
+    // during scraping
     //
 
     protected function get_info( $url, $count, $level, $memory )
@@ -73,14 +82,24 @@ class Scraper
     //
     // filter the URLs retrieved;
     // the function may return:
-    // `true` let load and parse the URL
-    // `false` URL should not be loaded
-    // <string> let parse this URL instead
+    // `true`  let  load  and  parse  the  URL;
+    // `false`  URL  should  not   be   loaded;
+    // <string> let parse this URL instead;
     //
+    // default filter removes the fragment part
+    // of the url, converts spaces to `%20`
+    //                                       \p
 
     protected function filter( $url )
     {
-        return true;
+        $url = StringReplace( $url, " ", "%20" );
+
+        if( StringHas( $url, "#" ) )
+        {
+            $url = StringBetween( $url, '', '#');
+        }
+
+        return $url;
     }
 
 
@@ -88,10 +107,13 @@ class Scraper
     // --- Override to implement a contents processor
 
     //
-    // process the response
-    //
+    // process the response;
+    // the function may return a string  or  an
+    // array  of  strings   representing   urls
+    // (aboslute o relative) to be scraped
+    //                                       \p
 
-    protected function process( $url, $response, $headers, $dom )
+    protected function process( $url, $response, $headers, $dom, $is_html )
     {
         //
     }
@@ -111,13 +133,24 @@ class Scraper
 
 
     //
+    // scraping done
+    //
+
+    public function done()
+    {
+        Curl(); // clear cookies
+    }
+
+
+
+    //
     // scrape
     //
     // parse the  site  from  `$root`  then  go
     // (only) deeper with recursion
     //
 
-    public function scrape( $root, $test = false )
+    public function scrape( $root )
     {
 
         // check root url is good
@@ -154,14 +187,6 @@ class Scraper
         $this->domain = $this->domain_from_url( $root );
 
 
-        // testing the class? exit here
-
-        if( $test )
-        {
-            return;
-        }
-
-
         // start recursive scraping
 
         $this->scrape_url( $root, 1 );
@@ -169,7 +194,7 @@ class Scraper
 
         // Done
 
-        EchoNL( '' );
+        EchoNL( "Done scraping {$this->root}" );
     }
 
 
@@ -189,6 +214,7 @@ class Scraper
         // provide info during parsing
 
         $memory = round( memory_get_usage() / ( 1024 * 1024 ), 0 );
+        $count = count( $this->visited );
         $info = $this->get_info( $url, $count, $level, $memory );
         EchoCR( $info );
 
@@ -247,7 +273,7 @@ class Scraper
 
         // process/parse contents
 
-        $this->process( $url, $response, $headers, $dom );
+        $more = $this->process( $url, $response, $headers, $dom, $is_html );
 
 
         // if not html there are no links
@@ -266,6 +292,29 @@ class Scraper
         foreach( $dom->getElementsByTagName( 'a' ) as $node )
         {
             $hrefs[] = [ 'url' => trim( $node->getAttribute('href') ), 'pre_filter_url' => '' ];
+        }
+
+
+        // add links returned by process function
+
+        if( is_string( $more ) )
+        {
+            $more = [ $more ];
+        }
+
+        if( is_array( $more ) )
+        {
+            foreach( $more as $m )
+            {
+                if( is_string( $m ) )
+                {
+                    $hrefs[] = [ 'url' => $m, 'pre_filter_url' => '' ];
+                }
+                else
+                {
+                    EchoNL( "WARNING: process function must return a string or array of strings" );
+                }
+            }
         }
 
 
@@ -343,13 +392,14 @@ class Scraper
             return Curl( $url );
         }
 
-        $cache_file_path = $this->cache_file_path_for_url( $url );
+        $resp = $this->cache_response_path_for_url( $url );
+        $hdrs = $this->cache_headers_path_for_url ( $url );
 
-        if( is_file( $cache_file_path ) )
+        if( FileExists( $resp ) )
         {
             $result = [];
-            $result['response'] = file_get_contents( "$cache_file_path.response.txt" );
-            $result['headers']  = file_get_contents( "$cache_file_path.headers.txt" );
+            $result['response'] = file_get_contents( $resp );
+            $result['headers']  = json_decode( file_get_contents( $hdrs ), true );
             $result['error'] = '';
             $result['status'] = 200;
             $result['errnum'] = 0;
@@ -364,8 +414,9 @@ class Scraper
             $result = Curl( $url );
             if( $result['status'] < 300 && $result['error'] == '' )
             {
-                file_put_contents( "$cache_file_path.response.txt", $result['response'] );
-                file_put_contents( "$cache_file_path.headers.txt",  $result['headers'] );
+                file_put_contents( $resp, $result['response'] );
+                file_put_contents( $hdrs, json_encode( $result['headers'], JSON_PRETTY_PRINT ) );
+                break;
             }
 
             for( $i = $this->pause; $i > 0; $i-- )
@@ -378,13 +429,12 @@ class Scraper
         return $result;
     }
 
+    // return path to  base  file  path  for  a
+    // given URL; as URL may be case  sensitive
+    // while the OS is not  a  hash  is  always
+    // appended                              \p
 
-    // return path to cache file  for  a  given
-    // URL
-    // as URL may be case sensitive  while  the
-    // OS is not a hash is always appended
-
-    private function cache_file_path_for_url( $url )
+    private function cache_base_path_for_url( $url )
     {
         $url = $this->lowercase_root( $url );
         $filename = str_replace( "://", "-", $url );
@@ -392,12 +442,32 @@ class Scraper
         $filename = str_replace( "/", "|", $filename );
         if( strlen( $filename ) > 100 )
         {
-            $filename = substr( $filename, 97 ) . '---';
+            $filename = substr( $filename, -97, 97 ) . '---';
         }
         $filename = $filename . " (" . md5( $url ) .")";
         $cache_file_path = $this->cache_path . "/" . $filename;
 
         return $cache_file_path;
+    }
+
+
+
+    // path to response cache file
+
+    private function cache_response_path_for_url( $url )
+    {
+        $path = $this->cache_base_path_for_url( $url );
+        return "$path.response.txt";
+    }
+
+
+
+    // path to response-headers cache file
+
+    private function cache_headers_path_for_url( $url )
+    {
+        $path = $this->cache_base_path_for_url( $url );
+        return "$path.headers.txt";
     }
 
 
@@ -496,7 +566,7 @@ class Scraper
 
     private function url_is_below_root( $url )
     {
-        return StringBegins( $url, $root, STRING_CI );
+        return StringBegins( $url, $this->root, STRING_CI );
     }
 
 
@@ -541,9 +611,11 @@ class Scraper
         }
         EchoNL( "---------------" );
 
-        $this->set_retry( 1, 8 );
-        if( $this->attempts === 1 && $this->pause === 8 );
+        TestBegin();
 
+        Test( 'set_retry', $this->set_retry( 1, 8 ), $this->attempts === 1 && $this->pause === 8 );
+
+        TestSummary();
 
     }
 }

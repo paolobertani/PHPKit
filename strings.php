@@ -49,7 +49,7 @@ define( 'STRING_NOT',          16 );
 // Functions that  output  an  array  will  return
 // `false` (not an empty array) in case the output
 // array's item count is 0 (zero)
-//
+//                                              \x
 
 
 
@@ -59,6 +59,15 @@ define( 'STRING_NOT',          16 );
 
 function StringLowercase( $string )
 {
+    if( $string === false || is_string( $string ) || is_array( $string ) )
+    {
+        //
+    }
+    else
+    {
+        Error( "parameter must be `false`, string or array of strings: passed @types" );
+    }
+
     if( $string === false )
     {
         return false;
@@ -92,6 +101,15 @@ function StringLowercase( $string )
 
 function StringUppercase( $string )
 {
+    if( $string === false || is_string( $string ) || is_array( $string ) )
+    {
+        //
+    }
+    else
+    {
+        Error( "parameter must be `false`, string or array of strings: passed @types" );
+    }
+
     if( $string === false )
     {
         return false;
@@ -128,7 +146,6 @@ function StringUppercase( $string )
 // which case the function  returns  true  if  the
 // string contains at least one of the strings  in
 // the array;
-//
 // if `$has` is an empty string  returns  true  if
 // `$string` is not empty
 //
@@ -146,7 +163,7 @@ function StringUppercase( $string )
 // allowed options:
 // STRING_NOT
 // STRING_CI
-//
+//                                              \x
 
 function StringHas( $string, $has, $options = STRING_NO_OPTIONS )
 {
@@ -159,7 +176,7 @@ function StringHas( $string, $has, $options = STRING_NO_OPTIONS )
     }
     else
     {
-        Error( "Wrong parameters type: passed @types" );
+        Error( "wrong parameters type: passed @types" );
         /*--- QUIT POINT ---*/
     }
 
@@ -214,14 +231,20 @@ function StringHas( $string, $has, $options = STRING_NO_OPTIONS )
     return $out;
 }
 
+// operates on a single string, returns `true` or `false`
+
 function StringHasPrivate( $str, $has, $not )
 {
     $yes = ! $not;
+
+    // empty `has`
 
     if( $has === '' )
     {
         return ( $str !== '' ) xor $not;
     }
+
+    // array `has`
 
     if( is_array( $has ) )
     {
@@ -242,6 +265,8 @@ function StringHasPrivate( $str, $has, $not )
         return $not;
         /*--- EXIT POINT --*/
     }
+
+    // single `has`
 
     return ( strpos( $str, $has ) !== false ) xor $not;
 }
@@ -281,7 +306,7 @@ function StringHasPrivate( $str, $has, $not )
 // allowed options:
 // STRING_MARKERS
 // STRING_FIRST
-//
+//                                              \x
 
 function StringsBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 {
@@ -307,7 +332,7 @@ function StringsBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
     }
 
 
-    // standard mode
+    // single string
 
     if( is_string( $string ) )
     {
@@ -316,7 +341,7 @@ function StringsBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
     }
 
 
-    // array mode
+    // array of strings
 
     $results = [];
     foreach( $string as $str )
@@ -350,6 +375,8 @@ function StringsBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
     return $results;
 }
 
+// operates on single string
+
 function StringsBetweenPrivate( $str, $sm, $em, $options )
 {
 
@@ -361,7 +388,7 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
 
     // collect results
 
-    $results = array();
+    $results = [];
 
     $idx = 0;
     $len = strlen( $str );
@@ -456,7 +483,7 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
 //
 // allowed options:
 // STRING_MARKERS
-//
+//                                              \x
 
 function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 {
@@ -484,9 +511,7 @@ function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 
     // parse and rebuild options
 
-    $include = $options & STRING_MARKERS;
-
-    $options = $include ? STRING_MARKERS : STRING_NO_OPTIONS;
+    $options = $options & STRING_MARKERS;
     $options = $options | STRING_FIRST;
 
 
@@ -637,6 +662,98 @@ function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
 
 
 //
+// StringEnds
+//
+// Returns true if  `$string`  ends  with  `$with`;
+// `$with` can  be  an  array  in  which  case  the
+// function returns true if `$string`  begins  with
+// at least one of the items of `$with`
+//
+// `$string` must be a string or `false`
+//
+// allowed options:
+// STRING_CI
+//
+
+function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
+{
+    // check parameters
+
+    if( ( $string === false || is_string( $string ) ) && ( is_array( $with ) || is_string( $with ) ) && is_int( $options ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "Wrong parameters type: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+
+    // `false` on `false` input
+
+    if( $string === false )
+    {
+        return false;
+    }
+
+
+    // array case: multiple $with
+
+    if( is_array( $with ) )
+    {
+        foreach( $with as $w )
+        {
+            if( ! is_string( $w ) )
+            {
+                Error( "`with` array must contain strings" );
+                /*--- QUIT POINT ---*/
+            }
+
+            if( StringEnds( $string, $w, $options ) )
+            {
+                return true;
+                /*--- EXIT POINT ---*/
+            }
+        }
+        return false;
+        /*--- EXIT POINT ---*/
+    }
+
+
+    // string case: single $with
+
+    $len = strlen( $with );
+
+    if( strlen( $string ) < $len )
+    {
+        return false;
+        /*--- EXIT POINT ---*/
+    }
+
+
+    // cut string
+
+    $string = substr( $string, -$len, $len );
+
+
+    // case insensitive ?
+
+    if( $options & STRING_CI )
+    {
+        $string = StringLowercase( $string );
+        $with   = StringLowercase( $with );
+    }
+
+
+    // compare
+
+    return $string === $with;
+}
+
+
+
+//
 // StringReplaceAtBeginning
 //
 // Replace `src` with `rep` at the beginning of `str`
@@ -716,6 +833,88 @@ function StringsCompare( $a, $b, $options = STRING_NO_OPTIONS )
 
 
 //
+// StringReplace
+//
+
+function StringReplace( $string, $search, $replace )
+{
+    if( ( $string === false || is_string( $string ) || is_array( $string ) ) && is_string( $search ) && is_string( $replace ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "Wrong parameters type: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+    if( $string === false )
+    {
+        return false;
+    }
+
+    if( is_string( $string ) )
+    {
+        return str_replace( $search, $replace, $string );
+    }
+
+    $out = [];
+    foreach( $string as $str )
+    {
+        if( ! is_string( $str ) )
+        {
+            Error( "first parameter must be string or array of strings");
+            /*--- QUIT POINT ---*/
+        }
+        $out[] = str_replace( $search, $replace, $str );
+    }
+    return $out;
+}
+
+
+
+//
+// StringTrim
+//
+
+function StringTrim( $string, $mask = " \t\n\r\0\x0B" )
+{
+    if( ( $string === false || is_string( $string ) || is_array( $string ) ) && is_string( $mask ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "Wrong parameters type: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+    if( $string === false )
+    {
+        return false;
+    }
+
+    if( is_string( $string ) )
+    {
+        return trim( $string, $mask );
+    }
+
+    $out = [];
+    foreach( $string as $str )
+    {
+        if( ! is_string( $str ) )
+        {
+            Error( "first parameter must be string or array of strings");
+            /*--- QUIT POINT ---*/
+        }
+        $out[] = trim( $str, $mask );
+    }
+    return $out;
+}
+
+
+
+//
 // StringFromFloat
 //
 // convert float to string ignoring locale
@@ -749,7 +948,8 @@ function StringFromFloat( $f, $p = null )
 class StringParser
 {
 
-    private $result;
+    private $result,
+            $original;
 
 
 
@@ -761,32 +961,12 @@ class StringParser
 
     function __construct( $result )
     {
-        if( $result === false )
+        if( $result === null )
         {
-            // this is allowed
-        }
-        elseif( is_string( $result ) )
-        {
-            $result = [ $result ];
-        }
-        elseif( is_array( $result ) )
-        {
-            foreach( $result as $str )
-            {
-                if( ! is_string( $str ) )
-                {
-                    Error( "StringParser: a string or array of strings must be passed to the constructor" );
-                }
-            }
-        }
-        else
-        {
-            Error( "StringParser: a string or array of strings must be passed to the constructor" );
+            Error( "StringParser: NULL passed to the constructor" );
         }
 
-        $this->result = $result;
-
-        return $this;
+        return $this->restore( $result );
     }
 
 
@@ -852,6 +1032,80 @@ class StringParser
 
 
 
+    public function restore( $result = null )
+    {
+        if( $result === null )
+        {
+            $this->result = $this->original;
+            return $this;
+        }
+
+        if( $this->result === false )
+        {
+            // this is allowed
+        }
+        elseif( is_string( $result ) )
+        {
+            $result = [ $result ];
+        }
+        elseif( is_array( $result ) )
+        {
+            foreach( $result as $str )
+            {
+                if( ! is_string( $str ) )
+                {
+                    Error( "StringParser: a string or array of strings must be passed" );
+                }
+            }
+        }
+        else
+        {
+            Error( "StringParser: a string or array of strings must be passed" );
+        }
+
+        $this->result = $result;
+        $this->original = $result;
+
+        return $this;
+    }
+
+
+
+    public function select( $start, $count = 1 )
+    {
+        if( is_int( $start ) && is_int( $count ) && $start >= 0 && $count >= 0 )
+        {
+            // ok
+        }
+        else
+        {
+            Error( "StringParser: parameters must be int and positive" );
+        }
+
+        if( $this->result === false ) { return $this; }
+
+        $out = [];
+
+        for( $i = $start; $i < $start + $count; $i++ )
+        {
+            if( isset( $this->result[ $i ] ) )
+            {
+                $out[] = $this->result[ $i ];
+            }
+        }
+
+        if( count( $out ) === 0 )
+        {
+            $out = false;
+        }
+
+        $this->result = $out;
+
+        return $this;
+    }
+
+
+
     public function has( $what, $options = STRING_NO_OPTIONS )
     {
         $this->result = StringHas( $this->result, $what, $options );
@@ -870,20 +1124,7 @@ class StringParser
 
     public function trim( $mask = " \t\n\r\0\x0B" )
     {
-        if( ! is_string( $mask ) )
-        {
-            Error( "StringParser: `mask` must be string" );
-            /*--- QUIT POINT ---*/
-        }
-
-        if( $this->result === false ) { return $this; }
-
-        $output = [];
-        foreach( $this->result as $str )
-        {
-            $output[] = trim( $str, $mask );
-        }
-        $this->result = $output;
+        $this->result = StringTrim( $this->result, $mask );
         return $this;
     }
 
@@ -933,20 +1174,7 @@ class StringParser
 
     public function replace( $search, $replace )
     {
-        if( ! is_string( $search ) || ! is_string( $replace ) )
-        {
-            Error( "StringParser: parameters must be string" );
-            /*--- QUIT POINT ---*/
-        }
-
-        if( $this->result === false ) { return $this; }
-
-        $output = [];
-        foreach( $this->result as $str )
-        {
-            $output[] = str_replace( $search, $replace, $str );
-        }
-        $this->result = $output;
+        $this->result = StringReplace( $this->result, $search, $replace );
         return $this;
     }
 
