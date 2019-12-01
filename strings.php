@@ -910,6 +910,89 @@ function StringTrim( $string, $mask = " \t\n\r\0\x0B" )
 
 
 //
+// StringSubstring
+//
+
+function StringSubstring( $string, $start, $len )
+{
+
+    // false case first, without checking `start` and `len`
+
+    if( $string === false )
+    {
+        return false;
+        /*--- EXIT POINT ---*/
+    }
+
+    // parameter type check
+
+    if( is_string( $string ) && is_int( $start ) && is_int( $len ) )
+    {
+        // ok
+    }
+    elseif( is_array( $string ) && is_int( $start ) && is_int( $len ) )
+    {
+        // ok
+    }
+    elseif( is_array( $string ) && is_array( $start ) && is_array( $len ) && count( $string ) === count( $start ) && count( $start ) === count( $end ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "wrong parameters type or mix: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+    // single string
+
+    if( is_string( $string ) )
+    {
+        return mb_substr( $string, $start, $len );
+        /*--- EXIT POINT ---*/
+    }
+
+    // array of strings with single `start`, `len`
+
+    if( is_int( $start ) )
+    {
+        $out = [];
+        foreach( $string as $str )
+        {
+            if( ! is_string( $str ) )
+            {
+                Error( '`string` must be array of strings' );
+                /*--- QUIT POINT ---*/
+            }
+
+            $out[] = mb_substr( $str, $start, $len );
+        }
+        return $out;
+        /*--- EXIT POINT ---*/
+    }
+
+    // array of strings with arrays of `start`, `len`
+
+    $out = [];
+    $n = count( $string );
+    foreach( $i = 0; $i < $n; $i++ )
+    {
+        $str = $string[ $i ];
+        $s = $start[ $i ];
+        $l = $len[ $i ];
+
+        if( ! is_string( $str ) ) { Error( '`string` must be array of strings' ); } /*--- QUIT POINT ---*/
+        if( ! is_int( $s ) ) { Error( '`start` must be array of ints' ); }          /*--- QUIT POINT ---*/
+        if( ! is_int( $l ) ) { Error( '`len` must be array of ints' ); }            /*--- QUIT POINT ---*/
+
+        $out[] = mb_substr( $str, $s, $l );
+    }
+    return $out;
+}
+
+
+
+//
 // StringFromFloat
 //
 // convert float to string ignoring locale
