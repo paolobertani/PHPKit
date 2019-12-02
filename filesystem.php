@@ -398,3 +398,101 @@ function PathGetExtension( $path )
     return strtolower( pathinfo( $path, PATHINFO_EXTENSION ) );
 }
 
+
+
+//
+// Zip a directory
+//
+
+function ZipDirectory( $path )
+{
+    if( ! DirectoryExists( $path ) )
+    {
+        Error( "directory does not exists: $path" );
+    }
+
+    PathRemoveSlash( $path );
+
+    $parent = dirname( $path );
+
+    $cwd = getcwd();
+    if( $cwd === false )
+    {
+        Error( "failed getcwd()" );
+    }
+
+    $result = chdir( $parent );
+    if( ! $result )
+    {
+        Error( "failed chdir()" );
+    }
+
+    $name = basename( $path );
+
+    $exitStatus = 0;
+    $toolcall = [ "zip -rq", "$name.zip", $name ];
+    $output = Execute( $toolcall, $exitStatus );
+    if( $exitStatus != 0 )
+    {
+        $toolcall = implode( ' ', $toolcall );
+        Error( "failed zip: $toolcall");
+    }
+
+    RemoveDirectory( $path );
+
+    $result = chdir( $cwd );
+    if( ! $result )
+    {
+        Error( "failed chdir() when restoring cwd" );
+    }
+}
+
+
+
+//
+// Unzip a zip file and delete it after extraction
+//
+
+function Unzip( $path )
+{
+    if( ! FileExists( $path ) )
+    {
+        Error( "directory does not exists: $path" );
+    }
+
+    if( PathGetExtension( $path ) !== 'zip' )
+    {
+        Error( "not a zip file" );
+    }
+
+    $parent = dirname( $path );
+
+    $cwd = getcwd();
+    if( $cwd === false )
+    {
+        Error( "failed getcwd()" );
+    }
+
+    $result = chdir( $parent );
+    if( ! $result )
+    {
+        Error( "failed chdir()" );
+    }
+
+    $exitStatus = 0;
+    $toolcall = [ "unzip -qq", $path ];
+    $output = Execute( $toolcall, $exitStatus );
+    if( $exitStatus != 0 )
+    {
+        $toolcall = implode( ' ', $toolcall );
+        Error( "failed unzip: $toolcall");
+    }
+
+    RemoveFile( $path );
+
+    $result = chdir( $cwd );
+    if( ! $result )
+    {
+        Error( "failed chdir() when restoring cwd" );
+    }
+}
