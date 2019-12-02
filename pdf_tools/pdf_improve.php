@@ -38,6 +38,8 @@ require_once ROOT . '/include/arguments.php';
 require_once ROOT . '/include/filesystem.php';
 require_once ROOT . '/include/milliseconds.php';
 
+require_once ROOT . '/include/pdf_tools/pdf_tools.php';
+
 
 
 //
@@ -92,7 +94,6 @@ function PdfImprove()
     $pdfPath = ArgumentGet( 'pdf' );
     $resPath = ArgumentGet( 'res' );
     $dstPath = ArgumentGet( 'out',    ARGUMENT_OPTIONAL );
-    $keep    = ArgumentGet( 'keep',   ARGUMENT_BOOLEAN );
     $noimg   = ArgumentGet( 'noimg',  ARGUMENT_BOOLEAN );
 
 
@@ -100,19 +101,10 @@ function PdfImprove()
     // Temp files paths
     //
 
-    $pdfffPath      = ROOT . '/temp/temp.pdfff';
-    $pdfidxPath     = ROOT . '/temp/temp.pdfidx';
     $linksPath      = ROOT . '/temp/temp.lks-0.txt';
     $pdfImagesPath  = ROOT . '/temp/temp.pdf-1-images.pdf';
     $pdfLinksPath   = ROOT . '/temp/temp.pdf-2-links.pdf';
     $pdfOutlinesPath= ROOT . '/temp/temp.pdf-3-outlines.pdf';
-
-
-    //
-    // Array of produced temp file paths
-    //
-
-    $tempFiles = [];
 
 
     //
@@ -150,54 +142,11 @@ function PdfImprove()
 
 
     //
-    // Temp dir
+    // Temp dir, pdfff and pdfidx
     //
 
-    MakeDir( ROOT . '/temp' );
+    PdfToolsPdfidx( $pdfPath );
 
-
-    //
-    // Build PDFFF file
-    //
-
-    if( ! FileExists( $pdfffPath ) )
-    {
-        EchoNL( "Generating pdfff file" );
-        $output = Execute( [ 'pdfff -suppress_warnings yes -rewrite yes -pdf', $pdfPath, '-out', $pdfffPath ], $status );
-        if( $status != 0 )
-        {
-            EchoNL( "pdfff exited with status $status: $output" );
-            exit(0);
-        }
-        RemoveFile( $pdfidxPath ); // if the pdfff was generated then let the pdfidx be rebuilt
-    }
-    else
-    {
-        EchoNL( "Using existing pdfff file" );
-    }
-    $tempFiles['pdfff'] = $pdfffPath;
-
-
-    //
-    // Build PDFIDX file
-    //
-
-    if( ! FileExists( $pdfidxPath ) )
-    {
-        EchoNL( "Generating pdfidx file" );
-        $output = Execute( [ 'pdfidx -pdfff', $pdfffPath, '-pdfidx', $pdfidxPath ], $status );
-        if( $status != 0 )
-        {
-            EchoNL( "pdfidx exited with status $status: $output" );
-            exit(0);
-        }
-        RemoveFile( $linksPath ); // if the pdfidx was regenerated then let the links list file be rebuilt
-    }
-    else
-    {
-        EchoNL( "Using existing pdfidxfile" );
-    }
-    $tempFiles['pdfidx'] = $pdfidxPath;
 
 
     //
@@ -455,7 +404,6 @@ function PdfImprove()
     EchoNL( "Writing links list file" );
     file_put_contents( $linksPath, $linksText );
     EchoNL( "Links count: " . count( $linksList ) );
-    $tempFiles['links/images'] = $linksPath;
 
 
     //
@@ -484,7 +432,6 @@ function PdfImprove()
         }
         $relPath = PathRelative( $outPath );
         EchoNL( "Produced PDF with images: $relPath" );
-        $tempFiles['images-pdf'] = $outPath;
     }
 
     if( ! $hasimg && ! $noimg )
@@ -512,7 +459,6 @@ function PdfImprove()
         }
         $relPath = PathRelative( $outPath );
         EchoNL( "Produced PDF with links: $relPath" );
-        $tempFiles['links-pdf'] = $outPath;
     }
     else
     {
@@ -540,7 +486,6 @@ function PdfImprove()
         }
         $relPath = PathRelative( $outPath );
         EchoNL( "Produced PDF with outlines: $relPath" );
-        $tempFiles['outlines-pdf'] = $outPath;
     }
     else
     {
@@ -559,14 +504,8 @@ function PdfImprove()
     // Discarding temporary files
     //
 
-    if( ! $keep )
-    {
-        foreach( $tempFiles as $descr => $path )
-        {
-            EchoNL( "Discarding $descr file" );
-            RemoveFile( $path );
-        }
-    }
+
+    PdfToolsDeleteTempDir();
 
 
     //
