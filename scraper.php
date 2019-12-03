@@ -42,22 +42,50 @@ class Scraper
         $this->attempts = 3;
         $this->pause = 10;
 
-        $cache_arg = ArgumentGet( 'cache', ARGUMENT_OPTIONAL );
+        // manage cache dir and archive
 
+        $cache_arg = ArgumentGet( 'cache', ARGUMENT_OPTIONAL );
         if( $cache_arg === false )
         {
-            $this->cache_path = ROOT . "/cache.noindex";
-            MakeDir( $this->cache_path );
+            $cache_arg = "";
         }
-        elseif( StringsCompare( $cache_arg, 'no', STRING_CI ) )
+
+        $path = ROOT . "/cache.noindex";
+
+        if( StringCompare( $cache_arg, 'no', STRING_CI ) )
         {
             $this->cache_path = false;
         }
-        elseif( StringsCompare( $cache_arg, 'clear', STRING_CI ) )
+        elseif( StringCompare( $cache_arg, 'clear', STRING_CI ) )
         {
-            $this->cache_path = ROOT . "/cache.noindex";
-            RemoveDirectory( $this->cache_path );
-            MakeDir( $this->cache_path );
+            RemoveFile( "$path.zip" );
+            RemoveDirectory( $path );
+            MakeDir( $path );
+            $this->cache_path = $path;
+        }
+        else
+        {
+            $zip = FileExists( "$path.zip" );
+            $dir = DirectoryExists( $path );
+
+            if( $zip && $dir )
+            {
+                RemoveFile( "$path.zip" );
+            }
+            elseif( $zip && ! $dir )
+            {
+                Unzip( "$path.zip", FS_ZIP_DELETE );
+            }
+            elseif( ! $zip && $dir )
+            {
+                //
+            }
+            else//( ! zip && ! dir )
+            {
+                MakeDir( $path );
+            }
+
+            $this->cache_path = $path;
         }
     }
 
@@ -138,7 +166,18 @@ class Scraper
 
     public function done()
     {
-        Curl(); // clear cookies
+        // clear cookies
+
+        Curl();
+
+        // manage cache archive
+
+        if( $this->cache_path !== false )
+        {
+            EchoCR( "Archiving cache..." );
+            ZipDirectory( $this->cache_path, FS_ZIP_DELETE );
+            EchoNL( "Cache archived" );
+        }
     }
 
 
