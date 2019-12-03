@@ -1,5 +1,111 @@
 <?php
 
+
+
+require_once ROOT . '/include/error.php';
+
+
+
+//
+// Read associative array from tab separated text fike
+//
+
+function ArrayFromFile( $path )
+{
+    $text = @file_get_contents( $path );
+    if( $text === false )
+    {
+        Error( "cannot read file: $path" );
+    }
+
+    $lines = explode( "\n", $text );
+    $n = count( $lines );
+    if( $n < 2 )
+    {
+        Error( "file is empty: $path");
+    }
+
+    $out = [];
+    $keys = explode( "\t", $lines[ 0 ] );
+    $cols = count( $keys );
+
+    for( $i = 1; $i < $n; $i++ )
+    {
+        if( $lines[ $i ] === '' && $i === $n - 1 )
+        {
+            break;
+        }
+
+        $parts = explode( "\t", $lines[ $i ] );
+
+        if( count( $parts ) !== $cols )
+        {
+            Error( "mismatch number of columns at row $i" );
+        }
+
+        $row = [];
+
+        for( $j = 0; $j < $cols; $j++ )
+        {
+            $row[ $keys[ $j ] ] = $parts[ $j ];
+        }
+
+        $out[] = $row;
+    }
+
+    return $out;
+}
+
+
+//
+// Write associative array to tab separated text file
+//
+
+function ArrayToFile( $path, $array )
+{
+    $out = "";
+    $i = 0;
+    $row = $array[ 0 ];
+
+    $first = true;
+    foreach( $row as $key => $value )
+    {
+        if( ! $first )
+        {
+            $out .= "\t";
+        }
+        else
+        {
+            $first = false;
+        }
+
+        $out .= $key;
+    }
+
+    foreach( $array as $row )
+    {
+        $out .= "\n";
+        $first = true;
+        foreach( $row as $key => $value )
+        {
+            if( ! $first )
+            {
+                $out .= "\t";
+            }
+            else
+            {
+                $first = false;
+            }
+
+            $out .= $value;
+        }
+    }
+
+    file_put_contents( $path, $out );
+}
+
+
+
 //
 // Sort an array of associative arrays
 //
@@ -27,6 +133,8 @@ function ArraySortByKeyAsc( &$array, $key )
     }
 }
 
+
+
 function ArraySortByKeyDesc( &$array, $key )
 {
     if( is_array( $key ) )
@@ -49,6 +157,73 @@ function ArraySortByKeyDesc( &$array, $key )
         usort( $array, function( $a, $b ) use ($key) { return ( ( $a[$key] > $b[$key] ) ? -1 : 1 ); } );
     }
 }
+
+
+
+function ArraySortByKey( &$array, $keys )
+{
+    if( is_array( $keys ) )
+    {
+        $order = [];
+        $n = count( $keys );
+        for( $i = 0; $i < $n; $i++ )
+        {
+            $key = $keys[ $i ];
+            if( substr( $key, -3, 3 ) === "ASC" )
+            {
+                $order[] = 1;
+                $key = substr( $key, 0, -3 );
+            }
+            elseif( substr( $key, -4, 4 ) === "DESC" )
+            {
+                $order[] = -1;
+                $key = substr( $key, 0, -4 );
+            }
+            else
+            {
+                $order[] = 1;
+            }
+            $keys[ $i ] = $key;
+        }
+
+        usort( $array, function( $a, $b ) use ( $keys, $order, $n )
+        {
+            for( $i = 0; $i < $n; $i++ )
+            {
+                $k = $keys[ $i ];
+                $o = $order[ $i ];
+                if( $a[$k] == $b[$k] )
+                {
+                    continue;
+                }
+                return ( ( $a[$k] < $b[$k] ) ? -$o : $o );
+            }
+            return -1;
+        } );
+    }
+    else
+    {
+        $key = $keys;
+        if( substr( $key, -3, 3 ) === "ASC" )
+        {
+            $order = 1;
+            $key = substr( $key, 0, -3 );
+        }
+        elseif( substr( $key, -4, 4 ) === "DESC" )
+        {
+            $order = -1;
+            $key = substr( $key, 0, -4 );
+        }
+        else
+        {
+            $order = 1;
+        }
+
+        usort( $array, function( $a, $b ) use ($key, $order) { return ( ( $a[$key] < $b[$key] ) ? -$order : $order ); } );
+    }
+
+}
+
 
 //
 // Sort two arrays based on the values of the second
