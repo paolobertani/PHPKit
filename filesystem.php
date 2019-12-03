@@ -9,17 +9,21 @@
 
 
 //
-// Includes
+// INCLUDE
 //
 
 require_once ROOT . "/include/error.php";
 
 
+
 //
-// Constants
+// CONSTANTS AND OPTIONS
 //
 
-define( 'FS_FULLPATH', 1 );
+
+define( 'FS_NO_OPTIONS',        0 );
+define( 'FS_FULLPATH',          1 );
+define( 'FS_ZIP_DELETE',        2 );
 
 
 
@@ -96,11 +100,11 @@ function MakeDirectoryTree( $d, $mode = 0755 )
         return;
     }
 
-    $result = mkdir( $d, $mode, true );
+    $result = @mkdir( $d, $mode, true );
 
     if( ! $result )
     {
-        Error( "Cannot make directory tree: $d\n" );
+        Error( "Cannot make directory tree: $d" );
         /*--- QUIT POINT ---*/
     }
 }
@@ -174,10 +178,11 @@ function PathRelative( $path, $root = false )
 // NOTE:
 // Items that begins with dot `.` are excluded
 // Symbolic links are excluded
-// Optional `$fullpath` will make the function return full paths
+//
+// Option FS_FULLPATH will make the function return full paths
 //
 
-function FilesInDirectory( $d, $fullpath = false )
+function FilesInDirectory( $d, $options = FS_NO_OPTIONS )
 {
     if( ! DirectoryExists( $d ) )
     {
@@ -196,7 +201,7 @@ function FilesInDirectory( $d, $fullpath = false )
     {
         if( is_file( "$d$item" ) && substr( $item, 0, 1 ) != '.' && ! is_link( "$d$item" ) )
         {
-            if( $fullpath === FS_FULLPATH )
+            if( $options === FS_FULLPATH )
             {
                 $files[] = realpath( "$d$item" );
             }
@@ -401,17 +406,30 @@ function PathGetExtension( $path )
 
 
 //
-// Zip a directory
+// ZipDirectory
 //
+// zip  a  directory  contents;  an   archive   is
+// producted with `.zip`  extension  in  the  same
+// directory  of  the  source  directory;  if  the
+// target file already exists an error is produced
+//
+// option FS_ZIP_DELETE will delete the source
+// directory after compression
+//                                              \x
 
-function ZipDirectory( $path )
+function ZipDirectory( $path, $options = FS_NO_OPTIONS )
 {
     if( ! DirectoryExists( $path ) )
     {
-        Error( "directory does not exists: $path" );
+        Error( "directory does not exist: $path" );
     }
 
     PathRemoveSlash( $path );
+
+    if( FileExists( "$path.zip" ) )
+    {
+        Error( "zip would overwrite existing archive: $path.zip" );
+    }
 
     $parent = dirname( $path );
 
@@ -438,7 +456,10 @@ function ZipDirectory( $path )
         Error( "failed zip: $toolcall");
     }
 
-    RemoveDirectory( $path );
+    if( $options === FS_ZIP_DELETE )
+    {
+        RemoveDirectory( $path );
+    }
 
     $result = chdir( $cwd );
     if( ! $result )
@@ -450,10 +471,15 @@ function ZipDirectory( $path )
 
 
 //
-// Unzip a zip file and delete it after extraction
+// Unzip
 //
+// unzip an archive
+//
+// option FS_ZIP_DELETE will  delete  the  archive
+// after unzip
+//                                              \x
 
-function Unzip( $path )
+function Unzip( $path, $options = FS_NO_OPTIONS  )
 {
     if( ! FileExists( $path ) )
     {
@@ -488,7 +514,10 @@ function Unzip( $path )
         Error( "failed unzip: $toolcall");
     }
 
-    RemoveFile( $path );
+    if( $options === FS_ZIP_DELETE )
+    {
+        RemoveFile( $path );
+    }
 
     $result = chdir( $cwd );
     if( ! $result )
