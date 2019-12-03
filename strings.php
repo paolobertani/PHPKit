@@ -774,7 +774,7 @@ function StringReplaceAtBeginning( $string, $src, $rep, $options = STRING_NO_OPT
 
 
 //
-// StringsCompare
+// StringCompare
 //
 // compare the two strings passed  as  parameters;
 // both parameters must be string.
@@ -783,7 +783,7 @@ function StringReplaceAtBeginning( $string, $src, $rep, $options = STRING_NO_OPT
 // STRING_CI
 //
 
-function StringsCompare( $a, $b, $options = STRING_NO_OPTIONS )
+function StringCompare( $a, $b, $options = STRING_NO_OPTIONS )
 {
     if( is_string( $a ) && is_string( $b ) && is_int( $options ) )
     {
