@@ -1,5 +1,11 @@
 <?php
 
+//
+//
+// ARRAYS
+//
+//
+
 
 
 require_once ROOT . '/include/error.php';
@@ -7,8 +13,24 @@ require_once ROOT . '/include/error.php';
 
 
 //
-// Read associative array from tab separated text fike
+// CONSTANTS
 //
+
+define( 'ARRAY_ASC',    1 );
+define( 'ARRAY_DESC',   2 );
+
+
+
+//
+// ArrayFromFile
+//
+// Read  array  of  associative  arrays  from  tab
+// separated text file:  first  row  must  contain
+// column names that  will  become  array's  keys;
+// every row must contain all the columns; only  a
+// trailing empty row is allowed  (extra  "\n"  at
+// the end of the file)
+//                                              \x
 
 function ArrayFromFile( $path )
 {
@@ -57,9 +79,15 @@ function ArrayFromFile( $path )
 }
 
 
+
 //
-// Write associative array to tab separated text file
+// ArrayToFile
 //
+// Write an array of associative arrays to  a  tab
+// separated text file; the first row will contain
+// the inner arrays' keys; every associative array
+// into the main array must contain the same keys
+//                                              \x
 
 function ArrayToFile( $path, $array )
 {
@@ -107,58 +135,18 @@ function ArrayToFile( $path, $array )
 
 
 //
-// Sort an array of associative arrays
+// ArraySortByKey
 //
-
-function ArraySortByKeyAsc( &$array, $key )
-{
-    if( is_array( $key ) )
-    {
-        usort( $array, function( $a, $b ) use ($key)
-        {
-            foreach( $key as $k )
-            {
-                if( $a[$k] == $b[$k] )
-                {
-                    continue;
-                }
-                return ( ( $a[$k] < $b[$k] ) ? -1 : 1 );
-            }
-            return -1;
-        } );
-    }
-    else
-    {
-        usort( $array, function( $a, $b ) use ($key) { return ( ( $a[$key] < $b[$key] ) ? -1 : 1 ); } );
-    }
-}
-
-
-
-function ArraySortByKeyDesc( &$array, $key )
-{
-    if( is_array( $key ) )
-    {
-        usort( $array, function( $a, $b ) use ($key)
-        {
-            foreach( $key as $k )
-            {
-                if( $a[$k] == $b[$k] )
-                {
-                    continue;
-                }
-                return ( ( $a[$k] > $b[$k] ) ? -1 : 1 );
-            }
-            return -1;
-        } );
-    }
-    else
-    {
-        usort( $array, function( $a, $b ) use ($key) { return ( ( $a[$key] > $b[$key] ) ? -1 : 1 ); } );
-    }
-}
-
-
+// Sort an array  of  associative  arrays  by  the
+// values of the specified key(s):  a  single  key
+// may be specified as string, multiple keys  must
+// be specified with an array  of  strings;  every
+// associative array must  contain  all  the  keys
+// used to sort the main array; sorting order  can
+// be  specified  by  appending  `ASC`   (default,
+// optional) or `DESC` to  one  ore  more  sorting
+// keys;
+//                                              \x
 
 function ArraySortByKey( &$array, $keys )
 {
