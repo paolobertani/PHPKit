@@ -9,7 +9,7 @@
 //          -pdf        path to PDF file
 //          -res        path to web resources file
 //          -out        path to PDF file with links to produce (opt.)
-//          -keep       keep temp files (opt.)
+//          -cleanup    discard temp files (opt.)
 //          -noimg      do not produce pdf with icons/images (opt.)
 //
 // Requirements:

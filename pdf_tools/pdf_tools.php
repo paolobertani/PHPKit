@@ -66,7 +66,7 @@ function PdfToolsDeleteTempDir()
         return;
     }
 
-    if( ArgumentGet( 'keep',   ARGUMENT_BOOLEAN ) )
+    if( ! ArgumentGet( 'cleanup', ARGUMENT_BOOLEAN ) )
     {
         EchoNL( "Keeping temp files" );
         return;
