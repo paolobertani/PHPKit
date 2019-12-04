@@ -213,21 +213,33 @@ function ArraySortByKey( &$array, $keys )
 }
 
 
-//
-// Sort two arrays based on the values of the second
-//
 
-function ArraySortByArrayAsc( &$a1, &$a2 )
+//
+// ArraySortByArray
+//
+// Sort two arrays based  on  the  values  of  the
+// second; option parameter may be used to specify
+// sort order: `ARRAY_ASC` (default, optional)  or
+// `ARRAY_DESC`
+//                                              \x
+
+function ArraySortByArray( &$a1, &$a2, $options = ARRAY_ASC )
 {
     array_multisort( $a2, $a1 );
+
+    if( $options === ARRAY_DESC )
+    {
+        $t1 = array_reverse( $a1 );
+        $t2 = array_reverse( $a2 );
+        $a1 = $t1;
+        $a2 = $t2;
+    }
 }
 
-function ArraySortByArrayDesc( &$a1, &$a2 )
-{
-    array_multisort( $a2, $a1 );
-    $t1 = array_reverse( $a1 );
-    $t2 = array_reverse( $a2 );
-    $a1 = $t1;
-    $a2 = $t2;
-}
+
+
+//
+//
+//
+
 
