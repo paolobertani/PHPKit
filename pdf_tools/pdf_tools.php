@@ -13,7 +13,7 @@ require_once ROOT . '/include/milliseconds.php';
 
 
 
-define( 'PDFTOOLS_TEMP_DIR', ROOT . '/temp' )
+define( 'PDFTOOLS_TEMP_DIR', ROOT . '/temp' );
 
 
 

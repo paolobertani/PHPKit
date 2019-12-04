@@ -17,22 +17,22 @@ require_once ROOT . '/include/pdf_tools/pdf_tools.php';
 // `resources.txt` file; the file is built in  the
 // same location of the resources file;  resources
 // file must contain  column  headers  `code`  and
-// `description`;  if  `search`   is   not   false
-// (default) then each code is searched using  the
-// pdfidx file in the `/temp` directory;  `search`
-// can  be  true  or  a  single  character  string
-// (search modifier) that will be appended to each
-// search query; when `search` is  requested  each
-// product will be added to the file only if found
+// `description`; optional `modifier` is a  search
+// modifier appended to each code; if `search`  is
+// not false (default) then each code is  searched
+// using the pdfidx file in the `/temp` directory;
+// when `search` is requested each product will be
+// added to the file only if found.
+// This  tool  can  be  used  either  just   after
+// scraping (but normally no pdfidx is  available)
+// or after building improved pdf
 //                                              \x
 
-function PdfToolsBuildProductsFile( $res_path, $search = false )
+function PdfToolsBuildProductsFile( $res_path, $modifier = '', $search = false )
 {
     $res = ArrayFromFile( $res_path );
 
     $out = "";
-
-    $src = is_string( $search ) ? $search : "";
 
     $pdfidxPath = PDFTOOLS_TEMP_DIR . '/temp.pdfidx';
 
@@ -42,7 +42,7 @@ function PdfToolsBuildProductsFile( $res_path, $search = false )
         /*--- QUIT POINT ---*/
     }
 
-    if( ! is_set( $res[0]['code'] || ! is_set( $res[0]['description'] )
+    if( ! isset( $res[0]['code'] ) || ! isset( $res[0]['description'] ) )
     {
         Error( "resource file must have `code` and `description` columns" );
         /*--- QUIT POINT ---*/
@@ -50,9 +50,14 @@ function PdfToolsBuildProductsFile( $res_path, $search = false )
 
     foreach( $res as $r )
     {
-        if( $search !== false ) // check if the product's code appears into the document
+        if( $r['description'] === '' ) // skip products without description
         {
-            $output = Execute( [ "pdfidxfind -limit 10 -pdfidx", $pdfidxPath, "-search", $src . $r['code'] ], $status );
+            continue;
+        }
+
+        if( $search ) // check if the product's code appears into the document
+        {
+            $output = Execute( [ "pdfidxfind -limit 10 -pdfidx", $pdfidxPath, "-search", $modifier . $r['code'] ], $status );
             if( $status != 0 )
             {
                 Error( "pdfidxfind exited with status $status: searching $code: $output" );
@@ -67,10 +72,14 @@ function PdfToolsBuildProductsFile( $res_path, $search = false )
             }
         }
 
-        $out = "$src{$r['code']}\t{$r['decription']}\n";
+        $out .= "$modifier{$r['code']}\t{$r['description']}\n";
     }
 
-    file_put_contents( dirname( $respath ) . "/products.txt" );
+    $out_path = dirname( $res_path ) . "/products.txt";
+
+    file_put_contents( $out_path, $out );
+
+    EchoNL( "built products file: $out_path" );
 }
 
 
