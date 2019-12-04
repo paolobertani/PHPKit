@@ -5,6 +5,7 @@
 //
 
 require_once ROOT . '/include/echo.php';
+require_once ROOT . '/include/error.php';
 require_once ROOT . '/include/arrays.php';
 require_once ROOT . '/include/arguments.php';
 require_once ROOT . '/include/filesystem.php';
