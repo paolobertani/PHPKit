@@ -366,7 +366,7 @@ function PdfImprove()
     // Links/images list MUST be sorted by page
     //
 
-    ArraySortByKeyAsc( $linksList, [ 'p', 'z', 't', 'l' ] );
+    ArraySortByKey( $linksList, [ 'p', 'z', 't', 'l' ] );
 
 
     //
