@@ -11,13 +11,15 @@
 //          -out        path to PDF file with links to produce (opt.)
 //          -cleanup    discard temp files (opt.)
 //          -noimg      do not produce pdf with icons/images (opt.)
+//          -offset     see "Offset" below
 //
 // Requirements:
 //
-// the resource file must be a tab separated text file
-// witn `\n` line separators. The first column holds the string
-// that will be searched on the PDF.
-// The first line contains columns' header.
+// the resource file must be a tab separated  text
+// file  witn  `\n`  line  separators.  The  first
+// column holds the string that will  be  searched
+// on the PDF. The first  line  contains  columns'
+// header.                                      \x
 //
 // Must be defined:
 //
@@ -31,14 +33,44 @@
 // (array) associative with the keys `l`, `t`, `w`, `h`, `url`, optionally `p`
 // (array) of associative arrays if two or more links have to be created
 //
+// May be defined:
+//
+// function PdfImproveLinksProcess( (string) $code ) --> (string) | false
+//
+// Receives a product code, returns  the  code  to
+// search  for  (generally  the  same  code   with
+// prepended a  modifier  search  character);  may
+// return false to instruct to skip the code
+//                                              \x
+// May be defined:
+//
+// function PdfImproveResourcesManager( $resources ) --> (array)
+//
+// receives the products from the resource file as
+// array  of  associative  arrays,   returns   the
+// products array edited
+//                                              \x
+//
+// Offset: the argument expect a value in the form
+// `hh` where `hh` express a character  height  at
+// 720 dpi; if `offset` is specified then a report
+// is produced with the X offsets where the  codes
+// (with specified height) are found on the  pages
+// of the document. If `offset` is specified  then
+// no output file is generated
+//                                              \x
+
+
 
 require_once ROOT . '/include/echo.php';
+require_once ROOT . '/include/error.php';
 require_once ROOT . '/include/arrays.php';
 require_once ROOT . '/include/arguments.php';
 require_once ROOT . '/include/filesystem.php';
 require_once ROOT . '/include/milliseconds.php';
 
 require_once ROOT . '/include/pdf_tools/pdf_tools.php';
+require_once ROOT . '/include/pdf_tools/pdf_inspect.php';
 
 
 
@@ -54,8 +86,8 @@ function PdfImprove()
 
     if( ! function_exists( 'PdfImproveLinksProcess' ) )
     {
-        EchoNL( "PdfImproveLinksProcess function is not defined." );
-        exit(0);
+        Error( "PdfImproveLinksProcess function is not defined." );
+        /*--- QUIT POINT ---*/
     }
 
 
@@ -93,8 +125,9 @@ function PdfImprove()
 
     $pdfPath = ArgumentGet( 'pdf' );
     $resPath = ArgumentGet( 'res' );
-    $dstPath = ArgumentGet( 'out',    ARGUMENT_OPTIONAL );
-    $noimg   = ArgumentGet( 'noimg',  ARGUMENT_BOOLEAN );
+    $dstPath = ArgumentGet( 'out',     ARGUMENT_OPTIONAL );
+    $noimg   = ArgumentGet( 'noimg',   ARGUMENT_BOOLEAN );
+    $offset  = ArgumentGet( 'offset',  ARGUMENT_OPTIONAL );
 
 
     //
@@ -113,8 +146,13 @@ function PdfImprove()
 
     if( ! FileExists( $pdfPath ) || PathGetExtension( $pdfPath ) !== 'pdf' )
     {
-        EchoNL( "input pdf missing or not a pdf file: $pdfPath" );
-        exit(0);
+        Error( "input pdf missing or not a pdf file: $pdfPath" );
+        /*--- QUIT POINT ---*/
+    }
+
+    if( $dstPath !== false && $offset !== false )
+    {
+        EcnoNL( "`offset` option specified. no output file will be produced" );
     }
 
     if( $dstPath === false )
@@ -122,22 +160,25 @@ function PdfImprove()
         $dstPath = substr( $pdfPath, 0, -4 ) . '-improved.pdf';
     }
 
-    if( PathGetExtension( $dstPath ) !== 'pdf' )
+    if( $offset === false )
     {
-        EchoNL( "output pdf has not pdf extension: $outPath" );
-        exit(0);
-    }
+        if( PathGetExtension( $dstPath ) !== 'pdf' )
+        {
+            Error( "output pdf has not pdf extension: $outPath" );
+            /*--- QUIT POINT ---*/
+        }
 
-    if( $pdfPath === $dstPath ) // don't overwrite source
-    {
-        EchoNL( "input and output pdf file must be different" );
-        exit(0);
-    }
+        if( $pdfPath === $dstPath ) // don't overwrite source
+        {
+            Error( "input and output pdf file must be different" );
+            /*--- QUIT POINT ---*/
+        }
 
-    if( FileExists( $dstPath ) ) // overwrite
-    {
-        EchoNL( "output file exists, will be overwritten: $dstPath" );
-        RemoveFile( $dstPath );
+        if( FileExists( $dstPath ) ) // overwrite
+        {
+            EchoNL( "output file exists, will be overwritten: $dstPath" );
+            RemoveFile( $dstPath );
+        }
     }
 
 
@@ -145,8 +186,7 @@ function PdfImprove()
     // Temp dir, pdfff and pdfidx
     //
 
-    PdfToolsPdfidx( $pdfPath );
-
+    $pdfidxPath = PdfToolsPdfidx( $pdfPath );
 
 
     //
@@ -155,34 +195,28 @@ function PdfImprove()
 
     RemoveFile( $linksPath );
 
-    $text = file_get_contents( $resPath );
-    if( $text === false || $text == '' )
-    {
-        EchoNL( "$resPath URLs file not found or empty" );
-        exit(0);
-    }
+    $products = ArrayFromFile( $resPath );
 
     // Manage resource
 
     if( $resmanager )
     {
-        $text = PdfImproveResourcesManager( $text );
+        $products = PdfImproveResourcesManager( $products );
     }
 
-    // Split lines/columns
-
-    $lines = explode( "\n", $text );
-    $products = array();
-    $n = count( $lines );
-
-    // The first line contains column headers
-
-    for( $i = 1; $i < $n; $i++ )
-    {
-        $products[] = explode( "\t", $lines[ $i ] );
-    }
     EchoNL( ( count( $products ) ) . " links/products parsed" );
 
+
+    //
+    // OFFSET mode
+    //
+
+    if( $offset !== false )
+    {
+        PdfOffset( $offset, $products, $pdfidxPath );
+        exit(0);
+        /*--- QUIT POINT ---*/
+    }
 
     //
     // Search for text to be linked, build links+images list
@@ -200,7 +234,7 @@ function PdfImprove()
         EchoCR( "Searching for text to turn into links... $i:$n" );
         $i++;
 
-        $code = $p[0];
+        $code = $p['code'];
 
         // skip empty line (no code)
 
@@ -225,8 +259,8 @@ function PdfImprove()
         $output = Execute( [ "pdfidxfind -limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
         if( $status != 0 )
         {
-            EchoNL( "pdfidxfind exited with status $status: searching $code: $output" );
-            exit(0);
+            Error( "pdfidxfind exited with status $status: searching $code: $output" );
+            /*--- QUIT POINT ---*/
         }
         $milliseconds += Milliseconds( $ms );
 
@@ -427,8 +461,8 @@ function PdfImprove()
         $output = Execute( [ "pdfAddImgs -pdf", $inPath, "-imgs", $linksPath, "-out", $outPath ], $status );
         if( $status != 0 )
         {
-            EchoNL( "pdfAddImgs exited with status $status: $output" );
-            exit(0);
+            Error( "pdfAddImgs exited with status $status: $output" );
+            /*--- QUIT POINT ---*/
         }
         $relPath = PathRelative( $outPath );
         EchoNL( "Produced PDF with images: $relPath" );
@@ -454,8 +488,8 @@ function PdfImprove()
         $output = Execute( [ "pdfAddLinks -pdf", $inPath, "-links", $linksPath, "-out", $outPath ], $status );
         if( $status != 0 )
         {
-            EchoNL( "pdfAddLinks exited with status $status: $output" );
-            exit(0);
+            Error( "pdfAddLinks exited with status $status: $output" );
+            /*--- QUIT POINT ---*/
         }
         $relPath = PathRelative( $outPath );
         EchoNL( "Produced PDF with links: $relPath" );
@@ -481,8 +515,8 @@ function PdfImprove()
         $output = Execute( [ "pdfAddOutlines -pdf", $inPath, "-otl", $outlinesPath, "-out", $outPath ], $status );
         if( $status != 0 )
         {
-            EchoNL( "pdfAddOutlines exited with status $status: $output" );
-            exit(0);
+            Error( "pdfAddOutlines exited with status $status: $output" );
+            /*--- QUIT POINT ---*/
         }
         $relPath = PathRelative( $outPath );
         EchoNL( "Produced PDF with outlines: $relPath" );
@@ -501,7 +535,7 @@ function PdfImprove()
 
 
     //
-    // Discarding temporary files
+    // Discarding temporary files (only if tool was called with `cleanup` argument)
     //
 
 

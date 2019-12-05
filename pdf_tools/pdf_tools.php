@@ -30,8 +30,8 @@ function PdfToolsPdfidx( $pdfPath )
         $output = Execute( [ 'pdfff -suppress_warnings yes -rewrite yes -pdf', $pdfPath, '-out', $pdfffPath ], $status );
         if( $status != 0 )
         {
-            EchoNL( "pdfff exited with status $status: $output" );
-            exit(0);
+            Error( "pdfff exited with status $status: $output" );
+            /*--- QUIT POINT ---*/
         }
         RemoveFile( $pdfidxPath ); // if the pdfff was generated then let the pdfidx be rebuilt
     }
@@ -46,8 +46,8 @@ function PdfToolsPdfidx( $pdfPath )
         $output = Execute( [ 'pdfidx -pdfff', $pdfffPath, '-pdfidx', $pdfidxPath ], $status );
         if( $status != 0 )
         {
-            EchoNL( "pdfidx exited with status $status: $output" );
-            exit(0);
+            Error( "pdfidx exited with status $status: $output" );
+            /*--- QUIT POINT ---*/
         }
         RemoveFile( $linksPath ); // if the pdfidx was regenerated then let the links list file be rebuilt
     }
@@ -55,6 +55,8 @@ function PdfToolsPdfidx( $pdfPath )
     {
         EchoNL( "Using existing pdfidxfile" );
     }
+
+    return $pdfidxPath;
 }
 
 
