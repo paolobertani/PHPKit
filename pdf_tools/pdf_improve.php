@@ -12,6 +12,9 @@
 //          -cleanup    discard temp files (opt.)
 //          -noimg      do not produce pdf with icons/images (opt.)
 //          -offset     see "Offset" below
+//          -height     see "Height" below
+//          -tol        see "Tolerance"
+//          -code       see "Code" below
 //
 // Requirements:
 //
@@ -51,13 +54,34 @@
 // products array edited
 //                                              \x
 //
+// DOCUMENT INSPECTION
+//
+// Height: the argument `height` does not  require
+// any value; when specified a report is  produced
+// with all the character heights at 720dpi of the
+// codes found in the document; along  with  every
+// "height" found, the  pages  containing  one  or
+// more product codes with that height are listed.
+//
 // Offset: the argument expect a value in the form
 // `hh` where `hh` express a character  height  at
 // 720 dpi; if `offset` is specified then a report
 // is produced with the X offsets where the  codes
 // (with specified height) are found on the  pages
 // of the document. If `offset` is specified  then
-// no output file is generated
+// no output file is generated; several values may
+// be specified separated by comma: hh1,hh2,...
+//
+// Tolerance: `tol` expect a value that  represent
+// a 720dpi measure;  when  specified  along  with
+// `offset` or `height` the reports produced group
+// heights/offsets that differs equal or less  the
+// value specified (they fit into the tolerance).
+//
+// Code: `code` let the  Offset  report  (argument
+// `height`) produce also  code  for  setting  the
+// icons   offsets   for   each   combination   of
+// product-code x position and height
 //                                              \x
 
 
@@ -128,6 +152,7 @@ function PdfImprove()
     $dstPath = ArgumentGet( 'out',     ARGUMENT_OPTIONAL );
     $noimg   = ArgumentGet( 'noimg',   ARGUMENT_BOOLEAN );
     $offset  = ArgumentGet( 'offset',  ARGUMENT_OPTIONAL );
+    $height  = ArgumentGet( 'height',  ARGUMENT_BOOLEAN );
 
 
     //
@@ -141,7 +166,7 @@ function PdfImprove()
 
 
     //
-    // File check
+    // File & arguments check
     //
 
     if( ! FileExists( $pdfPath ) || PathGetExtension( $pdfPath ) !== 'pdf' )
@@ -150,17 +175,30 @@ function PdfImprove()
         /*--- QUIT POINT ---*/
     }
 
+    if( $height !== false && $offset !== false )
+    {
+        EcnoNL( "cannot have both `height` and `offset` arguments in tool call" );
+        exit(0);
+        /*--- QUIT POINT ---*/
+    }
+
     if( $dstPath !== false && $offset !== false )
     {
         EcnoNL( "`offset` option specified. no output file will be produced" );
     }
+
+    if( $dstPath !== false && $height !== false )
+    {
+        EcnoNL( "`height` option specified. no output file will be produced" );
+    }
+
 
     if( $dstPath === false )
     {
         $dstPath = substr( $pdfPath, 0, -4 ) . '-improved.pdf';
     }
 
-    if( $offset === false )
+    if( $offset === false && $height === false )
     {
         if( PathGetExtension( $dstPath ) !== 'pdf' )
         {
@@ -217,6 +255,19 @@ function PdfImprove()
         exit(0);
         /*--- QUIT POINT ---*/
     }
+
+
+    //
+    // HEIGHT mode
+    //
+
+    if( $height !== false )
+    {
+        PdfHeight( $products, $pdfidxPath );
+        exit(0);
+        /*--- QUIT POINT ---*/
+    }
+
 
     //
     // Search for text to be linked, build links+images list
