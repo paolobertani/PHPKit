@@ -16,6 +16,7 @@ require_once ROOT . '/include/curl.php';
 require_once ROOT . '/include/echo.php';
 require_once ROOT . '/include/error.php';
 require_once ROOT . '/include/phpuri.php';
+require_once ROOT . '/include/signals.php';
 require_once ROOT . '/include/strings.php';
 require_once ROOT . '/include/arguments.php';
 require_once ROOT . '/include/filesystem.php';
@@ -54,10 +55,12 @@ class Scraper
 
         if( StringCompare( $cache_arg, 'no', STRING_CI ) )
         {
+            EchoNL( 'cache disabled' );
             $this->cache_path = false;
         }
         elseif( StringCompare( $cache_arg, 'clear', STRING_CI ) )
         {
+            EchoNL( 'cache clear');
             RemoveFile( "$path.zip" );
             RemoveDirectory( $path );
             MakeDir( $path );
@@ -74,6 +77,7 @@ class Scraper
             }
             elseif( $zip && ! $dir )
             {
+                EchoCR( "Unzipping cache..." );
                 Unzip( "$path.zip", FS_ZIP_DELETE );
             }
             elseif( ! $zip && $dir )
@@ -152,8 +156,11 @@ class Scraper
     // set "retry" values
     //
 
-    protected function set_retry( $attempts, $pause )
+    public function set_retry( $attempts, $pause )
     {
+        if( $attempts < 1 ) { Error( "`attemps` must be at least 1" ); }
+        if( $pause < 0 )    { Error( "`pause` must be at least 0" );   }
+
         $this->attempts = $attempts;
         $this->pause    = $pause;
     }
@@ -178,6 +185,48 @@ class Scraper
             ZipDirectory( $this->cache_path, FS_ZIP_DELETE );
             EchoNL( "Cache archived" );
         }
+    }
+
+
+
+    //
+    // is the url absolute
+    //
+
+    protected function url_is_absolute( $url )
+    {
+        return StringBegins( $url, [ 'https://', 'http://' ], STRING_CI );
+    }
+
+
+
+    //
+    // is the url good
+    //
+
+    protected function url_is_good( $url )
+    {
+        $scheme = StringLowercase( StringBetween( $url, '', '://' ) );
+
+        if( $scheme === false )
+        {
+            return true; // relative url is ok
+        }
+
+        // check scheme is supported
+
+        return in_array( $scheme, [ 'http', 'https' ] );
+    }
+
+
+
+    //
+    // make relative path absolute
+    //
+
+    protected function url_make_absolute( $relative )
+    {
+        return phpUri::parse( $this->domain )->join( $relative );
     }
 
 
@@ -325,6 +374,7 @@ class Scraper
         }
 
 
+
         // retrieve links and go thru the linked pages
 
         $hrefs = [];
@@ -380,7 +430,7 @@ class Scraper
 
             if( ! $this->url_is_absolute( $url ) )
             {
-                $url = $this->make_url_absolute( $url );
+                $url = $this->url_make_absolute( $url );
             }
 
             if( ! $this->url_is_below_root( $url ) )
@@ -419,6 +469,13 @@ class Scraper
             }
 
             $this->scrape_url( $url, $level + 1 );
+
+            // check for CTRL-C
+
+            if( SignalIsInstalled() && SignalQuitReceived() )
+            {
+                break;
+            }
         }
     }
 
@@ -520,42 +577,6 @@ class Scraper
         {
             $this->visited[] = $url;
         }
-    }
-
-
-
-    // is the url absolute
-
-    private function url_is_absolute( $url )
-    {
-        return StringBegins( $url, [ 'https://', 'http://' ], STRING_CI );
-    }
-
-
-
-    // is the url good
-
-    private function url_is_good( $url )
-    {
-        $scheme = StringLowercase( StringBetween( $url, '', '://' ) );
-
-        if( $scheme === false )
-        {
-            return true; // relative url is ok
-        }
-
-        // check scheme is supported
-
-        return in_array( $scheme, [ 'http', 'https' ] );
-    }
-
-
-
-    // make relative path absolute
-
-    private function make_url_absolute( $relative )
-    {
-        return phpUri::parse( $this->domain )->join( $relative );
     }
 
 
