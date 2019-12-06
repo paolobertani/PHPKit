@@ -1066,7 +1066,7 @@ function StringPosition( $string, $search, $offset = 0 )
 
     if( is_string( $string ) )
     {
-        return mb_strpos( $string, $search, $offset );
+        return @mb_strpos( $string, $search, $offset );
         /*--- EXIT POINT ---*/
     }
 
@@ -1081,7 +1081,89 @@ function StringPosition( $string, $search, $offset = 0 )
             /*--- QUIT POINT ---*/
         }
 
-        $out[] = mb_strpos( $str, $search, $offset );
+        $out[] = @mb_strpos( $str, $search, $offset );
+    }
+    return $out;
+}
+
+
+
+//
+// StringHtmlToText
+//
+// Convert html to text stripping html tags and
+// converting html entities to corresponding
+// characters; the `flags` parameter is passed to
+// `html_entity_decode`
+// ADDITIONALLY:  LN,  CR  are  removed;  mupliple
+// spaces   are   turned    in    single    space;
+// subsequently,  &nbsp;  is  turned  into  space,
+// line-breaks tags are turned into newlines
+//                                              \x
+
+function StringHtmlToText( $string, $flags = ENT_QUOTES | ENT_HTML5 )
+{
+    // parameter type check
+
+    if( $string === false || is_string( $string ) || is_array( $string ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "wrong parameters type: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+    // `false`
+
+    if( $string === false )
+    {
+        return false;
+    }
+
+    // string
+
+    if( is_string( $string ) )
+    {
+        $string = StringReplace( $string, "\n", "" );
+        $string = StringReplace( $string, "\r", "" );
+        $string = StringReplace( $string, "&nbsp;", " " );
+        $string = StringReplace( $string, "<br>", "\n" );
+        $string = StringReplace( $string, "<br/>", "\n" );
+        $string = StringReplace( $string, "<br />", "\n" );
+        while( StringPosition( $string, "  " ) !== false )
+        {
+            $string = StringReplace( $string, "  ", " " );
+        }
+
+        return html_entity_decode( strip_tags( $string ), $flags );
+        /*--- EXIT POINT ---*/
+    }
+
+    // array
+
+    $out = [];
+    foreach( $string as $str )
+    {
+        if( ! is_string( $str ) )
+        {
+            Error( "`string` must be array of strings");
+            /*--- QUIT POINT ---*/
+        }
+
+        $str = StringReplace( $str, "\n", "" );
+        $str = StringReplace( $str, "\r", "" );
+        $str = StringReplace( $str, "&nbsp;", " " );
+        $str = StringReplace( $str, "<br>", "\n" );
+        $str = StringReplace( $str, "<br/>", "\n" );
+        $str = StringReplace( $str, "<br />", "\n" );
+        while( StringPosition( $str, "  " ) !== false )
+        {
+            $string = StringReplace( $str, "  ", " " );
+        }
+
+        $out[] = html_entity_decode( strip_tags( $str ), $flags );
     }
     return $out;
 }
@@ -1123,7 +1205,8 @@ class StringParser
 {
 
     private $result,
-            $original;
+            $original,
+            $storage;
 
 
 
@@ -1137,7 +1220,7 @@ class StringParser
     {
         if( $result === null )
         {
-            Error( "StringParser: NULL passed to the constructor" );
+            Error( "NULL passed to the constructor" );
         }
 
         return $this->restore( $result );
@@ -1228,19 +1311,40 @@ class StringParser
             {
                 if( ! is_string( $str ) )
                 {
-                    Error( "StringParser: a string or array of strings must be passed" );
+                    Error( "a string or array of strings must be passed" );
                 }
             }
         }
         else
         {
-            Error( "StringParser: a string or array of strings must be passed" );
+            Error( "a string or array of strings must be passed" );
         }
 
         $this->result = $result;
         $this->original = $result;
 
         return $this;
+    }
+
+
+
+    public function save( $name )
+    {
+        $this->storage[ $name ] = $this->result;
+    }
+
+
+
+    public function load( $name )
+    {
+        if( isset( $this->storage[ $name ] ) )
+        {
+            $this->result = $this->storage[ $name ];
+        }
+        else
+        {
+            Error( "$name not found" );
+        }
     }
 
 
@@ -1253,7 +1357,7 @@ class StringParser
         }
         else
         {
-            Error( "StringParser: parameters must be int and positive" );
+            Error( "parameters must be int and positive" );
         }
 
         if( $this->result === false ) { return $this; }
@@ -1308,7 +1412,7 @@ class StringParser
     {
         if( ! is_string( $what ) )
         {
-            Error( "StringParser: parameter must be string" );
+            Error( "parameter must be string" );
             /*--- QUIT POINT ---*/
         }
 
@@ -1329,7 +1433,7 @@ class StringParser
     {
         if( ! is_string( $what ) )
         {
-            Error( "StringParser: parameter must be string" );
+            Error( "parameter must be string" );
             /*--- QUIT POINT ---*/
         }
 
@@ -1368,5 +1472,11 @@ class StringParser
         return $this;
     }
 
+
+    public function html_to_text( $flags = ENT_QUOTES | ENT_HTML5 )
+    {
+        $this->result = StringHtmlToText( $this->result, $flags );
+        return $this;
+    }
 
 }
