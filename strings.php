@@ -1440,4 +1440,43 @@ class StringParser
     }
 
 
+
+    // executes the callback `function`: the  function
+    // receives a string  as  input  and  must  return
+    // either `false` (the item will be  removed  from
+    // the  results  array)  or  a  string  that  will
+    // replace the input string                     \x
+
+    public function execute( $function )
+    {
+        if( ! is_callable( $function ) )
+        {
+            Error( "parameter must be a function" );
+        }
+
+        $out = [];
+
+        foreach( $this->result as $input )
+        {
+            $output = $function( $input );
+            if( $output === false )
+            {
+                continue;
+            }
+
+            if( ! is_string( $output ) )
+            {
+                Error( "callback function must return a string or `false`" );
+            }
+
+            $out[] = $output;
+        }
+
+        $this->result = $out;
+
+        return $this;
+    }
+
+
+
 }
