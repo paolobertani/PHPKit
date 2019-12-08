@@ -471,6 +471,11 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
 // of strings is passed as first parameter then an
 // array of strings is returned;
 //
+// EXCEPTION:  this  is  the  only  function  that
+// accepts `false` as input string;  the  function
+// will return `false`; this allow nesting two ore
+// more `StringBetween`
+//
 // options: see StringsBetween;
 //
 // NOTE: when a string is passed and there  is  no
@@ -483,6 +488,12 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
 
 function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 {
+    // false string
+
+    if( $string === false )
+    {
+        return false;
+    }
 
     // parameter type check
 
