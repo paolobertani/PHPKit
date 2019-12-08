@@ -1191,15 +1191,12 @@ function StringFromFloat( $f, $p = null )
 // StringParser
 //
 //
-// a parser can be initialized either with a
+// a parser  can  be  initialized  either  with  a
 // string, an array of strings or `false`
 //
-// The output will be either `false` or an array
-// of strings with at least one item
-//
-// every parser operator will return the parser
+// every parser operator will  return  the  parser
 // object allowing methods chains
-//
+//                                              \x
 
 class StringParser
 {
@@ -1208,6 +1205,9 @@ class StringParser
             $original,
             $storage;
 
+
+            // the internal `result` must always be  an  array
+            // of strings or `false`; never an empty array
 
 
     //
@@ -1331,6 +1331,7 @@ class StringParser
     public function save( $name )
     {
         $this->storage[ $name ] = $this->result;
+        return $this;
     }
 
 
@@ -1345,6 +1346,7 @@ class StringParser
         {
             Error( "$name not found" );
         }
+        return $this;
     }
 
 
@@ -1473,10 +1475,28 @@ class StringParser
     }
 
 
+
     public function html_to_text( $flags = ENT_QUOTES | ENT_HTML5 )
     {
         $this->result = StringHtmlToText( $this->result, $flags );
         return $this;
     }
+
+
+
+    public function position( &$position, $offset = 0 )
+    {
+        $position = StringPosition( $this->result, $offset );
+        return $this;
+    }
+
+
+
+    public function substring( $start, $len )
+    {
+        $this->result = StringSubstring( $this->result, $start, $len );
+        return $this;
+    }
+
 
 }
