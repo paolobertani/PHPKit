@@ -206,12 +206,14 @@ class Scraper
 
     protected function url_is_good( $url )
     {
-        $scheme = StringLowercase( StringBetween( $url, '', '://' ) );
+        $scheme = StringBetween( $url, '', '://' );
 
         if( $scheme === false )
         {
             return true; // relative url is ok
         }
+
+        $scheme = StringLowercase( $scheme );
 
         // check scheme is supported
 
@@ -616,7 +618,7 @@ class Scraper
 
         if( StringBegins( $this->root, $url, STRING_CI ) )
         {
-            return LowerCase( $url );
+            return StringLowercase( $url );
         }
         return $url;
     }
