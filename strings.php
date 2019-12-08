@@ -28,6 +28,7 @@ define( 'STRING_MARKERS',       4 );
 define( 'STRING_CI',            8 );
 define( 'STRING_NOT',          16 );
 define( 'STRING_WIDE',         32 );
+define( 'STRING_SINGLEMARKER', 64 );
 
 
 
@@ -283,7 +284,14 @@ function StringHasPrivate( $str, $has, $not )
 // mark ignoring  start  markers  before  the  end
 // mark;
 //
+// option  STRING_SINGLEMARKER:  this  option   is
+// allowed only if `$sm` and `$em`  are  the  same
+// and are not empty; end and start marker act  as
+// a single marker: an end marker can be the start
+// marker of the subsequent "string between";
+//
 // allowed options:
+// STRING_SINGLEMARKER
 // STRING_MARKERS
 // STRING_FIRST
 // STRING_WIDE
@@ -304,6 +312,12 @@ function StringsBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
         /*--- QUIT POINT ---*/
     }
 
+    // end marker begins with start marker
+
+    if( $sm !== '' && $em !== '' && StringBegins( $em, $sm ) )
+    {
+        $options = $options | STRING_WIDE; // force wide option
+    }
 
     // single string
 
@@ -346,6 +360,15 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
     $markers = $options & STRING_MARKERS;
     $first   = $options & STRING_FIRST;
     $wide    = $options & STRING_WIDE;
+    $single  = $options & STRING_SINGLEMARKER;
+
+
+    // check single marker
+
+    if( $single && ( $sm !== $em || $sm === '' ) )
+    {
+        Error( 'STRING_SINGLEMARKER allowed only when start and end markers are the same' );
+    }
 
 
     // collect results
@@ -393,7 +416,7 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
                 {
                     break;
                 }
-                $s = s2;
+                $s = $s2;
                 $idx = $s + $sml;
             }
         }
@@ -412,7 +435,14 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
             break;
         }
 
-        $idx = $e + $eml;
+        if( ! $single )
+        {
+            $idx = $e + $eml;
+        }
+        else
+        {
+            $idx = $e;
+        }
 
         if( $idx >= $len - 1 )
         {
