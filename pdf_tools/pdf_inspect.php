@@ -138,12 +138,14 @@ function PdfOffset( $heights, $products, $pdfidxPath )
         {
             sort( $pages );
             $i = 1;
+            $np = count( $pages );
+            $np = $np <= 1 ? '' : " ($np pages)";
             foreach( $pages as $p )
             {
                 $p++;
                 if( $i === 1 )
                 {
-                    echo "\nX = $x: $p";
+                    echo "\nX = $x$np: $p";
                 }
                 else
                 {
@@ -228,6 +230,8 @@ function PdfOffset( $heights, $products, $pdfidxPath )
     {
         sort( $g['pages'] );
         $i = 1;
+        $np = count( $g['pages'] );
+        $np = $np <= 1 ? '' : " ($np pages)";
         foreach( $g['pages'] as $p )
         {
             $p++;
@@ -236,11 +240,11 @@ function PdfOffset( $heights, $products, $pdfidxPath )
                 $t = $g['max'] - $g['min'];
                 if( $t === 0 )
                 {
-                    echo "\nX = {$g['min']}: $p";
+                    echo "\nX = {$g['min']}$np: $p";
                 }
                 else
                 {
-                    echo "\nX = [ {$g['min']} ... {$g['max']} ]: $p";
+                    echo "\nX = [ {$g['min']} ... {$g['max']} ]$np: $p";
                 }
             }
             else
@@ -398,12 +402,14 @@ function PdfHeight( $products, $pdfidxPath )
         {
             sort( $pages );
             $i = 1;
+            $np = count( $pages );
+            $np = $np <= 1 ? '' : " ($np pages)";
             foreach( $pages as $p )
             {
                 $p++;
                 if( $i === 1 )
                 {
-                    echo "\nH = $h: $p";
+                    echo "\nH = $h$np: $p";
                 }
                 else
                 {
@@ -487,6 +493,5 @@ function PdfHeight( $products, $pdfidxPath )
     }
     echo "\n";
 }
-
 
 

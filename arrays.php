@@ -25,7 +25,7 @@ define( 'ARRAY_DESC',   2 );
 // ArrayFromFile
 //
 // Read  array  of  associative  arrays  from  tab
-// separated text file:  first  row  must  contain
+// separated text file: first row  should  contain
 // column names that  will  become  array's  keys;
 // every row must contain all the columns; only  a
 // trailing empty row is allowed  (extra  "\n"  at
@@ -60,16 +60,20 @@ function ArrayFromFile( $path )
 
         $parts = explode( "\t", $lines[ $i ] );
 
-        if( count( $parts ) !== $cols )
-        {
-            Error( "mismatch number of columns at row $i" );
-        }
+        $partn = count( $parts );
 
         $row = [];
 
         for( $j = 0; $j < $cols; $j++ )
         {
-            $row[ $keys[ $j ] ] = $parts[ $j ];
+            if( $j < $partn )
+            {
+                $row[ $keys[ $j ] ] = $parts[ $j ];
+            }
+            else
+            {
+                $row[ $keys[ $j ] ] = "";
+            }
         }
 
         $out[] = $row;
@@ -91,6 +95,12 @@ function ArrayFromFile( $path )
 
 function ArrayToFile( $path, $array )
 {
+    if( count( $array ) === 0 )
+    {
+        file_put_contents( $path, "" );
+        return;
+    }
+
     $out = "";
     $i = 0;
     $row = $array[ 0 ];
@@ -239,7 +249,119 @@ function ArraySortByArray( &$a1, &$a2, $options = ARRAY_ASC )
 
 
 //
+// ArrayHasDuplicates
 //
+// given an array of  associative  arrays  returns
+// true if two (or more) items have the same value
+// for  the  specified  key;  the  array  will  be
+// ordered by the specified key;
+// optionally a `$flagKey`  may  be  specified  in
+// which case the corresponding value in duplicate
+// records will be flagged with `$flag`
+//                                              \x
+
+function ArrayHasDuplicates( &$array, $key, $flagKey = false, $flag = "@" )
+{
+    ArraySortByKey( $array, $key );
+    $last = null;
+    $n = count( $array );
+    $duplicates = false;
+    for( $i = 0; $i < $n; $i++ )
+    {
+        if( $array[$i][$key] === $last )
+        {
+            $duplicates = true;
+            if( $flagKey !== false )
+            {
+                $array[$i][$flagKey] .= $flag;
+            }
+            else
+            {
+                return true;
+            }
+            /*--- EXIT POINT ---*/
+        }
+        $last = $array[$i][$key];
+    }
+    return $duplicates;
+}
+
+
+
 //
+// ArrayRemoveDuplicates
+//
+
+function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
+{
+    // item count
+
+    $n = count( $array );
+    if( $n < 2 )
+    {
+        return $array;
+        /*--- EXIT POINT ---*/
+    }
+
+    // sort array
+
+    ArraySortByKey( $array, $key );
+
+    // init output
+
+    $out = [];
+
+    // add NULL item at the end of the array to let the last block flush
+
+    $array[][$key] = NULL;
+    $n++;
+
+    // init the first block with the first item
+
+    $array[0][$score_key] = 0;
+    $block = [ $array[0] ];
+    $last  = $array[0][$key];
+
+    // start from the second item
+
+    for( $i = 1; $i < $n; $i++ )
+    {
+        $item = $array[$i];
+        $item[$score_key] = 0;
+
+        if( $item[$key] === $last )
+        {
+            // duplicate: add the item to the block
+
+            $block[] = $item;
+        }
+        else // not a duplicate
+        {
+            // if the block have more than one item run the chooser and sort by score desc.
+
+            if( count( $block ) > 1 )
+            {
+                $chooser( $block );
+                ArraySortByKey( $block, $score_key."DESC" );
+            }
+
+            // add to output the first item of the block
+
+            unset( $block[0][$score_key] );
+            $out[] = $block[0];
+
+            // initialize a new block with the new item
+
+            $last = $item[$key];
+            $block = [ $item ];
+        }
+    }
+
+    // set the array passed by reference to output array
+
+    $array = $out;
+}
+
+
 
 

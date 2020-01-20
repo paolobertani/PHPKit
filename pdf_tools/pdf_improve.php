@@ -28,13 +28,18 @@
 //
 // function PdfAddLinksProcess( (array)$resource, (array)$location ) --> (array|string)$link | false | []
 //
-// The function receives a resource record (as from the resource file)
-// and the location `p`, `l`, `t`, `w`, `h` of the string found on the PDF.
-// May return:
-// false if no links have to be created.
-// (string) the url to the link to create where the search string was found
-// (array) associative with the keys `l`, `t`, `w`, `h`, `url`, optionally `p`
-// (array) of associative arrays if two or more links have to be created
+// The function receives  a  resource  record  (as
+// from the resource file) and the  location  `p`,
+// `l`, `t`, `w`, `h` of the string found  on  the
+// PDF. May return:
+// false if no links have to be created;
+// (string) the url to the link  to  create  where
+// the search string was found;
+// (array) associative with  the  keys  `l`,  `t`,
+// `w`, `h`, `url` or `img`  or  both,  optionally
+// `p` (page), `z` z-index;
+// (array) of associative arrays if  two  or  more
+// links have to be created                     \x
 //
 // May be defined:
 //
@@ -99,11 +104,22 @@ require_once ROOT . '/include/pdf_tools/pdf_inspect.php';
 
 
 //
+// Globals
+//
+
+$g_pdf_improve_document_inspection = false;
+
+
+
+//
 // PdfImprove
 //
 
 function PdfImprove()
 {
+    global $g_pdf_improve_document_inspection;
+
+
     //
     // Check PdfImproveLinksProcess is defined
     //
@@ -141,6 +157,14 @@ function PdfImprove()
     {
         $resmanager = false;
     }
+
+
+    //
+    // Discard temporary files (only if tool was called with `cleanup` argument)
+    //
+
+
+    PdfToolsDeleteTempDir();
 
 
     //
@@ -195,7 +219,7 @@ function PdfImprove()
 
     if( $dstPath === false )
     {
-        $dstPath = substr( $pdfPath, 0, -4 ) . '-improved.pdf';
+        $dstPath = substr( $pdfPath, 0, -4 ) . '.improved.pdf';
     }
 
     if( $offset === false && $height === false )
@@ -231,8 +255,6 @@ function PdfImprove()
     // Parse Resources file
     //
 
-    RemoveFile( $linksPath );
-
     $products = ArrayFromFile( $resPath );
 
     // Manage resource
@@ -251,6 +273,7 @@ function PdfImprove()
 
     if( $offset !== false )
     {
+        $g_pdf_improve_document_inspection = true;
         PdfOffset( $offset, $products, $pdfidxPath );
         exit(0);
         /*--- QUIT POINT ---*/
@@ -263,232 +286,270 @@ function PdfImprove()
 
     if( $height !== false )
     {
+        $g_pdf_improve_document_inspection = true;
         PdfHeight( $products, $pdfidxPath );
         exit(0);
         /*--- QUIT POINT ---*/
     }
 
 
-    //
-    // Search for text to be linked, build links+images list
-    //
-
-    $linksList = [];
-    $lnkHashes = [];
-    $imgHashes = [];
-
-    $i = 1;
-    $n = count( $products );
-    $milliseconds = 0;
-    foreach( $products as $p )
+    if( ! FileExists( $linksPath ) )
     {
-        EchoCR( "Searching for text to turn into links... $i:$n" );
-        $i++;
+        //
+        // Search for text to be linked, build links+images list
+        //
 
-        $code = $p['code'];
+        $linksList = [];
+        $lnkHashes = [];
+        $imgHashes = [];
 
-        // skip empty line (no code)
-
-        if( $code === '' )
+        $i = 1;
+        $n = count( $products );
+        $milliseconds = 0;
+        foreach( $products as $p )
         {
-            continue;
-        }
+            EchoCR( "Searching for text to turn into links... $i:$n" );
+            $i++;
 
-        $text = array();
+            $code = $p['code'];
 
-        if( $filter )
-        {
-            $code = PdfImproveLinksFilter( $code );
-        }
+            // skip empty line (no code)
 
-        if( $code === false )
-        {
-            continue;
-        }
-
-        $ms = Milliseconds();
-        $output = Execute( [ "pdfidxfind -limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
-        if( $status != 0 )
-        {
-            Error( "pdfidxfind exited with status $status: searching $code: $output" );
-            /*--- QUIT POINT ---*/
-        }
-        $milliseconds += Milliseconds( $ms );
-
-        $results = json_decode( $output, true );
-
-        foreach( $results as $r )
-        {
-            $links = PdfImproveLinksProcess( $p, $r );
-
-            // false: no links/images
-
-            if( $links === false )
+            if( $code === '' )
             {
                 continue;
             }
 
-            // empty array: no links/images
+            $text = array();
 
-            if( is_array( $links ) && count( $links ) === 0 )
+            if( $filter )
+            {
+                $code = PdfImproveLinksFilter( $code );
+            }
+
+            if( $code === false )
             {
                 continue;
             }
 
-            // a string: the string is the url, location is taken from the resource, no image
-
-            if( is_string( $links ) )
+            if( is_array( $code ) )
             {
-                $links = [ 'p' => $r['p'], 'l' => $r['l'], 't' => $r['t'], 'w' => $r['w'], 'h' => $r['h'], 'url' => $links, 'img' => '' ];
+                Error( 'PdfImproveLinksFilter returned array' );
+                /*--- QUIT POINT ---*/
             }
 
-            // a key-value pair array: this is a single link/image
-
-            if( ! isset( $links[ 0 ] ) )
+            $ms = Milliseconds();
+            $output = Execute( [ "pdfidxfind -limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
+            if( $status != 0 )
             {
-                $links = [ $links ];
+                Error( "pdfidxfind exited with status $status: searching $code: $output" );
+                /*--- QUIT POINT ---*/
             }
+            $milliseconds += Milliseconds( $ms );
 
-            // for each link autocomplete the page, url, img if not present with their default values
+            $results = json_decode( $output, true );
 
-            foreach( $links as $l )
+            foreach( $results as $r )
             {
-                if( ! isset( $l['l'] ) )
+                $links = PdfImproveLinksProcess( $p, $r );
+
+                // false: no links/images
+
+                if( $links === false )
                 {
-                    $l['l'] = $r['l'];
-                }
-
-                if( ! isset( $l['t'] ) )
-                {
-                    $l['t'] = $r['t'];
-                }
-
-                if( ! isset( $l['w'] ) )
-                {
-                    $l['w'] = $r['w'];
-                }
-
-                if( ! isset( $l['h'] ) )
-                {
-                    $l['h'] = $r['h'];
-                }
-
-
-
-                if( ! isset( $l['p'] ) )
-                {
-                    $l['p'] = $r['p'];
-                }
-
-
-                if( ! isset( $l['img'] ) )
-                {
-                    $l['img'] = '';
-                }
-
-
-                if( ! isset( $l['url'] ) )
-                {
-                    $l['url'] = '';
-                }
-
-
-                if( ! isset( $l['z'] ) )
-                {
-                    $l['z'] = 0; // z-index
-                }
-
-
-                // raise a warning if both `url` and `img` are missing, skip the item
-
-                if( $l['img'] === '' && $l['url'] === '' )
-                {
-                    EchoNL( "WARNING: no `img` and no `url` specified for code-search $code, in page " . ( $r['p'] + 1 ) );
                     continue;
                 }
 
+                // empty array: no links/images
 
-                // raise a warning for duplicate locations
-
-                if( $l['url'] !== '' )
+                if( is_array( $links ) && count( $links ) === 0 )
                 {
-                    $lnkHash = md5(  $l['p'] . "," . $l['l'] . "," . $l['t'] . "," . $l['w'] . "," . $l['h'] );
-
-                    if( in_array( $lnkHash, $lnkHashes ) )
-                    {
-                        EchoNL( "WARNING: duplicate link location for code-search $code, in page " . ( $r['p'] + 1 ) );
-                    }
-                    else
-                    {
-                        $lnkHashes[] = $lnkHash;
-                    }
+                    continue;
                 }
 
-                if( $l['img'] !== '' )
-                {
-                    $imgHash = md5(  $l['p'] . "," . $l['l'] . "," . $l['t'] . "," . $l['w'] . "," . $l['h'] );
+                // a string: the string is the url, location is taken from the resource, no image
 
-                    if( in_array( $imgHash, $imgHashes ) )
-                    {
-                        EchoNL( "WARNING: duplicate image location for code-search $code, in page " . ( $r['p'] + 1 ) );
-                    }
-                    else
-                    {
-                        $imgHashes[] = $imgHash;
-                    }
+                if( is_string( $links ) )
+                {
+                    $links = [ 'p' => $r['p'], 'l' => $r['l'], 't' => $r['t'], 'w' => $r['w'], 'h' => $r['h'], 'url' => $links, 'img' => '' ];
                 }
 
+                // a key-value pair array: this is a single link/image
 
-                // each link is finally added to the global list
+                if( ! isset( $links[ 0 ] ) )
+                {
+                    $links = [ $links ];
+                }
 
-                $linksList[] = $l;
+                // for each link autocomplete the page, url, img if not present with their default values
+
+                foreach( $links as $l )
+                {
+                    if( ! isset( $l['l'] ) )
+                    {
+                        $l['l'] = $r['l'];
+                    }
+
+                    if( ! isset( $l['t'] ) )
+                    {
+                        $l['t'] = $r['t'];
+                    }
+
+                    if( ! isset( $l['w'] ) )
+                    {
+                        $l['w'] = $r['w'];
+                    }
+
+                    if( ! isset( $l['h'] ) )
+                    {
+                        $l['h'] = $r['h'];
+                    }
+
+
+
+                    if( ! isset( $l['p'] ) )
+                    {
+                        $l['p'] = $r['p'];
+                    }
+
+
+                    if( ! isset( $l['img'] ) )
+                    {
+                        $l['img'] = '';
+                    }
+
+
+                    if( ! isset( $l['url'] ) )
+                    {
+                        $l['url'] = '';
+                    }
+
+
+                    if( ! isset( $l['z'] ) )
+                    {
+                        $l['z'] = 0; // z-index
+                    }
+
+
+                    // raise a warning if both `url` and `img` are missing, skip the item
+
+                    if( $l['img'] === '' && $l['url'] === '' )
+                    {
+                        EchoNL( "WARNING: no `img` and no `url` specified for code-search $code, in page " . ( $r['p'] + 1 ) );
+                        continue;
+                    }
+
+
+                    // raise a warning for duplicate locations
+
+                    if( $l['url'] !== '' )
+                    {
+                        $lnkHash = md5(  $l['p'] . "," . $l['l'] . "," . $l['t'] . "," . $l['w'] . "," . $l['h'] );
+
+                        if( in_array( $lnkHash, $lnkHashes ) )
+                        {
+                            EchoNL( "WARNING: duplicate link location for code-search $code, in page " . ( $r['p'] + 1 ) );
+                        }
+                        else
+                        {
+                            $lnkHashes[] = $lnkHash;
+                        }
+                    }
+
+                    if( $l['img'] !== '' )
+                    {
+                        $imgHash = md5(  $l['p'] . "," . $l['l'] . "," . $l['t'] . "," . $l['w'] . "," . $l['h'] );
+
+                        if( in_array( $imgHash, $imgHashes ) )
+                        {
+                            EchoNL( "WARNING: duplicate image location for code-search $code, in page " . ( $r['p'] + 1 ) );
+                        }
+                        else
+                        {
+                            $imgHashes[] = $imgHash;
+                        }
+                    }
+
+
+                    // each link is finally added to the global list
+
+                    $linksList[] = $l;
+                }
             }
         }
+
+
+        //
+        // Links/images list MUST be sorted by page
+        //
+
+        ArraySortByKey( $linksList, [ 'p', 'z', 't', 'l' ] );
+
+
+        //
+        // Build links/images output, check for images and urls
+        //
+
+        $linksText = "";
+
+        $hasimg = false; // the links/images list specifies at least one image
+        $hasurl = false; // the links/images list specifies at least one link
+
+        foreach( $linksList as $l )
+        {
+            $linksText .= "{$l['p']}\t{$l['l']}\t{$l['t']}\t{$l['w']}\t{$l['h']}\t{$l['url']}\t{$l['img']}\n";
+
+            if( $l['img'] !== '' )
+            {
+                $hasimg = true;
+            }
+
+            if( $l['url'] !== '' )
+            {
+                $hasurl = true;
+            }
+
+        }
+
+
+        //
+        // Write links file
+        //
+
+        $milliseconds = (int) ( $milliseconds / $n );
+        EchoNL( "Search average time: $milliseconds ms" );
+        EchoNL( "Writing links list file" );
+        file_put_contents( $linksPath, $linksText );
+        EchoNL( "Links count: " . count( $linksList ) );
     }
-
-
-    //
-    // Links/images list MUST be sorted by page
-    //
-
-    ArraySortByKey( $linksList, [ 'p', 'z', 't', 'l' ] );
-
-
-    //
-    // Build links/images output, check for images and urls
-    //
-
-    $linksText = "";
-
-    $hasimg = false; // the links/images list specifies at least one image
-    $hasurl = false; // the links/images list specifies at least one link
-
-    foreach( $linksList as $l )
+    else
     {
-        $linksText .= "{$l['p']}\t{$l['l']}\t{$l['t']}\t{$l['w']}\t{$l['h']}\t{$l['url']}\t{$l['img']}\n";
+        EchoNL( "Using existing links-images file: " . PathRelative( $linksPath ) );
 
-        if( $l['img'] !== '' )
+        // Inspect file to detect links and/or images
+
+        $hasimg = false;
+        $hasurl = false;
+
+        $linksText = file_get_contents( $linksPath );
+        $linksList = explode( "\n", $linksText );
+        foreach( $linksList as $row )
         {
-            $hasimg = true;
+            $parts = explode( "\t", $row );
+            $n = count( $parts );
+            if( $n >= 6 && $parts[ 5 ] !== '' ) { $hasurl = true; }
+            if( $n >= 7 && $parts[ 6 ] !== '' ) { $hasimg = true; }
         }
-
-        if( $l['url'] !== '' )
-        {
-            $hasurl = true;
-        }
-
     }
 
 
     //
-    // Write links file
+    // Small report
     //
 
-    $milliseconds = (int) ( $milliseconds / $n );
-    EchoNL( "Search average time: $milliseconds ms" );
-    EchoNL( "Writing links list file" );
-    file_put_contents( $linksPath, $linksText );
-    EchoNL( "Links count: " . count( $linksList ) );
+
+    EchoNL( "Links:  " . ( $hasurl ? "YES" : "NO" ) );
+    EchoNL( "Images: " . ( $hasimg ? "YES" : "NO" ) );
 
 
     //
@@ -505,18 +566,25 @@ function PdfImprove()
 
     if( $hasimg && ! $noimg )
     {
+        $inPath = $outPath;
         $outPath = $pdfImagesPath;
-        RemoveFile( $outPath );
-
-        EchoCR( "Adding images to PDF..." );
-        $output = Execute( [ "pdfAddImgs -pdf", $inPath, "-imgs", $linksPath, "-out", $outPath ], $status );
-        if( $status != 0 )
-        {
-            Error( "pdfAddImgs exited with status $status: $output" );
-            /*--- QUIT POINT ---*/
-        }
         $relPath = PathRelative( $outPath );
-        EchoNL( "Produced PDF with images: $relPath" );
+
+        if( FileExists( $outPath ) )
+        {
+            EchoNL( "Using existing PDF with images: $relPath" );
+        }
+        else
+        {
+            EchoCR( "Adding images to PDF..." );
+            $output = Execute( [ "pdfAddImgs -pdf", $inPath, "-imgs", $linksPath, "-out", $outPath ], $status );
+            if( $status != 0 )
+            {
+                Error( "pdfAddImgs exited with status $status: $output" );
+                /*--- QUIT POINT ---*/
+            }
+            EchoNL( "Produced PDF with images: $relPath" );
+        }
     }
 
     if( ! $hasimg && ! $noimg )
@@ -533,17 +601,23 @@ function PdfImprove()
     {
         $inPath = $outPath;
         $outPath = $pdfLinksPath;
-        RemoveFile( $outPath );
-
-        EchoCR( "Adding links to PDF..." );
-        $output = Execute( [ "pdfAddLinks -pdf", $inPath, "-links", $linksPath, "-out", $outPath ], $status );
-        if( $status != 0 )
-        {
-            Error( "pdfAddLinks exited with status $status: $output" );
-            /*--- QUIT POINT ---*/
-        }
         $relPath = PathRelative( $outPath );
-        EchoNL( "Produced PDF with links: $relPath" );
+
+        if( FileExists( $outPath ) )
+        {
+            EchoNL( "Using existing PDF with links: $relPath" );
+        }
+        else
+        {
+            EchoCR( "Adding links to PDF..." );
+            $output = Execute( [ "pdfAddLinks -pdf", $inPath, "-links", $linksPath, "-out", $outPath ], $status );
+            if( $status != 0 )
+            {
+                Error( "pdfAddLinks exited with status $status: $output" );
+                /*--- QUIT POINT ---*/
+            }
+            EchoNL( "Produced PDF with links: $relPath" );
+        }
     }
     else
     {
@@ -555,22 +629,37 @@ function PdfImprove()
     // Add Outlines to PDF
     //
 
-    $outlinesPath = 'outlines.' . substr( $pdfPath, 0, -4 ) . '.txt';
+    $outlinesPath = PathEditFilename( $pdfPath, 'outlines.', '', "txt" );
     if( FileExists( $outlinesPath ) )
     {
         $inPath = $outPath;
         $outPath = $pdfOutlinesPath;
-        RemoveFile( $outPath );
-
-        EchoCR( "Adding outlines to PDF..." );
-        $output = Execute( [ "pdfAddOutlines -pdf", $inPath, "-otl", $outlinesPath, "-out", $outPath ], $status );
-        if( $status != 0 )
-        {
-            Error( "pdfAddOutlines exited with status $status: $output" );
-            /*--- QUIT POINT ---*/
-        }
         $relPath = PathRelative( $outPath );
-        EchoNL( "Produced PDF with outlines: $relPath" );
+
+        if( FileExists( $outPath ) )
+        {
+            EchoNL( "Using existing PDF with outlines: $relPath" );
+        }
+        else
+        {
+            EchoCR( "Adding outlines to PDF..." );
+            $output = Execute( [ "pdfAddOutlines -pdf", $inPath, "-otl", $outlinesPath, "-out", $outPath ], $status );
+            if( $status != 0 )
+            {
+                Error( "pdfAddOutlines exited with status $status: $output" );
+                /*--- QUIT POINT ---*/
+            }
+            $relPath = PathRelative( $outPath );
+            EchoNL( "Produced PDF with outlines: $relPath" );
+            if( $output !== '' )
+            {
+                echo "pdfAddOutlines messages:\n$output";
+                if( ! StringEnds( $output, "\n" ) )
+                {
+                    echo "\n";
+                }
+            }
+        }
     }
     else
     {
@@ -586,16 +675,24 @@ function PdfImprove()
 
 
     //
-    // Discarding temporary files (only if tool was called with `cleanup` argument)
-    //
-
-
-    PdfToolsDeleteTempDir();
-
-
-    //
     // Done
     //
 
     EchoNL( "Done" );
 }
+
+
+
+//
+// PdfIsInspecting
+//
+// Return `true` if  PdfImprove()  is  running  in
+// document inspection mode                     \x
+//
+
+function PdfInspectionMode()
+{
+    global $g_pdf_improve_document_inspection;
+    return $g_pdf_improve_document_inspection;
+}
+

@@ -153,7 +153,7 @@ function Curl( $url = false, $post = null, $headers = null )
         curl_setopt( $handle, CURLOPT_POST,         true );
     }
 
-    if( $post !== true && $post !== false )
+    if( $post !== true && $post !== false && $post !== null )
     {
         curl_setopt( $handle, CURLOPT_POSTFIELDS,   $post );
     }

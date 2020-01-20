@@ -404,6 +404,72 @@ function PathGetExtension( $path )
 }
 
 
+//
+// edit the path appending and/or prepending  text
+// to the filename: if  `extension`  is  true  the
+// existing extension (if any)  is  preserved;  if
+// `false` the extension is removed; if  a  string
+// is  passed  the  extension  is  changed;  if  a
+// trailing slash is present it  is  preserved  in
+// the returned path
+//                                              \x
+
+function PathEditFilename( $path, $prepend = '', $append = '', $extension = true )
+{
+    // preserve trailing slash
+
+    $slash = substr( $path, -1, 1 ) === '/' ? '/' : '';
+
+    // split path in parts
+
+    $pi = pathinfo( $path );
+
+    // remove leading ./ for relative paths to items in the current directory
+
+    if( $pi['dirname'] === '.' )
+    {
+        $dir = '';
+    }
+    else
+    {
+        $dir = $pi['dirname'] . "/";
+    }
+
+    // manage the extension
+
+    $dotext = "";
+
+    if( $extension === false )
+    {
+        //
+    }
+    elseif( $extension === true )
+    {
+        if( isset( $pi['extension'] ) )
+        {
+            $dotext = "." . $pi['extension'];
+        }
+    }
+    elseif( is_string( $extension ) )
+    {
+        if( $extension !== '' )
+        {
+            $dotext = ".$extension";
+        }
+    }
+    else
+    {
+        Error( "`extension` must be true, false or string" );
+    }
+
+    // assemble parts
+
+    $path = "$dir$prepend{$pi['filename']}$append$dotext$slash";
+
+    return $path;
+}
+
+
 
 //
 // ZipDirectory

@@ -1077,15 +1077,15 @@ function StringHtmlToText( $string, $flags = ENT_QUOTES | ENT_HTML5 )
             /*--- QUIT POINT ---*/
         }
 
-        $str = StringReplace( $str, "\n", "" );
-        $str = StringReplace( $str, "\r", "" );
+        $str = StringReplace( $str, "\n", " " );
+        $str = StringReplace( $str, "\r", " " );
         $str = StringReplace( $str, "&nbsp;", " " );
         $str = StringReplace( $str, "<br>", "\n" );
         $str = StringReplace( $str, "<br/>", "\n" );
         $str = StringReplace( $str, "<br />", "\n" );
         while( StringPosition( $str, "  " ) !== false )
         {
-            $string = StringReplace( $str, "  ", " " );
+            $str = StringReplace( $str, "  ", " " );
         }
 
         $out[] = html_entity_decode( strip_tags( $str ), $flags );
@@ -1185,7 +1185,7 @@ class StringParser
 
     public function first() // returns `false` with no results
     {
-        if( count( $this->result ) )
+        if( count( $this->result ) === 0 )
         {
             return false;
         }
@@ -1199,7 +1199,7 @@ class StringParser
 
     public function string() // returns empty string with no results
     {
-        if( count( $this->result ) )
+        if( count( $this->result ) === 0 )
         {
             return "";
         }
@@ -1234,7 +1234,7 @@ class StringParser
 
     public function get_first( &$output ) // gives `false` with no results
     {
-        if( count( $this->result ) )
+        if( count( $this->result ) === 0 )
         {
             $output = false;
         }
@@ -1250,7 +1250,7 @@ class StringParser
 
     public function get_string( &$output ) // gives empty string with no results
     {
-        if( count( $this->result ) )
+        if( count( $this->result ) === 0 )
         {
             $output = "";
         }
