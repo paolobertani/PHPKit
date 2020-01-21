@@ -183,10 +183,10 @@ function PdfImprove()
     // Temp files paths
     //
 
-    $linksPath      = ROOT . '/temp/temp.lks-0.txt';
-    $pdfImagesPath  = ROOT . '/temp/temp.pdf-1-images.pdf';
-    $pdfLinksPath   = ROOT . '/temp/temp.pdf-2-links.pdf';
-    $pdfOutlinesPath= ROOT . '/temp/temp.pdf-3-outlines.pdf';
+    $linksPath      = PdfToolsTempFileLinks();
+    $pdfImagesPath  = PdfToolsTempFilePdfIm();
+    $pdfLinksPath   = PdfToolsTempFilePdfLk();
+    $pdfOutlinesPath= PdfToolsTempFilePdfOL();
 
 
     //

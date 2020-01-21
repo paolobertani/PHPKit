@@ -21,8 +21,9 @@ function PdfToolsPdfidx( $pdfPath )
 {
     MakeDir( PDFTOOLS_TEMP_DIR );
 
-    $pdfffPath  = PDFTOOLS_TEMP_DIR . '/temp.pdfff';
-    $pdfidxPath = PDFTOOLS_TEMP_DIR . '/temp.pdfidx';
+    $pdfffPath  = PdfToolsTempFilePdfff();
+    $pdfidxPath = PdfToolsTempFilePdfidx();
+    $linksPath  = PdfToolsTempFileLinks();
 
     if( ! FileExists( $pdfffPath ) )
     {
@@ -77,9 +78,20 @@ function PdfToolsDeleteTempDir()
     $files = FilesInDirectory( PDFTOOLS_TEMP_DIR );
     foreach( $files as $f )
     {
-        EcnoNL( "Removing temp file: $f" );
+        EchoNL( "Removing temp file: $f" );
         RemoveFile( PDFTOOLS_TEMP_DIR . "/$f" );
     }
 }
 
 
+function PdfToolsTempFilePdfff() { return PDFTOOLS_TEMP_DIR . '/temp.pdfff'; }
+
+function PdfToolsTempFilePdfidx(){ return PDFTOOLS_TEMP_DIR . '/temp.pdfidx'; }
+
+function PdfToolsTempFileLinks() { return ROOT . '/temp/temp.lks-0.txt'; }
+
+function PdfToolsTempFilePdfIm() { return ROOT . '/temp/temp.pdf-1-images.pdf'; }
+
+function PdfToolsTempFilePdfLk() { return ROOT . '/temp/temp.pdf-2-links.pdf'; }
+
+function PdfToolsTempFilePdfOL() { return ROOT . '/temp/temp.pdf-3-outlines.pdf'; }
