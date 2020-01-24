@@ -827,6 +827,70 @@ function StringReplace( $string, $search, $replace )
 
 
 //
+// StringRemove
+//
+// remove  every  occurrency   of   `$what`   from
+// `$string`; `$string` can be an array of strings
+// in wich case the operation is performed on each
+// element; `$what` can be an array of strings  in
+// wich case every string in the array is  removed
+// from  the  source;  the  function  removes  the
+// strings from the longest to the shortes      \x
+//
+
+function StringRemove( $string, $what )
+{
+    // parameter check
+
+    if( ( is_string( $string ) || is_array( $string ) ) && ( is_string( $what ) || is_array( $what ) ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "wrong parameters type: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+    // single "what" case
+
+    if( is_string( $what ) )
+    {
+        $string = StringReplace( $string, $what, "" );
+        return $string;
+        /*--- EXIT POINT ---*/
+    }
+
+    // get lengths
+
+    $len = [];
+
+    foreach( $what as $w )
+    {
+        $len[] = strlen( $w );
+    }
+
+    // order $what by lenght desc
+
+    array_multisort( $len, $what );
+
+    $what = array_reverse( $what );
+
+    // remove occurrencies
+
+    foreach( $what as $w )
+    {
+        $string = StringReplace( $string, $w, "" );
+    }
+
+    // return result
+
+    return $string;
+}
+
+
+
+//
 // StringTrim
 //
 
