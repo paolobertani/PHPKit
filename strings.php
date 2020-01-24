@@ -1465,6 +1465,14 @@ class StringParser
 
 
 
+    public function remove( $what )
+    {
+        $this->result = StringRemove( $this->result, $what );
+        return $this;
+    }
+
+
+
     public function lowercase()
     {
         $this->result = StringLowercase( $this->result );
