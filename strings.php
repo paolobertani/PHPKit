@@ -714,7 +714,6 @@ function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
 // STRING_CI
 //
 
-
 function StringReplaceAtBeginning( $string, $src, $rep, $options = STRING_NO_OPTIONS )
 {
 
@@ -1326,6 +1325,23 @@ class StringParser
         return $this;
     }
 
+
+    public function get_index_having( &$output, $str )
+    {
+        $i = 0;
+        foreach( $this->result as $res )
+        {
+            if( StringHas( $res, $str ) )
+            {
+                $output = $i;
+                return $this;
+                /*--- EXIT POINT ---*/
+            }
+            $i++;
+        }
+        $output = false;
+        return $this;
+    }
 
 
     public function get_count( &$output )
