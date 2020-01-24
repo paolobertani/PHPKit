@@ -1369,22 +1369,25 @@ class StringParser
 
     public function select( $start, $count = 1 )
     {
-        if( is_int( $start ) && is_int( $count ) && $start >= 0 && $count >= 0 )
+        if( ( ( is_int( $start ) && $start >= 0 ) || $start === false ) && is_int( $count ) && $count >= 0 )
         {
             // ok
         }
         else
         {
-            Error( "parameters must be int and positive" );
+            Error( "parameters must be int >=0; `start` can be `false`" );
         }
 
         $out = [];
 
-        for( $i = $start; $i < $start + $count; $i++ )
+        if( $start !== false )
         {
-            if( isset( $this->result[ $i ] ) )
+            for( $i = $start; $i < $start + $count; $i++ )
             {
-                $out[] = $this->result[ $i ];
+                if( isset( $this->result[ $i ] ) )
+                {
+                    $out[] = $this->result[ $i ];
+                }
             }
         }
 
