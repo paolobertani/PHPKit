@@ -291,9 +291,44 @@ function ArrayHasDuplicates( &$array, $key, $flagKey = false, $flag = "@" )
 //
 // ArrayRemoveDuplicates
 //
+// the  function  receives  the  `$array`  to   be
+// processed and  the  `$key`  for  the  duplicate
+// values; `$chooser`  is  a  function  (callable)
+// whose purpose is described later;
+//
+// the function has two operative  modes:  chooser
+// and manager
+//
+// chooser:
+// items with the same value for the specified key
+// are aggregated into an array and passed to  the
+// `$chooser` function; the "chooser" must  add  a
+// value for the key  specificed  as  `$score_key`
+// (default: 'score'); for every  group  of  items
+// with the same key only  the  one  with  highest
+// score will be kept
+//
+// manager:
+// to enable `manager` mode `$score_key` is set to
+// `false`; items with  the  same  value  for  the
+// specified key are aggregated into an array  and
+// passed to the  "duplicate  manager"  `$chooser`
+// function; the duplicate manager may  alter  any
+// values of the received array that will  replace
+// the values in the original array (normally  the
+// manager will alter the key with  duplicates  to
+// make them unique but this is not mandatory)  \x
+//
 
 function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
 {
+    // manage score key
+
+    if( $score_key === null || $score_key === '' )
+    {
+        $score_key = false;
+    }
+
     // item count
 
     $n = count( $array );
@@ -318,7 +353,7 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
 
     // init the first block with the first item
 
-    $array[0][$score_key] = 0;
+    if( $score_key !== false ) { $array[0][$score_key] = 0; }
     $block = [ $array[0] ];
     $last  = $array[0][$key];
 
@@ -327,7 +362,7 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
     for( $i = 1; $i < $n; $i++ )
     {
         $item = $array[$i];
-        $item[$score_key] = 0;
+        if( $score_key !== false ) { $item[$score_key] = 0; }
 
         if( $item[$key] === $last )
         {
@@ -342,13 +377,26 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
             if( count( $block ) > 1 )
             {
                 $chooser( $block );
-                ArraySortByKey( $block, $score_key."DESC" );
+                if( $score_key !== false ) { ArraySortByKey( $block, $score_key."DESC" ); }
             }
 
-            // add to output the first item of the block
+            // chooser: add to output the first item of the block
 
-            unset( $block[0][$score_key] );
-            $out[] = $block[0];
+            if( $score_key !== false )
+            {
+                unset( $block[0][$score_key] );
+                $out[] = $block[0];
+            }
+
+            // manager: add to output the block
+
+            if( $score_key === false )
+            {
+                foreach( $block as $b )
+                {
+                    $out[] = $b;
+                }
+            }
 
             // initialize a new block with the new item
 
