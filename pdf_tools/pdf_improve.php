@@ -24,6 +24,7 @@
 // on the PDF. The first  line  contains  columns'
 // header.                                      \x
 //
+//
 // Must be defined:
 //
 // function PdfAddLinksProcess( (array)$resource, (array)$location ) --> (array|string)$link | false | []
@@ -41,6 +42,7 @@
 // (array) of associative arrays if  two  or  more
 // links have to be created                     \x
 //
+//
 // May be defined:
 //
 // function PdfImproveLinksProcess( (string) $code ) --> (string) | false
@@ -48,8 +50,21 @@
 // Receives a product code, returns  the  code  to
 // search  for  (generally  the  same  code   with
 // prepended a  modifier  search  character);  may
-// return false to instruct to skip the code
-//                                              \x
+// return false to instruct to skip the code    \x
+//
+//
+// May be defined:
+//
+// function PdfImproveResultsFilter( (string)$search, (array)$results ) --> (array) | false
+//
+// Receives  the  search  query  (as   passed   to
+// pdfidxfind) an the search results  as  returned
+// by pdfidxfind and is  expected  to  return  the
+// same set or a subset; the returned results will
+// be  passed  to  PdfAddLinksProces;  may  return
+// `false` as an alias to a empty array         \x
+//
+//
 // May be defined:
 //
 // function PdfImproveResourcesManager( $resources ) --> (array)
@@ -142,6 +157,20 @@ function PdfImprove()
     else
     {
         $filter = false;
+    }
+
+
+    //
+    // Check PdfImproveResultsFilter is defined
+    //
+
+    if( function_exists( 'PdfImproveResultsFilter' ) )
+    {
+        $results_filter = true;
+    }
+    else
+    {
+        $results_filter = false;
     }
 
 
@@ -339,7 +368,8 @@ function PdfImprove()
             }
 
             $ms = Milliseconds();
-            $output = Execute( [ "pdfidxfind -limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
+            $getText = $results_filter ? "-text yes " : "";
+            $output = Execute( [ "pdfidxfind $getText-limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
             if( $status != 0 )
             {
                 Error( "pdfidxfind exited with status $status: searching $code: $output" );
@@ -348,6 +378,25 @@ function PdfImprove()
             $milliseconds += Milliseconds( $ms );
 
             $results = json_decode( $output, true );
+
+
+            //
+            // Filter the whole set of results (if the filter function is defined)
+            //
+
+            if( $results_filter && count( $results ) > 0 )
+            {
+                $results = PdfImproveResultsFilter( $code, $results );
+                if( $results === false )
+                {
+                    $results = [];
+                }
+            }
+
+
+            //
+            // Pass each result to the icon-link generator function
+            //
 
             foreach( $results as $r )
             {
@@ -385,6 +434,7 @@ function PdfImprove()
 
                 foreach( $links as $l )
                 {
+
                     if( ! isset( $l['l'] ) )
                     {
                         $l['l'] = $r['l'];
@@ -404,7 +454,6 @@ function PdfImprove()
                     {
                         $l['h'] = $r['h'];
                     }
-
 
 
                     if( ! isset( $l['p'] ) )
@@ -474,8 +523,10 @@ function PdfImprove()
                     // each link is finally added to the global list
 
                     $linksList[] = $l;
+
                 }
             }
+
         }
 
 
