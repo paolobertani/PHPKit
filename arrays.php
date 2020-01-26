@@ -326,7 +326,7 @@ function ArrayHasDuplicates( &$array, $key, $flagKey = false, $flag = "@" )
 // make them unique but this is not mandatory)  \x
 //
 
-function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
+function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = false )
 {
     // manage score key
 
