@@ -329,8 +329,6 @@ function PdfImprove()
         //
 
         $linksList = [];
-        $lnkHashes = [];
-        $imgHashes = [];
 
         $i = 1;
         $n = count( $products );
@@ -434,6 +432,7 @@ function PdfImprove()
 
                 foreach( $links as $l )
                 {
+                    $l['src'] = $code; // the search performed
 
                     if( ! isset( $l['l'] ) )
                     {
@@ -455,30 +454,27 @@ function PdfImprove()
                         $l['h'] = $r['h'];
                     }
 
-
                     if( ! isset( $l['p'] ) )
                     {
                         $l['p'] = $r['p'];
                     }
-
 
                     if( ! isset( $l['img'] ) )
                     {
                         $l['img'] = '';
                     }
 
-
                     if( ! isset( $l['url'] ) )
                     {
                         $l['url'] = '';
                     }
-
 
                     if( ! isset( $l['z'] ) )
                     {
                         $l['z'] = 0; // z-index
                     }
 
+                    $l['hash'] = md5(  $l['p'] . "," . $l['l'] . "," . $l['t'] . "," . $l['w'] . "," . $l['h'] );
 
                     // raise a warning if both `url` and `img` are missing, skip the item
 
@@ -488,38 +484,6 @@ function PdfImprove()
                         continue;
                     }
 
-
-                    // raise a warning for duplicate locations
-
-                    if( $l['url'] !== '' )
-                    {
-                        $lnkHash = md5(  $l['p'] . "," . $l['l'] . "," . $l['t'] . "," . $l['w'] . "," . $l['h'] );
-
-                        if( in_array( $lnkHash, $lnkHashes ) )
-                        {
-                            EchoNL( "WARNING: duplicate link location for code-search $code, in page " . ( $r['p'] + 1 ) );
-                        }
-                        else
-                        {
-                            $lnkHashes[] = $lnkHash;
-                        }
-                    }
-
-                    if( $l['img'] !== '' )
-                    {
-                        $imgHash = md5(  $l['p'] . "," . $l['l'] . "," . $l['t'] . "," . $l['w'] . "," . $l['h'] );
-
-                        if( in_array( $imgHash, $imgHashes ) )
-                        {
-                            EchoNL( "WARNING: duplicate image location for code-search $code, in page " . ( $r['p'] + 1 ) );
-                        }
-                        else
-                        {
-                            $imgHashes[] = $imgHash;
-                        }
-                    }
-
-
                     // each link is finally added to the global list
 
                     $linksList[] = $l;
@@ -527,6 +491,23 @@ function PdfImprove()
                 }
             }
 
+        }
+
+
+        //
+        // Check for duplicate locations
+        //
+
+        $duplicates = [];
+
+        ArrayRemoveDuplicates( $linksList, 'hash', function( &$block ) use (&$duplicates) { $duplicates = array_merge( $duplicates, $block ); } );
+
+        if( count( $duplicates ) > 0 )
+        {
+            EchoNL( "Images/Links in duplicate positions, produced `duplicates.txt` file" );
+            ArrayToFile( ROOT . "/duplicates.txt",  $duplicates );
+            exit( 0 );
+            /*--- QUIT POINT ---*/
         }
 
 
