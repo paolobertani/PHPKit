@@ -160,6 +160,12 @@ function ArrayToFile( $path, $array )
 
 function ArraySortByKey( &$array, $keys )
 {
+    if( ! is_array( $array ) )
+    {
+        Error( "array expected" );
+        /*--- QUIT POINT ---*/
+    }
+
     if( is_array( $keys ) )
     {
         $order = [];
