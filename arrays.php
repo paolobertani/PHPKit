@@ -420,4 +420,80 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = false )
 
 
 
+//
+// ArrayFind
+//
+// returns  the  index  of  the  item   with   the
+// specified kay and value; returns false in  case
+// of  no  match;  optionally  `$offset`  may   be
+// specified                                    \x
+//
 
+function ArrayFind( $array, $key, $value, $offset = 0 )
+{
+    $n = count( $array );
+    for( $i = $offset; $i < $n; $i++ )
+    {
+        if( $array[ $i ][ $key ] === $value )
+        {
+            return $i;
+            /*--- EXIT POINT ---*/
+        }
+    }
+    return false;
+}
+
+
+
+//
+// ArraySet
+//
+// set keys/values for the item at  the  specified
+// index; if index  is  `false`  then  the  passed
+// record is added to the array
+//                                              \x
+
+function ArraySet( &$array, $index, $record )
+{
+    if( $index === false )
+    {
+        $array[] = $record;
+    }
+    else
+    {
+        foreach( $record as $key => $value )
+        {
+            $array[$index][$key] = $value;
+        }
+    }
+}
+
+
+
+//
+// ArrayFix
+//
+// fixes an array  setting  a  default  value  for
+// missing keys in every record
+//                                              \x
+
+function ArrayFix( &$array, $fix = '' )
+{
+    $keys = [];
+    foreach( $array as $row )
+    {
+        foreach( $row as $key => $value )
+        {
+            $keys[] = $key;
+        }
+    }
+    $keys = array_unique( $keys );
+    foreach( $array as $row )
+    {
+        foreach( $keys as $key )
+        if( ! isset( $row[$key] ) )
+        {
+            $row[$key] = $fix;
+        }
+    }
+}
