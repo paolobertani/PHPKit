@@ -105,6 +105,7 @@ function ArrayToFile( $path, $array )
     $i = 0;
     $row = $array[ 0 ];
 
+    $keys = [];
     $first = true;
     foreach( $row as $key => $value )
     {
@@ -118,13 +119,14 @@ function ArrayToFile( $path, $array )
         }
 
         $out .= $key;
+        $keys[] = $key;
     }
 
     foreach( $array as $row )
     {
         $out .= "\n";
         $first = true;
-        foreach( $row as $key => $value )
+        foreach( $keys as $key )
         {
             if( ! $first )
             {
@@ -135,7 +137,7 @@ function ArrayToFile( $path, $array )
                 $first = false;
             }
 
-            $out .= $value;
+            $out .= $row[$key];
         }
     }
 
