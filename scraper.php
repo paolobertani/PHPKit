@@ -293,7 +293,7 @@ class Scraper
     // url must have not been visited  yet  and
     // must have the root part lowercase
 
-    private function scrape_url( $url, $level )
+    protected function scrape_url( $url, $level )
     {
         // add URL to visited pages
 
@@ -483,7 +483,7 @@ class Scraper
 
 
 
-    private function curl_or_fetch_cache( $url )
+    protected function curl_or_fetch_cache( $url )
     {
         if( $this->cache_path === false )
         {
@@ -532,7 +532,7 @@ class Scraper
     // while the OS is not  a  hash  is  always
     // appended                              \p
 
-    private function cache_base_path_for_url( $url )
+    protected function cache_base_path_for_url( $url )
     {
         $url = $this->lowercase_root( $url );
         $filename = str_replace( "://", "-", $url );
@@ -552,7 +552,7 @@ class Scraper
 
     // path to response cache file
 
-    private function cache_response_path_for_url( $url )
+    protected function cache_response_path_for_url( $url )
     {
         $path = $this->cache_base_path_for_url( $url );
         return "$path.response.txt";
@@ -562,7 +562,7 @@ class Scraper
 
     // path to response-headers cache file
 
-    private function cache_headers_path_for_url( $url )
+    protected function cache_headers_path_for_url( $url )
     {
         $path = $this->cache_base_path_for_url( $url );
         return "$path.headers.txt";
@@ -572,7 +572,7 @@ class Scraper
 
     // save the url in the visited list
 
-    private function save_in_visited( $url )
+    protected function save_in_visited( $url )
     {
         $url = $this->lowercase_root( $url );
         if( ! in_array ( $url, $this->visited ) )
@@ -585,7 +585,7 @@ class Scraper
 
     // returns the scheme+domain
 
-    private function domain_from_url( $url )
+    protected function domain_from_url( $url )
     {
         $url = StringLowercase( $url ) . "/";
         $pos = strpos( $url, "/", 8 );
@@ -603,7 +603,7 @@ class Scraper
     // with the url it is  returned  lowercase,
     // if not is returned unmodified
 
-    private function lowercase_root( $url )
+    protected function lowercase_root( $url )
     {
         if( strlen( $url ) >= strlen( $this->root ) )
         {
@@ -626,7 +626,7 @@ class Scraper
 
     // is the absolute url below root
 
-    private function url_is_below_root( $url )
+    protected function url_is_below_root( $url )
     {
         return StringBegins( $url, $this->root, STRING_CI );
     }
@@ -635,7 +635,7 @@ class Scraper
 
     // warn if a url with issues comes from the filter function
 
-    private function warn_if_url_comes_from_filter( $warn, $new, $original )
+    protected function warn_if_url_comes_from_filter( $warn, $new, $original )
     {
         if( $original === '' )
         {
