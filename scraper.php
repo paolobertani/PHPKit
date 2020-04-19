@@ -29,10 +29,11 @@ class Scraper
     private $cache_path,
             $visited,
             $domain,
-            $root,
+            $root;
 
-            $attempts,
-            $pause;
+    protected $attempts,
+              $pause,
+              $parent;
 
 
 
@@ -120,6 +121,9 @@ class Scraper
     //
     // default filter removes the fragment part
     // of the url, converts spaces to `%20`
+    //
+    // may inspect `$this->parent` to know  the
+    // parent url
     //                                       \p
 
     protected function filter( $url )
@@ -237,11 +241,20 @@ class Scraper
     // scrape
     //
     // parse the  site  from  `$root`  then  go
-    // (only) deeper with recursion
+    // (only) deeper with recursion;
+    // optionally a url to start  from  may  be
+    // specified
     //
 
-    public function scrape( $root )
+    public function scrape( $root, $start = false )
     {
+        // manage optional `start`
+
+        if( $start === false )
+        {
+            $start = $root;
+        }
+
 
         // check root url is good
 
@@ -277,9 +290,20 @@ class Scraper
         $this->domain = $this->domain_from_url( $root );
 
 
+        // manage start URL
+
+        if( $start !== $root )
+        {
+            if( ! $this->url_is_good( $start ) ) { Error( "Scraper: bad start URL: $start" ); } /*--- QUIT POINT ---*/
+            if( ! $this->url_is_absolute( $start ) ) { $start = $this->url_make_absolute( $start ); }
+            if( ! $this->url_is_below_root( $start ) ) { Error( "Scraper: start URL is below root: $start" ); } /*--- QUIT POINT ---*/
+            $start = $this->lowercase_root( $start );
+        }
+
+
         // start recursive scraping
 
-        $this->scrape_url( $root, 1 );
+        $this->scrape_url( $start, 1 );
 
 
         // Done
@@ -422,35 +446,36 @@ class Scraper
         {
             $href = $hrefs[ $i ];
 
-            $url = $href['url'];
+            $linkurl = $href['url'];
 
-            if( ! $this->url_is_good( $url ) )
+            if( ! $this->url_is_good( $linkurl ) )
             {
                 $this->warn_if_url_comes_from_filter( 'not good', $href['url'], $href['pre_filter_url'] );
                 continue;
             }
 
-            if( ! $this->url_is_absolute( $url ) )
+            if( ! $this->url_is_absolute( $linkurl ) )
             {
-                $url = $this->url_make_absolute( $url );
+                $linkurl = $this->url_make_absolute( $linkurl );
             }
 
-            if( ! $this->url_is_below_root( $url ) )
+            if( ! $this->url_is_below_root( $linkurl ) )
             {
                 $this->warn_if_url_comes_from_filter( 'below root', $href['url'], $href['pre_filter_url'] );
                 continue;
             }
 
-            $url = $this->lowercase_root( $url );
+            $linkurl = $this->lowercase_root( $linkurl );
 
-            if( in_array( $url, $this->visited ) )
+            if( in_array( $linkurl, $this->visited ) )
             {
                 continue;
             }
 
             if( $href['pre_filter_url'] === '' )
             {
-                $filter = $this->filter( $url );
+                $this->parent = $url;
+                $filter = $this->filter( $linkurl );
 
                 if( $filter === false )
                 {
@@ -459,7 +484,7 @@ class Scraper
 
                 if( is_string( $filter ) ) // replace  the  current entry  with  the  new  url  and   let   the   loop
                 {                          // iterate on it again making every check. On the new iteration the new url
-                    $hrefs[ $i ] = [ 'url' => $filter, 'pre_filter_url' => $url ];  //  will  not  be  filtered  again
+                    $hrefs[ $i ] = [ 'url' => $filter, 'pre_filter_url' => $linkurl ];  //  will  not  be  filtered  again
                     $i--;
                     continue;
                 }
@@ -470,7 +495,7 @@ class Scraper
                 }
             }
 
-            $this->scrape_url( $url, $level + 1 );
+            $this->scrape_url( $linkurl, $level + 1 );
 
             // check for CTRL-C
 
@@ -520,6 +545,15 @@ class Scraper
             for( $i = $this->pause; $i > 0; $i-- )
             {
                 EchoCR( "Failed loading $url - Status: " . $result['status'] . " - Error: " . $result['error'] . " - pause... $i" );
+
+                // check for CTRL-C
+
+                if( SignalIsInstalled() && SignalQuitReceived() )
+                {
+                    return $result;
+                    /*--- EXIT POINT ---*/
+                }
+
                 sleep(1);
             }
         }
