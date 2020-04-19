@@ -29,6 +29,7 @@ define( 'STRING_CI',            8 );
 define( 'STRING_NOT',          16 );
 define( 'STRING_WIDE',         32 );
 define( 'STRING_SINGLEMARKER', 64 );
+define( 'STRING_REPEAT',      128 );
 
 
 
@@ -785,12 +786,12 @@ function StringCompare( $a, $b, $options = STRING_NO_OPTIONS )
 // StringReplace
 //
 
-function StringReplace( $string, $search, $replace )
+function StringReplace( $string, $search, $replace, $options = STRING_NO_OPTIONS )
 {
 
     // parameter type check
 
-    if( ( is_string( $string ) || is_array( $string ) ) && is_string( $search ) && is_string( $replace ) )
+    if( ( is_string( $string ) || is_array( $string ) ) && is_string( $search ) && is_string( $replace ) && is_int( $options ) )
     {
         // ok
     }
@@ -800,11 +801,26 @@ function StringReplace( $string, $search, $replace )
         /*--- QUIT POINT ---*/
     }
 
+    if( $search === $replace )
+    {
+        return $string;
+        /*--- EXIT POINT ---*/
+    }
+
     // single string
 
     if( is_string( $string ) )
     {
-        return str_replace( $search, $replace, $string );
+        while( strpos( $string, $search ) !== false )
+        {
+            $string = str_replace( $search, $replace, $string );
+            if( ! ( $options & STRING_REPEAT ) )
+            {
+                break;
+            }
+        }
+
+        return $string;
         /*--- EXIT POINT ---*/
     }
 
@@ -818,7 +834,17 @@ function StringReplace( $string, $search, $replace )
             Error( "`string` as array must be array of strings");
             /*--- QUIT POINT ---*/
         }
-        $out[] = str_replace( $search, $replace, $str );
+
+        while( strpos( $str, $search ) !== false )
+        {
+            $str = str_replace( $search, $replace, $str );
+            if( ! ( $options & STRING_REPEAT ) )
+            {
+                break;
+            }
+        }
+
+        $out[] = $str;
     }
     return $out;
 }
@@ -1551,9 +1577,9 @@ class StringParser
 
 
 
-    public function replace( $search, $replace )
+    public function replace( $search, $replace, $options = STRING_NO_OPTIONS )
     {
-        $this->result = StringReplace( $this->result, $search, $replace );
+        $this->result = StringReplace( $this->result, $search, $replace, $options );
         return $this;
     }
 
