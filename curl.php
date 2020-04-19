@@ -24,6 +24,7 @@ define( 'CURL_COOKIES',   ROOT . "/cookies.txt" );
 //
 
 $g_CurlDebug = false;
+$g_CurlTimeout = 30;
 
 
 
@@ -38,6 +39,21 @@ function CurlDebug( $d )
     global $g_CurlDebug;
 
     $g_CurlDebug = $d;
+}
+
+
+
+//
+// CurlSetTimeout
+//
+// Set a custom timeout value
+//             (default = 30)
+//
+
+function CurlSetTimeout( $s )
+{
+    global $g_CurlTimeout;
+    $g_CurlTimeout = $s;
 }
 
 
@@ -91,9 +107,10 @@ function Curl( $url = false, $post = null, $headers = null )
         /*--- EXIT POINT ---*/
     }
 
-    // Debug?
+    // Globals
 
     global $g_CurlDebug;
+    global $g_CurlTimeout;
 
 
     // Init curl
@@ -140,10 +157,10 @@ function Curl( $url = false, $post = null, $headers = null )
     curl_setopt( $handle, CURLOPT_COOKIEFILE,       CURL_COOKIES );
     curl_setopt( $handle, CURLOPT_COOKIEJAR,        CURL_COOKIES );
 
-    curl_setopt( $handle, CURLOPT_SSL_VERIFYHOST,   0);
-    curl_setopt( $handle, CURLOPT_SSL_VERIFYPEER,   0);
+    curl_setopt( $handle, CURLOPT_SSL_VERIFYHOST,   0 );
+    curl_setopt( $handle, CURLOPT_SSL_VERIFYPEER,   0 );
 
-    curl_setopt( $handle, CURLOPT_TIMEOUT,          30);
+    curl_setopt( $handle, CURLOPT_TIMEOUT,          $g_CurlTimeout );
 
 
     // Pass `$post` as true to make a POST request without sending data
