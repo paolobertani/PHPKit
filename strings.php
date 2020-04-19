@@ -1159,6 +1159,81 @@ function StringHtmlToText( $string, $flags = ENT_QUOTES | ENT_HTML5 )
 
 
 //
+// StringCompact
+//
+// convert newlines, tabs, etc.. into  space  then
+// remove multiple spaces and trim the string
+//                                              \x
+
+function StringCompact( $string, $preserve = "" )
+{
+    // parameter type check
+
+    if( ( is_string( $string ) || is_array( $string ) ) && is_string( $preserve ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "wrong parameters type: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+    // string
+
+    if( is_string( $string ) )
+    {
+        $result = StringCompact( [ $string ], $preserve );
+        return $result[0];
+        /*--- EXIT POINT ---*/
+    }
+
+    // entities to turn into space
+
+    $remove = [ "\n", "\r", "\t" ];
+
+
+    // entities to preserve
+
+    $preserve = str_split( $preserve );
+    $remove = array_diff( $remove, $preserve );
+    $preserve[] = ' ';
+
+    // array
+
+    $out = [];
+    foreach( $string as $str )
+    {
+        if( ! is_string( $str ) )
+        {
+            Error( "`string` must be array of strings");
+            /*--- QUIT POINT ---*/
+        }
+
+        foreach( $remove as $r )
+        {
+            $str = StringReplace( $str, $r, " " );
+        }
+
+        foreach( $preserve as $p )
+        {
+            $pp = $p.$p;
+            while( StringPosition( $str, $pp ) !== false )
+            {
+                $str = StringReplace( $str, $pp, $p );
+            }
+        }
+
+        $str = trim( $str );
+
+        $out[] = $str;
+    }
+    return $out;
+}
+
+
+
+//
 // StringFromFloat
 //
 // convert float to string ignoring locale
@@ -1511,6 +1586,14 @@ class StringParser
     public function html_to_text( $flags = ENT_QUOTES | ENT_HTML5 )
     {
         $this->result = StringHtmlToText( $this->result, $flags );
+        return $this;
+    }
+
+
+
+    public function compact( $preserve = '' )
+    {
+        $this->result = StringCompact( $this->result, $preserve );
         return $this;
     }
 
