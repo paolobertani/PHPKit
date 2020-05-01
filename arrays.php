@@ -424,7 +424,7 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = false )
 // ArrayFind
 //
 // returns  the  index  of  the  item   with   the
-// specified kay and value; returns false in  case
+// specified kEy and value; returns false in  case
 // of  no  match;  optionally  `$offset`  may   be
 // specified                                    \x
 //

@@ -1,4 +1,5 @@
-<?
+<?php
+
 function Error( $msg )
 {
     $trace = debug_backtrace();

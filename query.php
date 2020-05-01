@@ -121,7 +121,7 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
 
             if( $sql === false )
             {
-                $error = "Unable to find query named {$name}";
+                $error = "Unable to find query named `{$name}`";
                 return false;
             }
 
@@ -148,7 +148,7 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
         $token = '{{' . $key . '}}';
         if( ! StringHas( $sql, $token ) )
         {
-            $error = "Parameter $key not found in query $name";
+            $error = "Parameter `$key` not found in query `$name`";
             return false;
         }
 
@@ -167,7 +167,7 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
     $remainder = StringBetween( $sql, '{{' , '}}' );
     if( $remainder !== false)
     {
-        $error = "Value for parameter $remainder in query $name not provided";
+        $error = "Value for parameter `$remainder` in query `$name` not provided";
         return false;
     }
 
