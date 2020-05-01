@@ -1179,6 +1179,74 @@ function StringHtmlToText( $string, $flags = ENT_QUOTES | ENT_HTML5 )
 
         $out[] = html_entity_decode( strip_tags( $str ), $flags );
     }
+
+    return $out;
+}
+
+
+
+//
+// StringPercentEscape
+//
+// escapes  with  the  percent  %hh   form   every
+// character except the ones passed to  `$except`;
+// alphanumerical characters are never escaped
+//                                              \x
+
+function StringPercentEscape( $string, $except = "" )
+{
+    // parameter type check
+
+    if( ( is_string( $string ) || is_array( $string ) ) && is_string( $except ) )
+    {
+        // ok
+    }
+    else
+    {
+        Error( "wrong parameters type: passed @types" );
+        /*--- QUIT POINT ---*/
+    }
+
+    // default exceptions
+
+    $except = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$except";
+
+    // string
+
+    if( is_string( $string ) )
+    {
+        $result = StringPercentEscape( [ $string ], $except );
+        return $result[0];
+        /*--- EXIT POINT ---*/
+    }
+
+    // array
+
+    $out = [];
+    foreach( $string as $str )
+    {
+        if( ! is_string( $str ) )
+        {
+            Error( "`string` must be array of strings");
+            /*--- QUIT POINT ---*/
+        }
+
+        $o = "";
+        $n = strlen( $str );
+        for( $i = 0; $i < $n; $i++ )
+        {
+            $c = $str[ $i ];
+            if( strpos( $except, $c ) === false )
+            {
+                $c = strtoupper( dechex( ord( $c ) ) );
+                if( strlen( $c ) === 1 ) $c = "0$c";
+                $c = "%$c";
+            }
+            $o .= $c;
+        }
+        $out[] = $o;
+    }
+
     return $out;
 }
 
@@ -1617,6 +1685,14 @@ class StringParser
 
 
 
+    public function percent_escape( $except = "" )
+    {
+        $this->result = StringPercentEscape( $this->result, $except );
+        return $this;
+    }
+
+
+
     public function compact( $preserve = '' )
     {
         $this->result = StringCompact( $this->result, $preserve );
@@ -1678,5 +1754,13 @@ class StringParser
     }
 
 
+
+    // join result items in a single item
+
+    public function join( $glue = '' )
+    {
+        $this->result = array( implode( $glue, $this->result ) );
+        return $this;
+    }
 
 }
