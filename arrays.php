@@ -51,6 +51,21 @@ function ArrayFromFile( $path )
     $keys = explode( "\t", $lines[ 0 ] );
     $cols = count( $keys );
 
+    // Assign arbitrary column names if missing
+
+    $i = 1;
+    foreach( $keys as &$key )
+    {
+        $key = trim( $key );
+        if( $key == '' )
+        {
+            $key = str_pad( $i, 3, "0", STR_PAD_LEFT);
+            $i++;
+        }
+    }
+
+    // ---
+
     for( $i = 1; $i < $n; $i++ )
     {
         if( $lines[ $i ] === '' && $i === $n - 1 )
@@ -424,7 +439,7 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = false )
 // ArrayFind
 //
 // returns  the  index  of  the  item   with   the
-// specified kEy and value; returns false in  case
+// specified key and value; returns false in  case
 // of  no  match;  optionally  `$offset`  may   be
 // specified                                    \x
 //
