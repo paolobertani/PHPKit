@@ -118,8 +118,23 @@ function MakeDir( $d, $mode = 0755 )
 
 
 
+// Rename
+
+function RenameItem( $old, $new )
+{
+    $result = rename( $old, $new );
+    if( $result === false )
+    {
+        Error( "Cannot rename/move $old to $new" );
+        /*--- QUIT POINT ---*/
+    }
+    clearstatcache( true );
+}
+
+
+
 //
-// Copy a file
+// Copy a file, overwite the destination
 //
 
 function CopyFile( $s, $d )
@@ -285,7 +300,6 @@ function RemoveFile( $path )
 
 //
 // Remove the directory at the path provided and everything it contains
-// For safety checks related document id is passed
 //
 
 function RemoveDirectory( $path )
