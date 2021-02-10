@@ -921,6 +921,13 @@ function StringRemove( $string, $what )
 
 function StringTrim( $string, $mask = " \t\n\r\0\x0B" )
 {
+    // false case
+
+    if( $string === false )
+    {
+        return '';
+        /*--- EXIT POINT ---*/
+    }
 
     // parameter type check
 
