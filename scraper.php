@@ -636,7 +636,7 @@ class Scraper
         {
             if( StringBegins( $url, $this->root, STRING_CI ) )
             {
-                return StringReplaceAtBeginning( $url, $this->root, $this->root );
+                return StringReplaceAtBeginning( $url, $this->root, $this->root, STRING_CI );
             }
             return $url;
         }
