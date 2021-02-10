@@ -162,6 +162,94 @@ function ArrayToFile( $path, $array )
 
 
 //
+// ArrayFromFileCSV
+//
+// Read array of associative arrays from CSV  text
+// file: first row  should  contain  column  names
+// that will become array's keys; every  row  must
+// contain all the columns; only a trailing  empty
+// row is allowed (extra "\n" at the  end  of  the
+// file)                                        \x
+
+function ArrayFromFileCSV( $path )
+{
+    $handle = fopen( $path, 'r' );
+    if( $handle === false )
+    {
+        Error( "cannot read file: $path" );
+    }
+
+    $lines = [];
+    while( true )
+    {
+        $data = fgetcsv( $handle, 0, ',', '"' );
+        if( $data === false )
+        {
+            break;
+        }
+        $lines[] = $data;
+    }
+    fclose( $handle );
+
+    $keys = $lines[0];
+    $n = count( $lines );
+    $records = [];
+    for( $i = 1; $i < $n; $i++ )
+    {
+        $record = [];
+        $m = count( $lines[ $i ] );
+        for( $j = 0; $j < $m; $j++ )
+        {
+            $record[ $keys[ $j ] ] = $lines[ $i ][ $j ];
+        }
+        $records[] = $record;
+    }
+
+    return $records;
+}
+
+
+
+//
+// ArrayToFileCSV
+//
+// Write an array of associative arrays to  a  CSV
+// text file; every  associative  array  into  the
+// main array must contain the same keys        \x
+
+function ArrayToFileCSV( $path, $array )
+{
+    if( count( $array ) === 0 )
+    {
+        file_put_contents( $path, "" );
+        return;
+    }
+
+    $handle = fopen( $path, 'w+' );
+    if( $handle === false )
+    {
+        Error( "cannot open file: $path" );
+    }
+
+    $keys = array_keys( $array[ 0 ] );
+    fputcsv ( $handle, $keys, ",", '"' );
+
+    foreach( $array as $row )
+    {
+        $values = [];
+        foreach( $keys as $key )
+        {
+            $values[] = $row[ $key ];
+        }
+        fputcsv ( $handle, $values, ",", '"' );
+    }
+
+    fclose( $handle );
+}
+
+
+
+//
 // ArraySortByKey
 //
 // Sort an array  of  associative  arrays  by  the
