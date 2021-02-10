@@ -561,22 +561,15 @@ class Scraper
         return $result;
     }
 
+
+
     // return path to  base  file  path  for  a
-    // given URL; as URL may be case  sensitive
-    // while the OS is not  a  hash  is  always
-    // appended                              \p
+    // given URL;                            \p
 
     protected function cache_base_path_for_url( $url )
     {
         $url = $this->lowercase_root( $url );
-        $filename = str_replace( "://", "-", $url );
-        $filename = str_replace( ":", "_", $filename );
-        $filename = str_replace( "/", "|", $filename );
-        if( strlen( $filename ) > 100 )
-        {
-            $filename = substr( $filename, -97, 97 ) . '---';
-        }
-        $filename = $filename . " (" . md5( $url ) .")";
+        $filename = md5( $url );
         $cache_file_path = $this->cache_path . "/" . $filename;
 
         return $cache_file_path;
