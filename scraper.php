@@ -230,9 +230,9 @@ class Scraper
     // make relative path absolute
     //
 
-    protected function url_make_absolute( $relative )
+    protected function url_make_absolute( $relative, $from )
     {
-        return phpUri::parse( $this->domain )->join( $relative );
+        return phpUri::parse( $from )->join( $relative );
     }
 
 
@@ -295,7 +295,7 @@ class Scraper
         if( $start !== $root )
         {
             if( ! $this->url_is_good( $start ) ) { Error( "Scraper: bad start URL: $start" ); } /*--- QUIT POINT ---*/
-            if( ! $this->url_is_absolute( $start ) ) { $start = $this->url_make_absolute( $start ); }
+            if( ! $this->url_is_absolute( $start ) ) { $start = $this->url_make_absolute( $start, $root ); }
             if( ! $this->url_is_below_root( $start ) ) { Error( "Scraper: start URL is below root: $start" ); } /*--- QUIT POINT ---*/
             $start = $this->lowercase_root( $start );
         }
@@ -456,7 +456,7 @@ class Scraper
 
             if( ! $this->url_is_absolute( $linkurl ) )
             {
-                $linkurl = $this->url_make_absolute( $linkurl );
+                $linkurl = $this->url_make_absolute( $linkurl, $url );
             }
 
             if( ! $this->url_is_below_root( $linkurl ) )
@@ -469,12 +469,15 @@ class Scraper
 
             if( in_array( $linkurl, $this->visited ) )
             {
+                $this->level = $level;
+                $this->reprocess( $linkurl );
                 continue;
             }
 
             if( $href['pre_filter_url'] === '' )
             {
-                $this->parent = $url;
+                $this->parent_url = $url;
+                $this->parent_html = $response;
                 $filter = $this->filter( $linkurl );
 
                 if( $filter === false )
