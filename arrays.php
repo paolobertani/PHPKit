@@ -600,3 +600,22 @@ function ArrayFix( &$array, $fix = '' )
         }
     }
 }
+
+
+
+//
+// ArrayRemoveColumn
+//
+// Remove all the values with a given key
+//
+
+function ArrayRemoveColumn( &$array, $key )
+{
+    foreach( $array as &$record )
+    {
+        if( array_key_exists( $key, $record ) )
+        {
+            unset( $record[$key] );
+        }
+    }
+}
