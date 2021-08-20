@@ -33,7 +33,9 @@ class Scraper
 
     protected $attempts,
               $pause,
-              $parent;
+              $parent_url,
+              $parent_html,
+              $level;
 
 
 
@@ -43,6 +45,7 @@ class Scraper
         $this->visited = [];
         $this->attempts = 3;
         $this->pause = 10;
+        $this->level = 0;
 
         // manage cache dir and archive
 
@@ -122,8 +125,8 @@ class Scraper
     // default filter removes the fragment part
     // of the url, converts spaces to `%20`
     //
-    // may inspect `$this->parent` to know  the
-    // parent url
+    // may inspect `$this->parent_url` to  know
+    // the parent url
     //                                       \p
 
     protected function filter( $url )
@@ -150,6 +153,17 @@ class Scraper
     //                                       \p
 
     protected function process( $url, $response, $headers, $dom, $is_html )
+    {
+        //
+    }
+
+
+
+    //
+    // gets called when a url is encountered again
+    //
+
+    protected function reprocess( $url )
     {
         //
     }
@@ -317,7 +331,7 @@ class Scraper
     // url must have not been visited  yet  and
     // must have the root part lowercase
 
-    protected function scrape_url( $url, $level )
+    protected function scrape_url( $url, $level, $parent_url = '', $parent_html = '' )
     {
         // add URL to visited pages
 
@@ -387,13 +401,16 @@ class Scraper
 
         // process/parse contents
 
+        $this->level = $level;
+        $this->parent_url = $parent_url;
+        $this->parent_html = $parent_html;
         $more = $this->process( $url, $response, $headers, $dom, $is_html );
 
 
         // if not html there are no links
         // to parse: exit here
 
-        if( ! $is_html )
+        if( ! $is_html || $dom === false )
         {
             return;
             /*--- EXIT POINT ---*/
@@ -406,7 +423,9 @@ class Scraper
         $hrefs = [];
         foreach( $dom->getElementsByTagName( 'a' ) as $node )
         {
-            $hrefs[] = [ 'url' => trim( $node->getAttribute('href') ), 'pre_filter_url' => '' ];
+            $href = trim( $node->getAttribute('href') );
+
+            $hrefs[] = [ 'url' => $href, 'pre_filter_url' => '' ];
         }
 
 
@@ -496,6 +515,8 @@ class Scraper
                 {
                     continue;
                 }
+
+                $linkurl = $filter;
             }
 
             $this->scrape_url( $linkurl, $level + 1 );
