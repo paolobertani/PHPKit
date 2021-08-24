@@ -64,7 +64,17 @@ function EchoCR( $str )
 // Clear the terminal line, write a string then newline
 //
 
-function EchoNL( $str )
+function EchoNL( $str, $makecr = false )
 {
+    if( $makecr !== false )
+    {
+        EchoCR( $str );
+        if( is_int( $makecr ) )
+        {
+            sleep( $makecr );
+        }
+        return;
+        /*--- EXIT POINT ---*/
+    }
     echo CLEARLINE . $str . "\n";
 }
