@@ -35,17 +35,19 @@ class Scraper
               $pause,
               $parent_url,
               $parent_html,
-              $level;
+              $level,
+              $silent;
 
 
 
-    public function __construct()
+    public function __construct( $cmd = '', $silent = false )
     {
         $this->cache_path = false;
         $this->visited = [];
         $this->attempts = 3;
         $this->pause = 10;
         $this->level = 0;
+        $this->silent = $silent ? 1 : false;
 
         // manage cache dir and archive
 
@@ -57,14 +59,14 @@ class Scraper
 
         $path = ROOT . "/cache.noindex";
 
-        if( StringCompare( $cache_arg, 'no', STRING_CI ) )
+        if( StringCompare( $cache_arg, 'no', STRING_CI ) || $cmd === 'no cache' )
         {
-            EchoNL( 'cache disabled' );
+            EchoNL( 'cache disabled', $this->silent );
             $this->cache_path = false;
         }
-        elseif( StringCompare( $cache_arg, 'clear', STRING_CI ) )
+        elseif( StringCompare( $cache_arg, 'clear', STRING_CI ) || $cmd === 'clear cache' )
         {
-            EchoNL( 'cache clear');
+            EchoNL( 'cache clear', $this->silent );
             RemoveFile( "$path.zip" );
             RemoveDirectory( $path );
             MakeDir( $path );
@@ -109,6 +111,15 @@ class Scraper
     protected function get_info( $url, $count, $level, $memory )
     {
         return "(Visited: $count; Level: $level; Memory: $memory MB) URL: $url";
+    }
+
+
+
+    // --- Override to provide a handler for failed curls
+
+    protected function failed( $url, $status, $error )
+    {
+        EchoNL( "Failed loading $url - Status: $status - Error: $error", $this->silent );
     }
 
 
@@ -184,6 +195,16 @@ class Scraper
     }
 
 
+    //
+    // make the Scraper silent (writes only inline)
+    //
+
+    public function silent()
+    {
+        $this->silent = 1;
+    }
+
+
 
     //
     // scraping done
@@ -201,7 +222,7 @@ class Scraper
         {
             EchoCR( "Archiving cache..." );
             ZipDirectory( $this->cache_path, FS_ZIP_DELETE );
-            EchoNL( "Cache archived" );
+            EchoNL( "Cache archived", $this->silent );
         }
     }
 
@@ -322,7 +343,7 @@ class Scraper
 
         // Done
 
-        EchoNL( "Done scraping {$this->root}" );
+        EchoNL( "Done scraping {$this->root}", $this->silent );
     }
 
 
@@ -352,7 +373,7 @@ class Scraper
         $result = $this->curl_or_fetch_cache( $url );
         if( $result['status'] >= 300 || $result['error'] != '' )
         {
-            EchoNL( "Failed loading $url - Status: " . $result['status'] . " - Error: " . $result['error'] );
+            $this->failed( $url, $result['status'], $result['error'] );
             return;
         }
         $response = $result['response'];
@@ -385,11 +406,21 @@ class Scraper
 
         if( $is_html )
         {
+            if( trim( $response ) === '' )
+            {
+                $this->failed( $url, 0, 'Empty response' );
+                $dom = false;
+                $is_html = false;
+            }
+        }
+
+        if( $is_html )
+        {
             $dom = new DOMDocument();
             @$success = $dom->loadHtml( mb_convert_encoding( $response, 'HTML-ENTITIES', "UTF-8" ) );
             if( $success === false )
             {
-                EchoNL( "Failed parsing $url" );
+                $this->failed( $url, 0, 'Failed DOM parsing' );
                 $dom = false;
             }
         }
@@ -559,6 +590,7 @@ class Scraper
         for( $attempts = 0; $attempts < $this->attempts; $attempts++ )
         {
             $result = Curl( $url );
+
             if( $result['status'] < 300 && $result['error'] == '' )
             {
                 file_put_contents( $resp, $result['response'] );
