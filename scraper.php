@@ -29,7 +29,8 @@ class Scraper
     private $cache_path,
             $visited,
             $domain,
-            $root;
+            $root,
+            $quit;
 
     protected $attempts,
               $pause,
@@ -48,6 +49,7 @@ class Scraper
         $this->pause = 10;
         $this->level = 0;
         $this->silent = $silent ? 1 : false;
+        $this->quit = false;
 
         // manage cache dir and archive
 
@@ -97,6 +99,14 @@ class Scraper
 
             $this->cache_path = $path;
         }
+    }
+
+
+    // has the scraper been interrupted
+
+    public function has_quit()
+    {
+        return $this->quit;
     }
 
 
@@ -556,6 +566,7 @@ class Scraper
 
             if( SignalIsInstalled() && SignalQuitReceived() )
             {
+                $this->quit = true;
                 break;
             }
         }
@@ -606,6 +617,7 @@ class Scraper
 
                 if( SignalIsInstalled() && SignalQuitReceived() )
                 {
+                    $this->quit = true;
                     return $result;
                     /*--- EXIT POINT ---*/
                 }
