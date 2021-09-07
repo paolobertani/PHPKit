@@ -12,10 +12,10 @@
 // CONSTANTS
 //
 
-define( 'CURL_USERAGENT', "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0" );  // Pretend to be Firefox
-define( 'CURL_LANGUAGE',  "Accept-Language: it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3" );
-define( 'CURL_ACCEPT',    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" );
-define( 'CURL_COOKIES',   ROOT . "/cookies.txt" );
+if( ! defined( 'CURL_USERAGENT' ) ) define( 'CURL_USERAGENT', "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0" );  // Pretend to be Firefox
+if( ! defined( 'CURL_LANGUAGE' ) )  define( 'CURL_LANGUAGE',  "Accept-Language: it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3" );
+if( ! defined( 'CURL_ACCEPT' ) )    define( 'CURL_ACCEPT',    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" );
+if( ! defined( 'CURL_COOKIES' ) )   define( 'CURL_COOKIES',   ROOT . "/cookies.txt" );
 
 
 
