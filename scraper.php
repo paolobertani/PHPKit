@@ -170,8 +170,9 @@ class Scraper
     // process the response;
     // the function may return a string  or  an
     // array  of  strings   representing   urls
-    // (aboslute o relative) to be scraped
-    //                                       \p
+    // (aboslute o relative) to be scraped;
+    // in case `false` is returned links in the
+    // page are not scraped                  \p
 
     protected function process( $url, $response, $headers, $dom, $is_html )
     {
@@ -255,6 +256,11 @@ class Scraper
 
     protected function url_is_good( $url )
     {
+        if( StringBegins( $url, [ 'mailto:', 'tel:', 'javascript:' ] ) )
+        {
+            return false;
+        }
+
         $scheme = StringBetween( $url, '', '://' );
 
         if( $scheme === false )
@@ -490,6 +496,11 @@ class Scraper
                     EchoNL( "WARNING: process function must return a string or array of strings" );
                 }
             }
+        }
+
+        if( $more === false )
+        {
+            $hrefs = [];
         }
 
 

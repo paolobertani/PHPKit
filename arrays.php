@@ -619,3 +619,42 @@ function ArrayRemoveColumn( &$array, $key )
         }
     }
 }
+
+
+
+//
+// ArraySplit
+//
+// Split the array in sub-arrays by the given key
+//
+
+function ArraySplit( &$array, $key )
+{
+    $output = [];
+
+    foreach( $array as &$record )
+    {
+        if( trim( $record[$key] )=== '' )
+        {
+            $record[$key] = 'UNDEFINED';
+        }
+    }
+
+    foreach( $array as $record )
+    {
+        if( ! array_key_exists( $record[$key], $output ) )
+        {
+            $output[$record[$key]] = [];
+        }
+    }
+
+    foreach( $array as $record )
+    {
+        $output[$record[$key]][] = $record;
+    }
+
+    return $output;
+}
+
+
+

@@ -1350,6 +1350,22 @@ function StringFromFloat( $f, $p = null )
 }
 
 
+//
+// StringTruncateMaybe
+//
+// Truncate a string if exceeds length
+//
+
+function StringTruncateMaybe( $str, $len, $end='...' )
+{
+    if( strlen( $str ) > $len )
+    {
+        $str = mb_substr( $str,  0, $len - strlen( $end ) ) . $end;
+    }
+    return $str;
+}
+
+
 
 //
 // StringParser

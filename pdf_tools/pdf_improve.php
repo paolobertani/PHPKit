@@ -119,6 +119,14 @@ require_once ROOT . '/include/pdf_tools/pdf_inspect.php';
 
 
 //
+// Code column
+//
+
+if( ! defined( 'CODE_COLUMN' ) ) { define( 'CODE_COLUMN', 'code' ); }
+
+
+
+//
 // Globals
 //
 
@@ -338,7 +346,7 @@ function PdfImprove()
             EchoCR( "Searching for text to turn into links... $i:$n" );
             $i++;
 
-            $code = $p['code'];
+            $code = $p[CODE_COLUMN];
 
             // skip empty line (no code)
 
