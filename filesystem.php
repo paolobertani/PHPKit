@@ -26,6 +26,14 @@ define( 'FS_FULLPATH',          1 );
 define( 'FS_ZIP_DELETE',        2 );
 
 
+//
+// GLOBALS
+//
+
+$g_LastCommand = '';
+
+
+
 
 //
 // Execute a command line tool
@@ -39,6 +47,7 @@ define( 'FS_ZIP_DELETE',        2 );
 
 function Execute( $cmd, &$exitStatus )
 {
+    global $g_LastCommand;
     $output = array();
     $exitStatus = 0;
 
@@ -60,10 +69,18 @@ function Execute( $cmd, &$exitStatus )
 
     $output = implode( "\n", $output );
 
+    $g_LastCommand = $cmd;
+
     return $output;
 }
 
 
+
+function GetLastCommand()
+{
+    global $g_LastCommand;
+    return $g_LastCommand;
+}
 
 //
 // The given path points to an existing file
