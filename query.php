@@ -162,8 +162,33 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
         $sql = str_replace( $token, $value, $sql );
     }
 
-    // There must be no tokens left
+    // Check for constants
 
+    $cparams = StringsBetween( $sql, '{{' , '}}' );
+    foreach( $cparams as $cp )
+    {
+        if( ! defined( $cp ) )
+        {
+            $error = "Value for parameter `$cp` in query `$name` not provided";
+            return false;
+        }
+
+        $value = constant( $cp );
+
+        // Strings are escaped then enclosed between double quotes
+        if( is_string( $value ) )
+        {
+            $value = '"' . $mysqli->real_escape_string( $value ) . '"';
+        }
+
+        // The token in the query
+        $token = '{{' . $cp  . '}}';
+
+        // Parameters are replaced with values
+        $sql = str_replace( $token, $value, $sql );
+    }
+
+    // There must be no tokens left
     $remainder = StringBetween( $sql, '{{' , '}}' );
     if( $remainder !== false)
     {
