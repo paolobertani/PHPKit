@@ -658,3 +658,27 @@ function ArraySplit( &$array, $key )
 
 
 
+//
+// ArrayInsertOrUpdate
+//
+// Insert or update a record
+//
+
+function ArrayInsertOrUpdate( &$array, $key, $value, $record )
+{
+    $index = ArrayFind( $array, $key, $value );
+    if( $index === false )
+    {
+        $array[] = $record;
+    }
+    else
+    {
+        foreach( $record as $k => $v )
+        {
+            $array[$index][$k] = $v;
+        }
+    }
+}
+
+
+
