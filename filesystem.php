@@ -166,6 +166,32 @@ function CopyFile( $s, $d )
 
 
 //
+// Copy a directory, overwite the destination
+//
+
+function CopyDirectory( $s, $d )
+{
+    if( ! DirectoryExists( $s ) )
+    {
+        Error( "CopyDirectory: $s not found" );
+        /*--- QUIT POINT ---*/
+    }
+
+    RemoveDirectory( $d );
+
+    $output = Execute( array( 'cp -R', $s, $d ), $exitStatus );
+
+    if( $exitStatus !== 0 )
+    {
+        echo "filesystem: CopyDirectory: failed: $s -> $d\n";
+        exit(0);
+        /*--- QUIT POINT ---*/
+    }
+}
+
+
+
+//
 // Attempt to produce a relative path
 //
 
