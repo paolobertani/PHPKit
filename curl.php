@@ -7,6 +7,9 @@
 //
 
 
+require_once ROOT . '/include/error.php';
+require_once ROOT . '/include/filesystem.php';
+
 
 //
 // CONSTANTS
@@ -25,7 +28,63 @@ if( ! defined( 'CURL_COOKIES' ) )   define( 'CURL_COOKIES',   ROOT . "/cookies.t
 
 $g_CurlDebug = false;
 $g_CurlTimeout = 30;
+$g_CurlCache = false;
 
+
+
+//
+// Set curl to use the cache directory at the specified path
+// The cache can be a simple directory or a zipped file
+// with the directory name and extension .zip
+//
+
+function CurlUseCache( $path )
+{
+    global $g_CurlCache;
+
+    if( $g_CurlCache === false )
+    {
+        $g_CurlCache = $path;
+        if( FileExists( "$g_CurlCache.zip") )
+        {
+            Unzip( "$g_CurlCache.zip", FS_ZIP_DELETE );
+        }
+        if( ! DirectoryExists( $path ) )
+        {
+            MakeDir( $path );
+        }
+    }
+    else
+    {
+        Error( "CurlUseCache: cache alredy set" );
+    }
+}
+
+
+
+//
+// Archive the cache dir as a zip file
+// and disable cache use
+//
+
+function CurlArchiveCache()
+{
+    global $g_CurlCache;
+
+    if( $g_CurlCache === false )
+    {
+        Error( "CurlArchiveCache: cache is not in use" );
+    }
+    if( DirectoryExists( "$g_CurlCache") )
+    {
+        ZipDirectory( "$g_CurlCache", FS_ZIP_DELETE );
+        $g_CurlCache = false;
+    }
+    else
+    {
+        Error( "CurlArchiveCache: cache dir not found" );
+    }
+}
 
 
 //
@@ -90,11 +149,14 @@ function CurlEncode( $params )
 // Execute a request via CURL
 // `$post` can be associative array, url-encoded string or `true`
 // `$headers` can be an array or a string of "\n" separated values
-// Call without parameters to discard cookies file
+// Call without parameters to discard cookies file and archives
+// the cache if enabled.
 //
 
 function Curl( $url = false, $post = null, $headers = null )
 {
+    global $g_CurlCache;
+
     // Just discard cookies?
 
     if( $url === false )
@@ -102,6 +164,10 @@ function Curl( $url = false, $post = null, $headers = null )
         if( is_file( CURL_COOKIES ) )
         {
             unlink( CURL_COOKIES );
+        }
+        if( $g_CurlCache !== false )
+        {
+            CurlArchiveCache();
         }
         return;
         /*--- EXIT POINT ---*/
@@ -112,6 +178,28 @@ function Curl( $url = false, $post = null, $headers = null )
     global $g_CurlDebug;
     global $g_CurlTimeout;
 
+
+    // Retrieve from cache?
+
+    $urlhash = hash( "sha256", $url );
+
+    if( $g_CurlCache !== false )
+    {
+        if( FileExists( "$g_CurlCache/$urlhash.resp.txt" ) )
+        {
+            $result = [];
+            $result[ 'response' ] = file_get_contents( "$g_CurlCache/$urlhash.resp.txt" );
+            $result[ 'headers'  ] = json_decode( file_get_contents( "$g_CurlCache/$urlhash.hdrs.txt" ), true );
+            $info = json_decode( file_get_contents( "$g_CurlCache/$urlhash.info.txt" ), true );
+            $result[ 'status'   ] = (int)$info['status'];
+            $result[ 'errnum'   ] = 0;
+            $result[ 'error'    ] = '';
+            $result[ 'url'      ] = $info['eurl'];
+
+            return $result;
+            /*--- EXIT POINT ---*/
+        }
+    }
 
     // Init curl
 
@@ -232,6 +320,21 @@ function Curl( $url = false, $post = null, $headers = null )
         echo "hdrs:\n".implode( "\n", $headers )."\n";
         echo "---\n";
         echo $response."\n";
+    }
+
+
+    // Store data into cache?
+
+    if( $g_CurlCache !== false && $errnum == 0 && $status < 400 )
+    {
+        file_put_contents( "$g_CurlCache/$urlhash.resp.txt", $response );
+        file_put_contents( "$g_CurlCache/$urlhash.hdrs.txt", json_encode( $response_headers, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT ) );
+        file_put_contents( "$g_CurlCache/$urlhash.info.txt", json_encode( [
+            'url' => $url,
+            'eurl' => $eurl,
+            'status' => $status,
+            'length' => strlen( $response )
+        ], JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT ) );
     }
 
 
