@@ -29,6 +29,7 @@ if( ! defined( 'CURL_COOKIES' ) )   define( 'CURL_COOKIES',   ROOT . "/cookies.t
 $g_CurlDebug = false;
 $g_CurlTimeout = 30;
 $g_CurlCache = false;
+$g_CurlMaxRedirs = 5;
 
 
 
@@ -96,7 +97,6 @@ function CurlArchiveCache()
 function CurlDebug( $d )
 {
     global $g_CurlDebug;
-
     $g_CurlDebug = $d;
 }
 
@@ -155,7 +155,13 @@ function CurlEncode( $params )
 
 function Curl( $url = false, $post = null, $headers = null )
 {
+    // Globals
+
     global $g_CurlCache;
+    global $g_CurlMaxRedirs;
+    global $g_CurlDebug;
+    global $g_CurlTimeout;
+
 
     // Just discard cookies?
 
@@ -173,10 +179,10 @@ function Curl( $url = false, $post = null, $headers = null )
         /*--- EXIT POINT ---*/
     }
 
-    // Globals
 
-    global $g_CurlDebug;
-    global $g_CurlTimeout;
+    // Some URLs have spaces
+
+    $url = str_replace( " ", "%20", $url );
 
 
     // Retrieve from cache?
@@ -200,6 +206,7 @@ function Curl( $url = false, $post = null, $headers = null )
             /*--- EXIT POINT ---*/
         }
     }
+
 
     // Init curl
 
@@ -238,9 +245,9 @@ function Curl( $url = false, $post = null, $headers = null )
 
     curl_setopt( $handle, CURLOPT_URL,              $url );
     curl_setopt( $handle, CURLOPT_RETURNTRANSFER,   true );
-    curl_setopt( $handle, CURLOPT_FOLLOWLOCATION,   true );
+    curl_setopt( $handle, CURLOPT_FOLLOWLOCATION,   false );
     curl_setopt( $handle, CURLOPT_AUTOREFERER,      true );
-    curl_setopt( $handle, CURLOPT_MAXREDIRS,        3 );
+    curl_setopt( $handle, CURLOPT_MAXREDIRS,        $g_CurlMaxRedirs );
     curl_setopt( $handle, CURLOPT_HTTPHEADER,       $h );
     curl_setopt( $handle, CURLOPT_COOKIEFILE,       CURL_COOKIES );
     curl_setopt( $handle, CURLOPT_COOKIEJAR,        CURL_COOKIES );
@@ -279,28 +286,53 @@ function Curl( $url = false, $post = null, $headers = null )
         }
     );
 
+    $redirect_count = 0;
+
+    while( $redirect_count < $g_CurlMaxRedirs ) // loop throught redirects
+    {
+
+        // Send request, get response
+
+        $response = curl_exec( $handle );
 
 
-    // Send request, get response
+        // Catch error
 
-    $response = curl_exec( $handle );
-
-
-    // Catch error
-
-    $errnum = curl_errno( $handle );
-    $error = $errnum == 0 ? '' : curl_strerror( $errnum );
+        $errnum = curl_errno( $handle );
+        $error = $errnum == 0 ? '' : curl_strerror( $errnum );
 
 
-    // Get status
+        // Get status
 
-    $status = curl_getinfo( $handle, CURLINFO_HTTP_CODE );
+        $status = curl_getinfo( $handle, CURLINFO_HTTP_CODE );
 
 
-    // Get effective URL in case of redirect
+        // Exit if no redir
 
-    $eurl = curl_getinfo( $handle, CURLINFO_EFFECTIVE_URL );
+        if( $status < 300 || $status > 399 )
+        {
+            $eurl = $url; // effective desination url
+            break;
+            /*--- EXIT LOOP ---*/
+        }
 
+
+        // Manage redir
+
+        $redirect_count++;
+        if( ! isset( $response_headers['location'] ) )
+        {
+            $eurl = $url;
+            break;
+            /*--- EXIT LOOP ---*/
+        }
+
+        $url = $response_headers['location'];
+
+        $url = str_replace( " ", "%20", $url ); // some servers return location with spaces
+
+        curl_setopt( $handle, CURLOPT_URL, $url );
+    }
 
     // Cleanup
 
@@ -325,7 +357,7 @@ function Curl( $url = false, $post = null, $headers = null )
 
     // Store data into cache?
 
-    if( $g_CurlCache !== false && $errnum == 0 && $status < 400 )
+    if( $g_CurlCache !== false && $errnum == 0 )
     {
         file_put_contents( "$g_CurlCache/$urlhash.resp.txt", $response );
         file_put_contents( "$g_CurlCache/$urlhash.hdrs.txt", json_encode( $response_headers, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT ) );
