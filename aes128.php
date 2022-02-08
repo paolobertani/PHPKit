@@ -1,36 +1,15 @@
 <?php
 
-function aes128Encrypt( $text, $key )
+function aes128Encrypt( $text, $key, $iv = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" )
 {
-    $text = ( string )$text;                                        // cast text to string
-    if( 16 !== strlen( $key ) ) $key = hash( 'MD5', $key, true );   // if the key is not 16 characters MD5 it to get 16 bytes
-    $padding = 16 - ( strlen( $text ) % 16 );                       // padding characters to make the text multiple of 16 characters
-    $text .= str_repeat( chr( $padding ), $padding );               // text is padded with the padding length as a byte value
-    $enc = mcrypt_encrypt( MCRYPT_RIJNDAEL_128, $key, $text,        // text is encrypted
-        MCRYPT_MODE_CBC, str_repeat( "\0", 16 ) );                  // with cbc mode
-    $out = '';                                                      // encrypted data is turned into hex string
-    for( $i=0;$i<strlen( $enc );$i++ )
-    {
-        $out .= str_pad( dechex( ord( $enc{$i} ) ), 2, '0', STR_PAD_LEFT );
-    }
-    return $out;
+    return bin2hex( openssl_encrypt( $text, 'aes-128-cbc', strlen( $key ) === 16 ? $key : hash( 'md5', $key, true ), OPENSSL_RAW_DATA, strlen( $iv ) === 16 ? $iv : hash( 'md5', $iv, true ) ) );
 }
 
 
 
-function aes128Decrypt( $hexdata, $key )
+function aes128Decrypt( $hexdata, $key, $iv = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0" )
 {
-    $data = '';
-    if( strlen( $hexdata )%2!=0 ) $hexdata .= '0';                  // add a leading 0 if hexdata length is not mod 2
-    for( $i=0; $i<strlen( $hexdata ); $i+=2 )                       // turn hexdata into bytes
-    {
-        $data .= chr( hexdec( substr( $hexdata, $i, 2 ) ) );
-    }
-    if( 16 !== strlen( $key ) ) $key = hash( 'MD5', $key, true );   // if the key is not 16 characters MD5 it to get 16 bytes
-    $data = mcrypt_decrypt( MCRYPT_RIJNDAEL_128, $key, $data,       // data is decripted
-        MCRYPT_MODE_CBC, str_repeat( "\0", 16 ) );                  // using cbc
-    $padding = ord( $data[strlen( $data ) - 1] );                   // the decripted string is padded, the last byte is padding length
-    return substr( $data, 0, -$padding );                           // padding is removed
+    return openssl_decrypt( hex2bin( $hexdata ), 'aes-128-cbc', strlen( $key ) === 16 ? $key : hash( 'md5', $key, true ), OPENSSL_RAW_DATA, strlen( $iv ) === 16 ? $iv : hash( 'md5', $iv, true ) );
 }
 
 
