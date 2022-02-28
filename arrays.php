@@ -47,11 +47,12 @@ function ArrayFromFile( $path )
         Error( "file is empty: $path");
     }
 
-    $out = [];
+    $out  = [];
     $keys = explode( "\t", $lines[ 0 ] );
     $cols = count( $keys );
 
-    // Assign arbitrary column names if missing
+
+    // Assign arbitrary column names where missing
 
     $i = 1;
     foreach( $keys as &$key )
@@ -63,6 +64,35 @@ function ArrayFromFile( $path )
             $i++;
         }
     }
+
+
+    // Attempt to get key types
+
+    $types = [];
+    foreach( $keys as &$key )
+    {
+        $parts = explode( "::", $key );
+        if( count( $parts ) === 2 )
+        {
+            $type = $parts[1];
+            if( in_array( $type, [ 'i', 'f', 's' ] ) )
+            {
+                $types[] = $type;
+            }
+            else
+            {
+                Error( "Invalid type $type for column {$parts[0]}" );
+            }
+        }
+        else
+        {
+            $types[] = 's';
+        }
+    }
+
+    // Default values per type for empty cells
+
+    $defaultPerType = [ 's' => '', 'i' => intval(0), 'f' => floatval(0.0) ];
 
     // ---
 
@@ -83,11 +113,14 @@ function ArrayFromFile( $path )
         {
             if( $j < $partn )
             {
-                $row[ $keys[ $j ] ] = $parts[ $j ];
+                $t = $types[$j];
+                    if( $t === 'i' ) $row[ $keys[ $j ] ] = intval(  $parts[ $j ] );
+                elseif( $t === 'f' ) $row[ $keys[ $j ] ] = floatval(  $parts[ $j ] );
+                else                 $row[ $keys[ $j ] ] = $parts[ $j ];
             }
             else
             {
-                $row[ $keys[ $j ] ] = "";
+                $row[ $keys[ $j ] ] = $defaultPerType[ $types[ $j ] ];
             }
         }
 
@@ -105,10 +138,12 @@ function ArrayFromFile( $path )
 // Write an array of associative arrays to  a  tab
 // separated text file; the first row will contain
 // the inner arrays' keys; every associative array
-// into the main array must contain the same keys
+// into the main array must contain the same  keys
+// The first row is used to  determine  the  value
+// types unless `$usetypes` is passed as string
 //                                              \x
 
-function ArrayToFile( $path, $array )
+function ArrayToFile( $path, $array, $usetypes = true )
 {
     if( count( $array ) === 0 )
     {
@@ -116,47 +151,48 @@ function ArrayToFile( $path, $array )
         return;
     }
 
-    $out = "";
-    $i = 0;
     $row = $array[ 0 ];
-
     $keys = [];
-    $first = true;
+    $index = 0;
     foreach( $row as $key => $value )
     {
-        if( ! $first )
+        if( is_string( $usetypes ) )
         {
-            $out .= "\t";
+            $keys[] = $key . "::" . $usetypes[ $index++ ];
+        }
+        elseif( $usetypes === false )
+        {
+            $keys[] = $key;
+        }
+        elseif( $usetypes === true )
+        {
+                if( is_string( $value ) ) $keys[] = $key . "::s";
+            elseif(    is_int( $value ) ) $keys[] = $key . "::i";
+            elseif(  is_float( $value ) ) $keys[] = $key . "::f";
+            else Error('Unsupported type');
         }
         else
         {
-            $first = false;
+            Error( 'invalid `usetypes` parameter' );
         }
 
-        $out .= $key;
-        $keys[] = $key;
     }
+    $keys = implode( "\t", $keys );
 
-    foreach( $array as $row )
+    $out = "$keys\n";
+    foreach( $array as &$row )
     {
-        $out .= "\n";
-        $first = true;
-        foreach( $keys as $key )
-        {
-            if( ! $first )
-            {
-                $out .= "\t";
-            }
-            else
-            {
-                $first = false;
-            }
-
-            $out .= $row[$key];
-        }
+        $row = implode( "\t", $row );
     }
 
-    file_put_contents( $path, $out );
+    $out = "$keys\n" . implode( "\n", $array );
+
+    $result = @file_put_contents( $path, $out );
+
+    if( ! $result )
+    {
+        Error("Cannot write to $path");
+    }
 }
 
 
