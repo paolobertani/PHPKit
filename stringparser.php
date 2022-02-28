@@ -2,7 +2,7 @@
 
 
 
-require_once ROOT . '/strings.php';
+require_once ROOT . '/include/strings.php';
 
 
 
