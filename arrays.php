@@ -667,15 +667,30 @@ function ArraySplit( &$array, $key )
 function ArrayInsertOrUpdate( &$array, $key, $value, $record )
 {
     $index = ArrayFind( $array, $key, $value );
-    if( $index === false )
+
+    if( is_callable( $record ) )
     {
-        $array[] = $record;
+        if( $index === false )
+        {
+            $array[] = $record( null );
+        }
+        else
+        {
+            $array[$index] = $record( $array[$index] );
+        }
     }
     else
     {
-        foreach( $record as $k => $v )
+        if( $index === false )
         {
-            $array[$index][$k] = $v;
+            $array[] = $record;
+        }
+        else
+        {
+            foreach( $record as $k => $v )
+            {
+                $array[$index][$k] = $v;
+            }
         }
     }
 }
