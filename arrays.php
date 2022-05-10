@@ -570,9 +570,20 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = false )
 
 function ArrayFind( $array, $key, $value, $offset = 0 )
 {
+    if( ! is_array( $array ) )
+    {
+        echo "ArrayFind: not an array";
+        return false;
+    }
+
     $n = count( $array );
     for( $i = $offset; $i < $n; $i++ )
     {
+        if( ! is_array( $array[ $i ] ) )
+        {
+            echo "ArrayFind: item at index $i is not an array: {$array[ $i ]}\n";
+            continue;
+        }
         if( $array[ $i ][ $key ] === $value )
         {
             return $i;
