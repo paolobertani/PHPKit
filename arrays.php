@@ -180,9 +180,10 @@ function ArrayToFile( $path, $array, $usetypes = true )
     $keys = implode( "\t", $keys );
 
     $out = "$keys\n";
-    foreach( $array as &$row )
+    $n = count( $array );
+    for( $i = 0; $i < $n; $i++ )
     {
-        $row = implode( "\t", $row );
+        $array[$i] = implode( "\t", $array[$i] );
     }
 
     $out = "$keys\n" . implode( "\n", $array );
