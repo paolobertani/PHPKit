@@ -8,7 +8,7 @@
 
 
 require_once ROOT . '/include/error.php';
-require_once ROOT . '/include/filesystem.php';
+require_once ROOT . '/include/fs.php';
 
 
 //
@@ -46,13 +46,13 @@ function CurlUseCache( $path )
     if( $g_CurlCache === false )
     {
         $g_CurlCache = $path;
-        if( FileExists( "$g_CurlCache.zip") )
+        if( FSFileExists( "$g_CurlCache.zip") )
         {
-            Unzip( "$g_CurlCache.zip", FS_ZIP_DELETE );
+            FSUnzip( "$g_CurlCache.zip", FS_ZIP_DELETE );
         }
-        if( ! DirectoryExists( $path ) )
+        if( ! FSDirectoryExists( $path ) )
         {
-            MakeDir( $path );
+            FSMakeDir( $path );
         }
     }
     else
@@ -76,9 +76,9 @@ function CurlArchiveCache()
     {
         Error( "CurlArchiveCache: cache is not in use" );
     }
-    if( DirectoryExists( "$g_CurlCache") )
+    if( FSDirectoryExists( "$g_CurlCache") )
     {
-        ZipDirectory( "$g_CurlCache", FS_ZIP_DELETE );
+        FSZipDirectory( "$g_CurlCache", FS_ZIP_DELETE );
         $g_CurlCache = false;
     }
     else
@@ -191,7 +191,7 @@ function Curl( $url = false, $post = null, $headers = null )
 
     if( $g_CurlCache !== false )
     {
-        if( FileExists( "$g_CurlCache/$urlhash.resp.txt" ) )
+        if( FSFileExists( "$g_CurlCache/$urlhash.resp.txt" ) )
         {
             $result = [];
             $result[ 'response' ] = file_get_contents( "$g_CurlCache/$urlhash.resp.txt" );

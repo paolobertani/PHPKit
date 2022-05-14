@@ -110,7 +110,7 @@ require_once ROOT . '/include/echo.php';
 require_once ROOT . '/include/error.php';
 require_once ROOT . '/include/arrays.php';
 require_once ROOT . '/include/arguments.php';
-require_once ROOT . '/include/filesystem.php';
+require_once ROOT . '/include/fs.php';
 require_once ROOT . '/include/milliseconds.php';
 
 require_once ROOT . '/include/pdf_tools/pdf_tools.php';
@@ -230,7 +230,7 @@ function PdfImprove()
     // File & arguments check
     //
 
-    if( ! FileExists( $pdfPath ) || PathGetExtension( $pdfPath ) !== 'pdf' )
+    if( ! FSFileExists( $pdfPath ) || FSPathGetExtension( $pdfPath ) !== 'pdf' )
     {
         Error( "input pdf missing or not a pdf file: $pdfPath" );
         /*--- QUIT POINT ---*/
@@ -261,7 +261,7 @@ function PdfImprove()
 
     if( $offset === false && $height === false )
     {
-        if( PathGetExtension( $dstPath ) !== 'pdf' )
+        if( FSPathGetExtension( $dstPath ) !== 'pdf' )
         {
             Error( "output pdf has not pdf extension: $outPath" );
             /*--- QUIT POINT ---*/
@@ -273,10 +273,10 @@ function PdfImprove()
             /*--- QUIT POINT ---*/
         }
 
-        if( FileExists( $dstPath ) ) // overwrite
+        if( FSFileExists( $dstPath ) ) // overwrite
         {
             EchoNL( "output file exists, will be overwritten: $dstPath" );
-            RemoveFile( $dstPath );
+            FSRemoveFile( $dstPath );
         }
     }
 
@@ -330,7 +330,7 @@ function PdfImprove()
     }
 
 
-    if( ! FileExists( $linksPath ) )
+    if( ! FSFileExists( $linksPath ) )
     {
         //
         // Search for text to be linked, build links+images list
@@ -375,7 +375,7 @@ function PdfImprove()
 
             $ms = Milliseconds();
             $getText = $results_filter ? "-text yes " : "";
-            $output = Execute( [ "pdfidxfind $getText-limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
+            $output = FSExecute( [ "pdfidxfind $getText-limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
             if( $status != 0 )
             {
                 Error( "pdfidxfind exited with status $status: searching $code: $output" );
@@ -564,7 +564,7 @@ function PdfImprove()
     }
     else
     {
-        EchoNL( "Using existing links-images file: " . PathRelative( $linksPath ) );
+        EchoNL( "Using existing links-images file: " . FSPathRelative( $linksPath ) );
 
         // Inspect file to detect links and/or images
 
@@ -608,16 +608,16 @@ function PdfImprove()
     {
         $inPath = $outPath;
         $outPath = $pdfImagesPath;
-        $relPath = PathRelative( $outPath );
+        $relPath = FSPathRelative( $outPath );
 
-        if( FileExists( $outPath ) )
+        if( FSFileExists( $outPath ) )
         {
             EchoNL( "Using existing PDF with images: $relPath" );
         }
         else
         {
             EchoCR( "Adding images to PDF..." );
-            $output = Execute( [ "pdfAddImgs -pdf", $inPath, "-imgs", $linksPath, "-out", $outPath ], $status );
+            $output = FSExecute( [ "pdfAddImgs -pdf", $inPath, "-imgs", $linksPath, "-out", $outPath ], $status );
             if( $status != 0 )
             {
                 Error( "pdfAddImgs exited with status $status: $output" );
@@ -641,16 +641,16 @@ function PdfImprove()
     {
         $inPath = $outPath;
         $outPath = $pdfLinksPath;
-        $relPath = PathRelative( $outPath );
+        $relPath = FSPathRelative( $outPath );
 
-        if( FileExists( $outPath ) )
+        if( FSFileExists( $outPath ) )
         {
             EchoNL( "Using existing PDF with links: $relPath" );
         }
         else
         {
             EchoCR( "Adding links to PDF..." );
-            $output = Execute( [ "pdfAddLinks -pdf", $inPath, "-links", $linksPath, "-out", $outPath ], $status );
+            $output = FSExecute( [ "pdfAddLinks -pdf", $inPath, "-links", $linksPath, "-out", $outPath ], $status );
             if( $status != 0 )
             {
                 Error( "pdfAddLinks exited with status $status: $output" );
@@ -669,27 +669,27 @@ function PdfImprove()
     // Add Outlines to PDF
     //
 
-    $outlinesPath = PathEditFilename( $pdfPath, 'outlines.', '', "txt" );
-    if( FileExists( $outlinesPath ) )
+    $outlinesPath = FSPathEditFilename( $pdfPath, 'outlines.', '', "txt" );
+    if( FSFileExists( $outlinesPath ) )
     {
         $inPath = $outPath;
         $outPath = $pdfOutlinesPath;
-        $relPath = PathRelative( $outPath );
+        $relPath = FSPathRelative( $outPath );
 
-        if( FileExists( $outPath ) )
+        if( FSFileExists( $outPath ) )
         {
             EchoNL( "Using existing PDF with outlines: $relPath" );
         }
         else
         {
             EchoCR( "Adding outlines to PDF..." );
-            $output = Execute( [ "pdfAddOutlines -pdf", $inPath, "-otl", $outlinesPath, "-out", $outPath ], $status );
+            $output = FSExecute( [ "pdfAddOutlines -pdf", $inPath, "-otl", $outlinesPath, "-out", $outPath ], $status );
             if( $status != 0 )
             {
                 Error( "pdfAddOutlines exited with status $status: $output" );
                 /*--- QUIT POINT ---*/
             }
-            $relPath = PathRelative( $outPath );
+            $relPath = FSPathRelative( $outPath );
             EchoNL( "Produced PDF with outlines: $relPath" );
             if( $output !== '' )
             {
@@ -703,7 +703,7 @@ function PdfImprove()
     }
     else
     {
-        EchoNL( "Outlines file not present, expected: " . PathRelative( $outlinesPath ) );
+        EchoNL( "Outlines file not present, expected: " . FSPathRelative( $outlinesPath ) );
     }
 
 
@@ -711,7 +711,7 @@ function PdfImprove()
     // Take last produced file and copy to destination output file
     //
 
-    CopyFile( $outPath, $dstPath );
+    FSCopyFile( $outPath, $dstPath );
 
 
     //

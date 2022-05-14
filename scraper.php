@@ -19,7 +19,7 @@ require_once ROOT . '/include/phpuri.php';
 require_once ROOT . '/include/signals.php';
 require_once ROOT . '/include/strings.php';
 require_once ROOT . '/include/arguments.php';
-require_once ROOT . '/include/filesystem.php';
+require_once ROOT . '/include/fs.php';
 
 
 
@@ -69,24 +69,24 @@ class Scraper
         elseif( StringCompare( $cache_arg, 'clear', STRING_CI ) || $cmd === 'clear cache' )
         {
             EchoNL( 'cache clear', $this->silent );
-            RemoveFile( "$path.zip" );
-            RemoveDirectory( $path );
-            MakeDir( $path );
+            FSRemoveFile( "$path.zip" );
+            FSRemoveDirectory( $path );
+            FSMakeDir( $path );
             $this->cache_path = $path;
         }
         else
         {
-            $zip = FileExists( "$path.zip" );
-            $dir = DirectoryExists( $path );
+            $zip = FSFileExists( "$path.zip" );
+            $dir = FSDirectoryExists( $path );
 
             if( $zip && $dir )
             {
-                RemoveFile( "$path.zip" );
+                FSRemoveFile( "$path.zip" );
             }
             elseif( $zip && ! $dir )
             {
                 EchoCR( "Unzipping cache..." );
-                Unzip( "$path.zip", FS_ZIP_DELETE );
+                FSUnzip( "$path.zip", FS_ZIP_DELETE );
             }
             elseif( ! $zip && $dir )
             {
@@ -94,7 +94,7 @@ class Scraper
             }
             else//( ! zip && ! dir )
             {
-                MakeDir( $path );
+                FSMakeDir( $path );
             }
 
             $this->cache_path = $path;
@@ -232,7 +232,7 @@ class Scraper
         if( $this->cache_path !== false )
         {
             EchoCR( "Archiving cache..." );
-            ZipDirectory( $this->cache_path, FS_ZIP_DELETE );
+            FSZipDirectory( $this->cache_path, FS_ZIP_DELETE );
             EchoNL( "Cache archived", $this->silent );
         }
     }
@@ -595,7 +595,7 @@ class Scraper
         $resp = $this->cache_response_path_for_url( $url );
         $hdrs = $this->cache_headers_path_for_url ( $url );
 
-        if( FileExists( $resp ) )
+        if( FSFileExists( $resp ) )
         {
             $result = [];
             $result['response'] = file_get_contents( $resp );
