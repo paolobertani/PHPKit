@@ -15,12 +15,12 @@
 require_once ROOT . '/include/curl.php';
 require_once ROOT . '/include/echo.php';
 require_once ROOT . '/include/error.php';
-require_once ROOT . '/include/phpuri.php';
 require_once ROOT . '/include/signals.php';
 require_once ROOT . '/include/strings.php';
 require_once ROOT . '/include/arguments.php';
 require_once ROOT . '/include/fs.php';
 
+require_once ROOT . '/include/3rd-party/phpuri/phpuri.php';
 
 
 class Scraper
