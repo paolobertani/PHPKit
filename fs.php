@@ -673,3 +673,19 @@ function FSDirectoryOfItem( $path )
 
     return $path;
 }
+
+
+
+//
+// Get MD5 of file
+//
+
+function FSmd5( $path )
+{
+    $md5 = FSExecute( [ '/sbin/md5', '-q', $path ], $exitStatus );
+    if( $exitStatus != 0 )
+    {
+        Error( "Failed FSmd5 of $path" );
+    }
+    return trim( $md5 );
+}
