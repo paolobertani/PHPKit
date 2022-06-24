@@ -171,7 +171,7 @@ function FSCopyFile( $s, $d )
 
 function FSCopyDirectory( $s, $d )
 {
-    if( ! DirectoryExists( $s ) )
+    if( ! FSDirectoryExists( $s ) )
     {
         Error( "CopyDirectory: $s not found" );
         /*--- QUIT POINT ---*/
@@ -647,4 +647,29 @@ function FSUnzip( $path, $options = FS_NO_OPTIONS  )
     {
         Error( "failed chdir() when restoring cwd" );
     }
+}
+
+
+
+//
+// DirectoryOfItem
+//
+// Get the parent directory of an item (file or directory)
+// without trailing slash
+//
+
+function FSDirectoryOfItem( $path )
+{
+    if( substr( $path, -1, 1 ) === '/' )
+    {
+        $path = substr( $path, 0, -1 );
+    }
+
+    $path = explode( "/", $path );
+
+    array_pop( $path );
+
+    $path = implode( "/", $path );
+
+    return $path;
 }
