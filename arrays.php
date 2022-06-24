@@ -208,7 +208,7 @@ function ArrayToFile( $path, $array, $usetypes = true )
 // row is allowed (extra "\n" at the  end  of  the
 // file)                                        \x
 
-function ArrayFromFileCSV( $path )
+function ArrayFromFileCSV( $path, $sep = ',', $txt = '"' )
 {
     $handle = fopen( $path, 'r' );
     if( $handle === false )
@@ -219,7 +219,7 @@ function ArrayFromFileCSV( $path )
     $lines = [];
     while( true )
     {
-        $data = fgetcsv( $handle, 0, ',', '"' );
+        $data = fgetcsv( $handle, 0, $sep, $txt );
         if( $data === false )
         {
             break;
@@ -229,6 +229,7 @@ function ArrayFromFileCSV( $path )
     fclose( $handle );
 
     $keys = $lines[0];
+
     $n = count( $lines );
     $records = [];
     for( $i = 1; $i < $n; $i++ )
@@ -254,7 +255,7 @@ function ArrayFromFileCSV( $path )
 // text file; every  associative  array  into  the
 // main array must contain the same keys        \x
 
-function ArrayToFileCSV( $path, $array )
+function ArrayToFileCSV( $path, $array, $sep = ',', $txt = '"' )
 {
     if( count( $array ) === 0 )
     {
@@ -269,7 +270,7 @@ function ArrayToFileCSV( $path, $array )
     }
 
     $keys = array_keys( $array[ 0 ] );
-    fputcsv ( $handle, $keys, ",", '"' );
+    fputcsv ( $handle, $keys, $sep, $txt );
 
     foreach( $array as $row )
     {
@@ -278,7 +279,7 @@ function ArrayToFileCSV( $path, $array )
         {
             $values[] = $row[ $key ];
         }
-        fputcsv ( $handle, $values, ",", '"' );
+        fputcsv ( $handle, $values, $sep, $txt );
     }
 
     fclose( $handle );
