@@ -574,8 +574,7 @@ function ArrayFind( $array, $key, $value, $offset = 0 )
 {
     if( ! is_array( $array ) )
     {
-        echo "ArrayFind: not an array";
-        return false;
+        Error( "ArrayFind: not an array" );
     }
 
     $n = count( $array );
@@ -583,8 +582,11 @@ function ArrayFind( $array, $key, $value, $offset = 0 )
     {
         if( ! is_array( $array[ $i ] ) )
         {
-            echo "ArrayFind: item at index $i is not an array: {$array[ $i ]}\n";
-            continue;
+            Error( "ArrayFind: item at index $i is not an array: {$array[ $i ]}" );
+        }
+        if( ! isset( $array[ $i ][ $key ]) )
+        {
+            Error( "ArrayFind: item at index $i is missing key: $key" );
         }
         if( $array[ $i ][ $key ] === $value )
         {
