@@ -78,6 +78,7 @@ function ArrayFromFile( $path )
             if( in_array( $type, [ 'i', 'f', 's' ] ) )
             {
                 $types[] = $type;
+                $key = $parts[0];
             }
             else
             {
