@@ -38,6 +38,8 @@ function ExecShouldRestart( &$version )
 
 function ExecRestart( $abs_path, $more_args = null )
 {
+    global $argv;
+
     if( $more_args === null )
     {
         $more_args = [];
