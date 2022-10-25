@@ -1,8 +1,8 @@
 <?php
 
-require_once ROOT . '/include/3rd-party/phpmailer/PHPMailer.php';
-require_once ROOT . '/include/3rd-party/phpmailer/SMTP.php';
-require_once ROOT . '/include/3rd-party/phpmailer/Exception.php';
+require_once ROOT . '/include/3rd-parts/phpmailer/PHPMailer.php';
+require_once ROOT . '/include/3rd-parts/phpmailer/SMTP.php';
+require_once ROOT . '/include/3rd-parts/phpmailer/Exception.php';
 
 require_once ROOT . '/include/strings.php';
 

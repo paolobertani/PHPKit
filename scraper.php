@@ -20,7 +20,7 @@ require_once ROOT . '/include/strings.php';
 require_once ROOT . '/include/arguments.php';
 require_once ROOT . '/include/fs.php';
 
-require_once ROOT . '/include/3rd-party/phpuri/phpuri.php';
+require_once ROOT . '/include/3rd-parts/phpuri/phpuri.php';
 
 
 class Scraper
