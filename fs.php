@@ -542,7 +542,7 @@ function FSPathEditFilename( $path, $prepend = '', $append = '', $extension = tr
 
 function FSZipDirectory( $path, $options = FS_NO_OPTIONS )
 {
-    if( ! DirectoryExists( $path ) )
+    if( ! FSDirectoryExists( $path ) )
     {
         Error( "directory does not exist: $path" );
     }
@@ -572,7 +572,7 @@ function FSZipDirectory( $path, $options = FS_NO_OPTIONS )
 
     $exitStatus = 0;
     $toolcall = [ "zip -rq", "$name.zip", $name ];
-    $output = Execute( $toolcall, $exitStatus );
+    $output = FSExecute( $toolcall, $exitStatus );
     if( $exitStatus != 0 )
     {
         $toolcall = implode( ' ', $toolcall );
