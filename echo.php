@@ -39,7 +39,7 @@ function EchoCR( $str )
     if( $ms - $g_EchoTerminalWidthLast > 1000 )
     {
         $g_EchoTerminalWidthLast = $ms;
-        $g_EchoTerminalWidth = (int) trim( shell_exec( '/usr/bin/tput cols' ) );
+        $g_EchoTerminalWidth = (int) trim( exec( '/usr/bin/tput cols' ) );
     }
 
 
