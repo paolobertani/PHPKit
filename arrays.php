@@ -24,15 +24,22 @@ define( 'ARRAY_DESC',   2 );
 //
 // ArrayFromFile
 //
-// Read  array  of  associative  arrays  from  tab
-// separated text file: first row  should  contain
+// Read an array of associative arrays from  a tab
+// separated text file: first row   must   contain
 // column names that  will  become  array's  keys;
-// every row must contain all the columns; only  a
-// trailing empty row is allowed  (extra  "\n"  at
-// the end of the file)
+// every row must contain all the columns;
+// an eventuyally trailing empty row (extra   "\n"
+// at the end of the file) will be ignored;
+// `$null_on_empty`   will  let  non-string  empty
+// values to become `null` on file parsing;
+// column  names  ending  with  `::`  followed  by
+// `i`,  `b`,  `s`  or  `f`  do specify the column
+// values' type  (if unspecified then `string`  is
+// assumed). Casting to specified types does occur
+// on file parsing
 //                                              \x
 
-function ArrayFromFile( $path )
+function ArrayFromFile( $path, $null_on_empty = false )
 {
     $text = @file_get_contents( $path );
     if( $text === false )
@@ -44,7 +51,7 @@ function ArrayFromFile( $path )
     $n = count( $lines );
     if( $n < 2 )
     {
-        Error( "file is empty: $path");
+        return [];
     }
 
     $out  = [];
@@ -63,7 +70,7 @@ function ArrayFromFile( $path )
             $key = str_pad( $i, 3, "0", STR_PAD_LEFT);
             $i++;
         }
-    }
+    } unset( $key );
 
 
     // Attempt to get key types
@@ -75,55 +82,62 @@ function ArrayFromFile( $path )
         if( count( $parts ) === 2 )
         {
             $type = $parts[1];
-            if( in_array( $type, [ 'i', 'f', 's' ] ) )
+            if( in_array( $type, [ 'i', 'f', 's', 'b' ] ) )
             {
                 $types[] = $type;
                 $key = $parts[0];
             }
             else
             {
-                Error( "Invalid type $type for column {$parts[0]}" );
+                Error( "invalid type `$type` for column `{$parts[0]}`" );
             }
         }
         else
         {
             $types[] = 's';
         }
-    }
+    } unset( $key );
 
-    // Default values per type for empty cells
 
-    $defaultPerType = [ 's' => '', 'i' => intval(0), 'f' => floatval(0.0) ];
+    // Skip JUST last line if empty
 
-    // ---
+    if( $lines[ $n - 1 ] === '' ) $n--;
+
+
+    // Parse rows
 
     for( $i = 1; $i < $n; $i++ )
     {
-        if( $lines[ $i ] === '' && $i === $n - 1 )
-        {
-            break;
-        }
-
         $parts = explode( "\t", $lines[ $i ] );
 
-        $partn = count( $parts );
+        if( count( $parts ) < $cols ) Error( "missing column(s) at row $i" );
 
         $row = [];
 
-        for( $j = 0; $j < $cols; $j++ )
+        if( $null_on_empty ) // i DO repeat myself to speed things up
         {
-            if( $j < $partn )
+            for( $j = 0; $j < $cols; $j++ )
             {
-                $t = $types[$j];
-                    if( $t === 'i' ) $row[ $keys[ $j ] ] = intval(  $parts[ $j ] );
-                elseif( $t === 'f' ) $row[ $keys[ $j ] ] = floatval(  $parts[ $j ] );
-                else                 $row[ $keys[ $j ] ] = $parts[ $j ];
-            }
-            else
-            {
-                $row[ $keys[ $j ] ] = $defaultPerType[ $types[ $j ] ];
+                $type  = $types[ $j ];
+                $value = $parts[ $j ];
+                /**/if( $type === 'i' ) $value = $value === '' ? null : intval   ( $value );
+                elseif( $type === 'f' ) $value = $value === '' ? null : floatval ( $value );
+                elseif( $type === 'b' ) $value = $value === '' ? null : boolval  ( $value );
+                $row[ $keys[ $j ] ] = $value;
             }
         }
+        else
+        {
+            for( $j = 0; $j < $cols; $j++ )
+            {
+                $type  = $types[ $j ];
+                $value = $parts[ $j ];
+                /**/if( $type === 'i' ) $value = $value === '' ? 0      : intval   ( $value );
+                elseif( $type === 'f' ) $value = $value === '' ? 0.0    : floatval ( $value );
+                elseif( $type === 'b' ) $value = $value === '' ? false  : boolval  ( $value );
+                $row[ $keys[ $j ] ] = $value;
+            }
+         }
 
         $out[] = $row;
     }
@@ -141,10 +155,14 @@ function ArrayFromFile( $path )
 // the inner arrays' keys; every associative array
 // into the main array must contain the same  keys
 // The first row is used to  determine  the  value
-// types unless `$usetypes` is passed as string
+// types  that  will  be stored on the column name
+// unless `$save_types is set to false`
+//
+// Note  that  tabs  and  newlines are turned into
+// spaces.
 //                                              \x
 
-function ArrayToFile( $path, $array, $usetypes = true )
+function ArrayToFile( $path, $array, $store_types = true )
 {
     if( count( $array ) === 0 )
     {
@@ -154,40 +172,53 @@ function ArrayToFile( $path, $array, $usetypes = true )
 
     $row = $array[ 0 ];
     $keys = [];
+    $keys_with_type = [];
     $index = 0;
     foreach( $row as $key => $value )
     {
-        if( is_string( $usetypes ) )
+        $key = str_replace( "\t", " ", $key );
+        $key = str_replace( "\n", " ", $key );
+        $key = str_replace( "\r", " ", $key );
+        $key = str_replace( "::", ":", $key );
+        $key = trim( $key );
+
+        $keys[] = $key;
+        if( ! $store_types )
         {
-            $keys[] = $key . "::" . $usetypes[ $index++ ];
-        }
-        elseif( $usetypes === false )
-        {
-            $keys[] = $key;
-        }
-        elseif( $usetypes === true )
-        {
-                if( is_string( $value ) ) $keys[] = $key . "::s";
-            elseif(    is_int( $value ) ) $keys[] = $key . "::i";
-            elseif(  is_float( $value ) ) $keys[] = $key . "::f";
-            else Error('Unsupported type');
+            $keys_with_type[] = $key;
         }
         else
         {
-            Error( 'invalid `usetypes` parameter' );
+            /**/if( is_string( $value ) ) $keys_with_type[] = $key . "::s";
+            elseif(    is_int( $value ) ) $keys_with_type[] = $key . "::i";
+            elseif(  is_float( $value ) ) $keys_with_type[] = $key . "::f";
+            elseif(   is_bool( $value ) ) $keys_with_type[] = $key . "::b";
+            else Error( "`" . gettype( $value ) . "` is unsupported, key: $key" );
         }
-
     }
-    $keys = implode( "\t", $keys );
+    $keys_with_type = implode( "\t", $keys_with_type );
 
-    $out = "$keys\n";
+    $out = "$keys_with_type\n";
     $n = count( $array );
+    $m = $n - 1;
     for( $i = 0; $i < $n; $i++ )
     {
-        $array[$i] = implode( "\t", $array[$i] );
-    }
+        $row = '';
+        foreach( $keys as $key )
+        {
+            $value = $array[ $i ][ $key ];
 
-    $out = "$keys\n" . implode( "\n", $array );
+            $value = str_replace( "\t", " ", $value );
+            $value = str_replace( "\n", " ", $value );
+            $value = str_replace( "\r", " ", $value );
+
+            /**/if( $value === true  ) $row .= "1\t";
+            elseif( $value === false ) $row .= "0\t";
+            else $row .= "$value\t";
+        }
+        $out .= substr( $row, 0, -1 );
+        if( $i < $m ) $out .= "\n";
+    }
 
     $result = @file_put_contents( $path, $out );
 
@@ -418,12 +449,12 @@ function ArrayHasDuplicates( &$array, $key, $flagKey = false, $flag = "@" )
     $duplicates = false;
     for( $i = 0; $i < $n; $i++ )
     {
-        if( $array[$i][$key] === $last )
+        if( $array[ $i ][ $key ] === $last )
         {
             $duplicates = true;
             if( $flagKey !== false )
             {
-                $array[$i][$flagKey] .= $flag;
+                $array[ $i ][ $flagKey ] .= $flag;
             }
             else
             {
@@ -431,7 +462,7 @@ function ArrayHasDuplicates( &$array, $key, $flagKey = false, $flag = "@" )
             }
             /*--- EXIT POINT ---*/
         }
-        $last = $array[$i][$key];
+        $last = $array[ $i ][ $key ];
     }
     return $duplicates;
 }
@@ -470,7 +501,7 @@ function ArrayHasDuplicates( &$array, $key, $flagKey = false, $flag = "@" )
 // make them unique but this is not mandatory)  \x
 //
 
-function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = false )
+function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
 {
     // manage score key
 
@@ -498,23 +529,23 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = false )
 
     // add NULL item at the end of the array to let the last block flush
 
-    $array[][$key] = NULL;
+    $array[][ $key ] = NULL;
     $n++;
 
     // init the first block with the first item
 
-    if( $score_key !== false ) { $array[0][$score_key] = 0; }
-    $block = [ $array[0] ];
-    $last  = $array[0][$key];
+    if( $score_key !== false ) { $array[ 0 ][ $score_key ] = 0; }
+    $block = [ $array[ 0 ]  ];
+    $last  = $array[ 0 ][ $key ];
 
     // start from the second item
 
     for( $i = 1; $i < $n; $i++ )
     {
-        $item = $array[$i];
-        if( $score_key !== false ) { $item[$score_key] = 0; }
+        $item = $array[ $i ];
+        if( $score_key !== false ) { $item[ $score_key ] = 0; }
 
-        if( $item[$key] === $last )
+        if( $item[ $key ] === $last )
         {
             // duplicate: add the item to the block
 
@@ -534,8 +565,8 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = false )
 
             if( $score_key !== false )
             {
-                unset( $block[0][$score_key] );
-                $out[] = $block[0];
+                unset( $block[ 0 ][ $score_key ] );
+                $out[] = $block[ 0 ];
             }
 
             // manager: add to output the block
@@ -550,8 +581,8 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = false )
 
             // initialize a new block with the new item
 
-            $last = $item[$key];
-            $block = [ $item ];
+            $last = $item[ $key ];
+            $block = [ $item  ];
         }
     }
 
@@ -583,9 +614,9 @@ function ArrayFind( $array, $key, $value, $offset = 0 )
     {
         if( ! is_array( $array[ $i ] ) )
         {
-            Error( "ArrayFind: item at index $i is not an array: {$array[ $i ]}" );
+            Error( "ArrayFind: item at index $i is not an array: {$array[$i]}" );
         }
-        if( ! isset( $array[ $i ][ $key ]) )
+        if( ! isset( $array[ $i ][ $key ] ) )
         {
             Error( "ArrayFind: item at index $i is missing key: $key" );
         }
@@ -618,7 +649,7 @@ function ArraySet( &$array, $index, $record )
     {
         foreach( $record as $key => $value )
         {
-            $array[$index][$key] = $value;
+            $array[ $index ][ $key ] = $value;
         }
     }
 }
@@ -646,9 +677,9 @@ function ArrayFix( &$array, $fix = '' )
     foreach( $array as $row )
     {
         foreach( $keys as $key )
-        if( ! isset( $row[$key] ) )
+        if( ! isset( $row[ $key ] ) )
         {
-            $row[$key] = $fix;
+            $row[ $key ] = $fix;
         }
     }
 }
@@ -669,7 +700,7 @@ function ArrayRemoveColumn( &$array, $key )
         {
             unset( $record[$key] );
         }
-    }
+    } unset( $record );
 }
 
 
@@ -686,23 +717,23 @@ function ArraySplit( &$array, $key )
 
     foreach( $array as &$record )
     {
-        if( trim( $record[$key] )=== '' )
+        if( trim( $record[ $key ] )=== '' )
         {
-            $record[$key] = 'UNDEFINED';
+            $record[ $key ] = 'UNDEFINED';
         }
-    }
+    } unset( $record );
 
     foreach( $array as $record )
     {
-        if( ! array_key_exists( $record[$key], $output ) )
+        if( ! array_key_exists( $record[ $key ], $output ) )
         {
-            $output[$record[$key]] = [];
+            $output[ $record[ $key ] ] = [];
         }
-    }
+    } unset( $record );
 
     foreach( $array as $record )
     {
-        $output[$record[$key]][] = $record;
+        $output[ $record[ $key ] ][] = $record;
     }
 
     return $output;
@@ -728,7 +759,7 @@ function ArrayInsertOrUpdate( &$array, $key, $value, $record )
         }
         else
         {
-            $array[$index] = $record( $array[$index] );
+            $array[ $index ] = $record( $array[ $index ] );
         }
     }
     else
@@ -741,10 +772,75 @@ function ArrayInsertOrUpdate( &$array, $key, $value, $record )
         {
             foreach( $record as $k => $v )
             {
-                $array[$index][$k] = $v;
+                $array[ $index ][ $k ] = $v;
             }
         }
     }
+}
+
+
+
+//
+// ArrayInsertOrReplace
+//
+// Insert or replace a record
+//
+
+function ArrayInsertOrReplace( &$array, $key, $record )
+{
+    $value = $record[ $key ];
+
+    $index = ArrayFind( $array, $key, $value );
+
+    if( $index === false )
+    {
+        $array[] = $record;
+    }
+    else
+    {
+        $array[ $index ] = $record;
+    }
+}
+
+
+
+//
+// ArrayRequire
+//
+// Check the array of arrays have all the keys per each row
+//
+
+function ArrayRequire( $array, $keys )
+{
+    $keys = explode( ',', $keys );
+    $i = 0;
+    $missing = [];
+    foreach( $array as $row )
+    {
+        $i++;
+        foreach( $keys as $k )
+        {
+            if( ! isset( $row[ $k ] ) ) $missing[] = $k;
+        }
+        if( count( $missing ) !== 0 )
+        {
+            $missing = implode( ',', $missing );
+            Error( "array is missing key(s) $missing at row $i" );
+        }
+    }
+}
+
+
+
+//
+// ArrayRowRequire
+//
+// Check the array have all the keys
+//
+
+function ArrayRowRequire( $row, $keys )
+{
+    ArrayRequire( [ $row ], $keys );
 }
 
 
