@@ -23,7 +23,9 @@ require_once ROOT . "/include/error.php";
 
 define( 'FS_NO_OPTIONS',        0 );
 define( 'FS_FULLPATH',          1 );
+define( 'FS_FULL_PATH',         1 );
 define( 'FS_ZIP_DELETE',        2 );
+define( 'FS_WITH_EXTENSION',    4 );
 
 
 //
@@ -524,6 +526,179 @@ function FSPathEditFilename( $path, $prepend = '', $append = '', $extension = tr
     $path = "$dir$prepend{$pi['filename']}$append$dotext$slash";
 
     return $path;
+}
+
+
+
+//
+// PathGetFilename
+//
+// returns the filename for a given path
+//
+
+function FSPathGetFilename( $path, $options = FS_NO_OPTIONS )
+{
+    $pi = pathinfo( $path );
+    if( $options === FS_WITH_EXTENSION )
+    {
+        return $pi[ 'basename' ];
+    }
+    else
+    {
+        return $pi[ 'filename' ];
+    }
+}
+
+
+//
+// TarGzDirectory
+//
+// archive and compress a  directory  using  `tar`
+// and `pigz (parallelized gzip) producing a file
+// with extension `.tar.gz`.
+// Usage is the same as `ZipDirectory` below.
+//
+
+function FSTarGzDirectory( $path, $options = FS_NO_OPTIONS )
+{
+    if( ! FSDirectoryExists( $path ) )
+    {
+        Error( "directory does not exist: $path" );
+    }
+
+    FSPathRemoveSlash( $path );
+
+    if( FSFileExists( "$path.tar.gz" ) )
+    {
+        Error( "pigz would overwrite existing archive: $path.tar.gz" );
+    }
+
+    if( FSFileExists( "$path.tar" ) )
+    {
+        Error( "tar would overwrite existing archive: $path.tar" );
+    }
+
+    $parent = dirname( $path );
+
+    $cwd = getcwd();
+    if( $cwd === false )
+    {
+        Error( "failed getcwd()" );
+    }
+
+    $result = chdir( $parent );
+    if( ! $result )
+    {
+        Error( "failed chdir()" );
+    }
+
+    $name = basename( $path );
+
+    $exitStatus = 0;
+    $toolcall = [ "/usr/bin/tar -cf", "$name.tar", $name ];
+    $output = FSExecute( $toolcall, $exitStatus );
+    if( $exitStatus != 0 )
+    {
+        $toolcall = implode( ' ', $toolcall );
+        Error( "failed tar: $toolcall");
+    }
+
+    if( $options === FS_ZIP_DELETE )
+    {
+        FSRemoveDirectory( $path );
+    }
+
+    $exitStatus = 0;
+    $toolcall = [ "/usr/local/bin/pigz -9", "$name.tar" ];
+    $output = FSExecute( $toolcall, $exitStatus );
+    if( $exitStatus != 0 )
+    {
+        $toolcall = implode( ' ', $toolcall );
+        Error( "failed pigz: $toolcall");
+    }
+
+    $result = chdir( $cwd );
+    if( ! $result )
+    {
+        Error( "failed chdir() when restoring cwd" );
+    }
+}
+
+
+
+//
+// UnTarGz
+//
+// decompress and expand a `.tar.gz` archive
+//
+// option FS_ZIP_DELETE  will  delete  the  source
+// archive
+//                                              \x
+
+function FSUnTarGz( $path, $options = FS_NO_OPTIONS  )
+{
+    if( ! FSFileExists( $path ) )
+    {
+        Error( "directory does not exists: $path" );
+    }
+
+    if( FSPathGetExtension( $path ) !== 'gz' )
+    {
+        Error( "not a gzip `.gz` file: $path" );
+    }
+
+    $parent = dirname( $path );
+
+    $cwd = getcwd();
+    if( $cwd === false )
+    {
+        Error( "failed getcwd()" );
+    }
+
+    $result = chdir( $parent );
+    if( ! $result )
+    {
+        Error( "failed chdir()" );
+    }
+
+    $exitStatus = 0;
+    $keep = $options === FS_ZIP_DELETE ? '' : ' -k';
+    $toolcall = [ "/usr/local/bin/unpigz$keep", $path ];
+    $output = FSExecute( $toolcall, $exitStatus );
+    if( $exitStatus != 0 )
+    {
+        $toolcall = implode( ' ', $toolcall );
+        Error( "failed unpigz: $toolcall");
+    }
+
+    $path = substr( $path, 0, -3 );
+
+    if( FSPathGetExtension( $path ) !== 'tar' )
+    {
+        Error( "uncompressed file is not a tar `.tar` archive: $path" );
+    }
+
+    if( ! FSFileExists( $path ) )
+    {
+        Error( "cannot find tar archive: $path" );
+    }
+
+    $exitStatus = 0;
+    $toolcall = [ "/usr/bin/tar -xf", $path ];
+    $output = FSExecute( $toolcall, $exitStatus );
+    if( $exitStatus != 0 )
+    {
+        $toolcall = implode( ' ', $toolcall );
+        Error( "failed tar: $toolcall");
+    }
+
+    FSRemoveFile( $path );
+
+    $result = chdir( $cwd );
+    if( ! $result )
+    {
+        Error( "failed chdir() when restoring cwd" );
+    }
 }
 
 
