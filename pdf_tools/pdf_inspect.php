@@ -95,7 +95,7 @@ function PdfOffset( $heights, $products, $pdfidxPath )
             continue;
         }
 
-        $output = Execute( [ "pdfidxfind -limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
+        $output = FSExecute( [ "pdfidxfind -limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
         if( $status != 0 )
         {
             Error( "pdfidxfind exited with status $status: searching $code: $output" );
@@ -364,7 +364,7 @@ function PdfHeight( $products, $pdfidxPath )
             continue;
         }
 
-        $output = Execute( [ "pdfidxfind -limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
+        $output = FSExecute( [ "pdfidxfind -limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
         if( $status != 0 )
         {
             Error( "pdfidxfind exited with status $status: searching $code: $output" );
