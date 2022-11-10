@@ -27,6 +27,7 @@ class Scraper
 {
 
     private $cache_path,
+            $cache_zip,
             $visited,
             $domain,
             $root,
@@ -44,6 +45,7 @@ class Scraper
     public function __construct( $cmd = '', $silent = false )
     {
         $this->cache_path = false;
+        $this->cache_zip = true;
         $this->visited = [];
         $this->attempts = 3;
         $this->pause = 10;
@@ -59,6 +61,11 @@ class Scraper
             $cache_arg = "";
         }
 
+        if( ArgumentGet( 'nozip', ARGUMENT_BOOLEAN ) )
+        {
+            $this->cache_zip = false;
+        }
+
         $path = ROOT . "/cache.noindex";
 
         if( StringCompare( $cache_arg, 'no', STRING_CI ) || $cmd === 'no cache' )
@@ -69,28 +76,28 @@ class Scraper
         elseif( StringCompare( $cache_arg, 'clear', STRING_CI ) || $cmd === 'clear cache' )
         {
             EchoNL( 'cache clear', $this->silent );
-            FSRemoveFile( "$path.zip" );
+            FSRemoveFile( "$path.tar.gz" );
             FSRemoveDirectory( $path );
             FSMakeDir( $path );
             $this->cache_path = $path;
         }
         else
         {
-            $zip = FSFileExists( "$path.zip" );
+            $zip = FSFileExists( "$path.tar.gz" );
             $dir = FSDirectoryExists( $path );
 
             if( $zip && $dir )
             {
-                FSRemoveFile( "$path.zip" );
+                FSRemoveFile( "$path.tag.gz" );
             }
             elseif( $zip && ! $dir )
             {
-                EchoCR( "Unzipping cache..." );
-                FSUnzip( "$path.zip", FS_ZIP_DELETE );
+                EchoCR( "Decompressing and unarchiving cache..." );
+                FSUnTarGz( "$path.tar.gz", FS_ZIP_DELETE );
             }
             elseif( ! $zip && $dir )
             {
-                //
+                EchoNL( "Found existing cache" );
             }
             else//( ! zip && ! dir )
             {
@@ -231,9 +238,12 @@ class Scraper
 
         if( $this->cache_path !== false )
         {
-            EchoCR( "Archiving cache..." );
-            FSZipDirectory( $this->cache_path, FS_ZIP_DELETE );
-            EchoNL( "Cache archived", $this->silent );
+            if( $this->cache_zip )
+            {
+                EchoCR( "Archiving and compressing cache..." );
+                FSTarGzDirectory( $this->cache_path, FS_ZIP_DELETE );
+            }
+            EchoNL( "Cache archived and compressed", $this->silent );
         }
     }
 
