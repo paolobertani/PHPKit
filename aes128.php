@@ -107,7 +107,7 @@ function aes128xitob( $int, $n )
     for( $i = 0; $i < $n ; $i++ )
     {
         $bin .= chr( $int % 256 );
-        $int = intval( $int / 256 );
+        $int = intdiv( $int, 256 );
     }
     return $bin;
 }
