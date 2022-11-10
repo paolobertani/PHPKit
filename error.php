@@ -20,7 +20,7 @@ function Error( $msg )
     $include = is_link( ROOT."/include" ) ? readlink( ROOT."/include" ) : false;
 
     $n = count( $trace );
-    for( $i = 1; $i < $n; $i++ )
+    for( $i = 0; $i < $n; $i++ )
     {
         $file = $trace[$i]['file'];
         if( strpos( $file, ROOT."/" ) === 0 )
@@ -31,7 +31,8 @@ function Error( $msg )
         {
             $file = "include" . substr( $file, strlen( $include ) );
         }
-        echo "$file : {$trace[$i]['function']} : {$trace[$i]['line']}\n";
+        $fn = $i === 0 ? '' : "{$trace[$i]['function']} : ";
+        echo "$file : $fn{$trace[$i]['line']}\n";
     }
 
     exit(0);
