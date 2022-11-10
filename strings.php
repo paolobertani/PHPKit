@@ -1350,6 +1350,7 @@ function StringFromFloat( $f, $p = null )
 }
 
 
+
 //
 // StringTruncateMaybe
 //
@@ -1363,6 +1364,17 @@ function StringTruncateMaybe( $str, $len, $end='...' )
         $str = mb_substr( $str,  0, $len - strlen( $end ) ) . $end;
     }
     return $str;
+}
+
+
+
+//
+// StringJSON
+//
+
+function StringJSON( $array )
+{
+    return json_encode( $array, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT );
 }
 
 
