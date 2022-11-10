@@ -3,54 +3,86 @@
 //
 // PdfImprove
 //
-// Add links to a PDF document
+// Add links to a PDF document and register the assets
+//
+//
 //
 // Params:
 //          -pdf        path to PDF file
-//          -res        path to web resources file
+//          -prd        path to products file, with associated resources
 //          -out        path to PDF file with links to produce (opt.)
 //          -cleanup    discard temp files (opt.)
 //          -noimg      do not produce pdf with icons/images (opt.)
-//          -offset     see "Offset" below
-//          -height     see "Height" below
+//          -goffs      see "Offset" below
+//          -geths      see "Height" below
 //          -tol        see "Tolerance"
 //          -code       see "Code" below
 //
+//          or alone
+//
+//          -register   to register the assets file on Pinaxo
+//
 // Requirements:
 //
-// the resource file must be a tab separated  text
-// file  witn  `\n`  line  separators.  The  first
-// column holds the string that will  be  searched
-// on the PDF. The first  line  contains  columns'
-// header.                                      \x
+// the products file must be a tab separated  text
+// file generated with `ArrayToFile`.
+//
+// Relevant columns are:
+// `code` the product code;
+// `code_id` the product code -registered- `id`;
+// `brand_id` the brand id of the producer on Px;
+//
+// Resource columns with URLs must be named  using
+// the resource type code:
+// web - drw - ins - tec - pho - sht - spa - m2d -
+// m3d - amb
+//
+// For each resource column the resource file type
+// must be specificed in a column named type_{rtc}
+//
 //
 //
 // Must be defined:
 //
-// function PdfAddLinksProcess( (array)$resource, (array)$location ) --> (array|string)$link | false | []
+// function PdfImproveLinksProcess( (array)$product, (array)$location ) --> array[array] | false | []
 //
-// The function receives  a  resource  record  (as
-// from the resource file) and the  location  `p`,
-// `l`, `t`, `w`, `h` of the string found  on  the
-// PDF. May return:
-// false if no links have to be created;
-// (string) the url to the link  to  create  where
-// the search string was found;
-// (array) associative with  the  keys  `l`,  `t`,
-// `w`, `h`, `url` or `img`  or  both,  optionally
-// `p` (page), `z` z-index;
-// (array) of associative arrays if  two  or  more
-// links have to be created                     \x
+// receives the record for a given  product/item.
+// Receives the  location  where  the  resource's
+// code was found as associative array with  keys
+// `p`, `l`, `t`, `w`, `h`;
+// the function may return:`false` nothing to do;
+// array of associative arrays each one with  the
+// following keys:
+// `p` (opt): page number
+// `l`, `t`, `w`, `h` (opt): location on the page
+// `z` (opt): z-index of the image
+// `img` (opt): path to the image to be applied
+// `res` (opt): create a link to the resource  of
+// type specified;
+// either `url` or `img` should be specified;
+// values for `res`:
+// "web": product web page
+// "sht": product sheet
+// "tec": technical sheet
+// "ins": installation instruct
+// "spa": spare parts
+// "drw": 2d drawing
+// "m3d": 3d model
+// "m2d": 2d model
+// "pho": photo
+// "amb": photo of ambientation
+//
 //
 //
 // May be defined:
 //
-// function PdfImproveLinksProcess( (string) $code ) --> (string) | false
+// function PdfImproveLinksFilter( (string) $code ) --> (string) | false
 //
 // Receives a product code, returns  the  code  to
 // search  for  (generally  the  same  code   with
 // prepended a  modifier  search  character);  may
 // return false to instruct to skip the code    \x
+//
 //
 //
 // May be defined:
@@ -65,30 +97,22 @@
 // `false` as an alias to a empty array         \x
 //
 //
-// May be defined:
-//
-// function PdfImproveResourcesManager( $resources ) --> (array)
-//
-// receives the products from the resource file as
-// array  of  associative  arrays,   returns   the
-// products array edited
-//                                              \x
 //
 // DOCUMENT INSPECTION
 //
-// Height: the argument `height` does not  require
+// Height: the argument `geths` does  not  require
 // any value; when specified a report is  produced
 // with all the character heights at 720dpi of the
 // codes found in the document; along  with  every
 // "height" found, the  pages  containing  one  or
 // more product codes with that height are listed.
 //
-// Offset: the argument expect a value in the form
+// 'goffs`:the argument expect a value in the form
 // `hh` where `hh` express a character  height  at
-// 720 dpi; if `offset` is specified then a report
+// 720 dpi; if `goffs`  is specified then a report
 // is produced with the X offsets where the  codes
 // (with specified height) are found on the  pages
-// of the document. If `offset` is specified  then
+// of the document. If `goffs`  is specified  then
 // no output file is generated; several values may
 // be specified separated by comma: hh1,hh2,...
 //
@@ -98,7 +122,7 @@
 // heights/offsets that differs equal or less  the
 // value specified (they fit into the tolerance).
 //
-// Code: `code` let the  Offset  report  (argument
+// Code: `code` let the  Offsets report  (argument
 // `height`) produce also  code  for  setting  the
 // icons   offsets   for   each   combination   of
 // product-code x position and height
@@ -112,17 +136,24 @@ require_once ROOT . '/include/arrays.php';
 require_once ROOT . '/include/arguments.php';
 require_once ROOT . '/include/fs.php';
 require_once ROOT . '/include/milliseconds.php';
+require_once ROOT . '/include/strings.php';
 
 require_once ROOT . '/include/pdf_tools/pdf_tools.php';
 require_once ROOT . '/include/pdf_tools/pdf_inspect.php';
 
+require_once ROOT . '/include/pinaxo/assets.php';
+
 
 
 //
-// Code column
+// REGISTER ASSETS
 //
 
-if( ! defined( 'CODE_COLUMN' ) ) { define( 'CODE_COLUMN', 'code' ); }
+if( ArgumentGet( '-register', ARGUMENT_BOOLEAN ) )
+{
+    RegisterAssetsPrivate();
+    exit( 0 );
+}
 
 
 
@@ -142,6 +173,8 @@ function PdfImprove()
 {
     global $g_pdf_improve_document_inspection;
 
+    $successful_searches = 0;
+    $links_sets_produced = 0;
 
     //
     // Check PdfImproveLinksProcess is defined
@@ -183,17 +216,10 @@ function PdfImprove()
 
 
     //
-    // Check PdfImproveResourcesManager is defined
+    // Pinaxo Assets Interface
     //
 
-    if( function_exists( 'PdfImproveResourcesManager' ) )
-    {
-        $resmanager = true;
-    }
-    else
-    {
-        $resmanager = false;
-    }
+    $pinaxoAssets = new PinaxoAssets();
 
 
     //
@@ -208,12 +234,24 @@ function PdfImprove()
     // Get params
     //
 
+    if( ArgumentGet( 'res', ARGUMENT_OPTIONAL ) !== false ) Error( "PDF Improve: `-res` argument is no longer in use; use `-prd` instead" );
     $pdfPath = ArgumentGet( 'pdf' );
-    $resPath = ArgumentGet( 'res' );
+    $prdPath = ArgumentGet( 'prd' );
     $dstPath = ArgumentGet( 'out',     ARGUMENT_OPTIONAL );
     $noimg   = ArgumentGet( 'noimg',   ARGUMENT_BOOLEAN );
-    $offset  = ArgumentGet( 'offset',  ARGUMENT_OPTIONAL );
-    $height  = ArgumentGet( 'height',  ARGUMENT_BOOLEAN );
+    $offset  = ArgumentGet( 'goffs',   ARGUMENT_OPTIONAL );
+    $height  = ArgumentGet( 'geths',   ARGUMENT_BOOLEAN );
+
+
+    //
+    // Get document id from directory name
+    //
+
+    $document_id = false;
+    $dd = FSDirectoriesInDirectory( ROOT );
+    foreach( $dd as $d ) if( substr( $d, 0, 12 ) === 'document_id=' ) $document_id = intval( substr( $d, 12 ) );
+    if( $document_id === false ) $document_id = intval( ArgumentGet( 'document_id' ) );
+    EchoNL( "document id = $document_id" );
 
 
     //
@@ -238,19 +276,19 @@ function PdfImprove()
 
     if( $height !== false && $offset !== false )
     {
-        EcnoNL( "cannot have both `height` and `offset` arguments in tool call" );
+        EchoNL( "cannot have both `height` and `offset` arguments in tool call" );
         exit(0);
         /*--- QUIT POINT ---*/
     }
 
     if( $dstPath !== false && $offset !== false )
     {
-        EcnoNL( "`offset` option specified. no output file will be produced" );
+        EchoNL( "`offset` option specified. no output file will be produced" );
     }
 
     if( $dstPath !== false && $height !== false )
     {
-        EcnoNL( "`height` option specified. no output file will be produced" );
+        EchoNL( "`height` option specified. no output file will be produced" );
     }
 
 
@@ -289,18 +327,10 @@ function PdfImprove()
 
 
     //
-    // Parse Resources file
+    // Parse Products file
     //
 
-    $products = ArrayFromFile( $resPath );
-
-    // Manage resource
-
-    if( $resmanager )
-    {
-        $products = PdfImproveResourcesManager( $products );
-    }
-
+    $products = ArrayFromFile( $prdPath );
     EchoNL( ( count( $products ) ) . " links/products parsed" );
 
 
@@ -346,7 +376,7 @@ function PdfImprove()
             EchoCR( "Searching for text to turn into links... $i:$n" );
             $i++;
 
-            $code = $p[CODE_COLUMN];
+            $code = $p[ 'code' ];
 
             // skip empty line (no code)
 
@@ -375,7 +405,9 @@ function PdfImprove()
 
             $ms = Milliseconds();
             $getText = $results_filter ? "-text yes " : "";
-            $output = FSExecute( [ "pdfidxfind $getText-limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status );
+
+            $output = FSExecute( [ "pdfidxfind $getText-limit 2500 -pdfidx", $pdfidxPath, "-search", $code ], $status, true /**/ );
+
             if( $status != 0 )
             {
                 Error( "pdfidxfind exited with status $status: searching $code: $output" );
@@ -384,6 +416,8 @@ function PdfImprove()
             $milliseconds += Milliseconds( $ms );
 
             $results = json_decode( $output, true );
+
+            $successful_searches += ( count( $results ) > 0 ) ? 1 : 0;
 
 
             //
@@ -422,19 +456,14 @@ function PdfImprove()
                     continue;
                 }
 
-                // a string: the string is the url, location is taken from the resource, no image
+                // no array: raise error
 
-                if( is_string( $links ) )
+                if( ! is_array( $links ) )
                 {
-                    $links = [ 'p' => $r['p'], 'l' => $r['l'], 't' => $r['t'], 'w' => $r['w'], 'h' => $r['h'], 'url' => $links, 'img' => '' ];
+                    Error( 'PdfImproveLinksProcess must return `false`, a empty array or an array of associative arrays' );
                 }
 
-                // a key-value pair array: this is a single link/image
-
-                if( ! isset( $links[ 0 ] ) )
-                {
-                    $links = [ $links ];
-                }
+                $links_sets_produced += ( count( $links ) > 0 ) ? 1 : 0;
 
                 // for each link autocomplete the page, url, img if not present with their default values
 
@@ -472,9 +501,9 @@ function PdfImprove()
                         $l['img'] = '';
                     }
 
-                    if( ! isset( $l['url'] ) )
+                    if( ! isset( $l['res'] ) )
                     {
-                        $l['url'] = '';
+                        $l['res'] = '';
                     }
 
                     if( ! isset( $l['z'] ) )
@@ -484,12 +513,52 @@ function PdfImprove()
 
                     $l['hash'] = md5(  $l['p'] . "," . $l['l'] . "," . $l['t'] . "," . $l['w'] . "," . $l['h'] );
 
-                    // raise a warning if both `url` and `img` are missing, skip the item
+                    // raise a warning if both `res` and `img` are missing, skip the item
 
-                    if( $l['img'] === '' && $l['url'] === '' )
+                    if( $l['img'] === '' && $l['res'] === '' )
                     {
-                        EchoNL( "WARNING: no `img` and no `url` specified for code-search $code, in page " . ( $r['p'] + 1 ) );
+                        EchoNL( "WARNING: no `img` and no `res` specified for code-search $code, in page " . ( $r['p'] + 1 ) );
                         continue;
+                    }
+
+                    // Fetch URL and other resource info from resource record
+
+                    $res = $l['res'];
+                    $err_trailer = "for code-search $code, in page " . ( $r['p'] + 1 );
+
+                    if( $res !== '' )
+                    {
+                        if( ! isset( $p[ "$res"                      ] ) ) Error( "Unavailable resource `$res` $err_trailer"                              );
+                        if( ! isset( $p[ "resource_type_id_for_$res" ] ) ) Error( "Unavailable resource type id for resource of type `$res` $err_trailer" );
+                        if( ! isset( $p[ "file_type_id_for_$res"     ] ) ) Error( "Unavailable file type id for resource of type `$res` $err_trailer"     );
+                        if( ! isset( $p[ "language_id"               ] ) ) Error( "Missing `language_id` $err_trailer"                                    );
+                        if( ! isset( $p[ "code_id"                   ] ) ) Error( "Missing `code_id` $err_trailer"                                        );
+                        if( ! isset( $p[ "code"                      ] ) ) Error( "Missing `code` $err_trailer"                                           );
+                        if( ! isset( $p[ "brand_id"                  ] ) ) Error( "Missing `brand_id` $err_trailer"                                       );
+
+                        $l[ 'url'              ] = $p[ "$res"                       ];
+                        $l[ 'resource_type_id' ] = $p[ "resource_type_id_for_$res"  ];
+                        $l[ 'file_type_id'     ] = $p[ "file_type_id_for_$res"      ];
+                        $l[ 'language_id'      ] = $p[ 'language_id'                ];
+                        $l[ 'product_code_id'  ] = $p[ 'code_id'                    ];
+                        $l[ 'product_code'     ] = $p[ 'code'                       ];
+                        $l[ 'brand_id'         ] = $p[ 'brand_id'                   ];
+                        $l[ 'document_id'      ] = $document_id;
+                        $l[ 'value'            ] = $pinaxoAssets->value( $l );
+                        $l[ 'pinaxo_url'       ] = "https://www.pinaxo.com/asset/{$l['value']}";
+                    }
+                    else
+                    {
+                        $l[ 'url' ]              = '';
+                        $l[ 'resource_type_id' ] = 0;
+                        $l[ 'file_type_id'     ] = 0;
+                        $l[ 'language_id'      ] = 0;
+                        $l[ 'product_code_id'  ] = 0;
+                        $l[ 'product_code'     ] = '';
+                        $l[ 'brand_id'         ] = 0;
+                        $l[ 'document_id'      ] = 0;
+                        $l[ 'value'            ] = '';
+                        $l[ 'pinaxo_url'       ] = '';
                     }
 
                     // each link is finally added to the global list
@@ -537,7 +606,7 @@ function PdfImprove()
 
         foreach( $linksList as $l )
         {
-            $linksText .= "{$l['p']}\t{$l['l']}\t{$l['t']}\t{$l['w']}\t{$l['h']}\t{$l['url']}\t{$l['img']}\n";
+            $linksText .= "{$l['p']}\t{$l['l']}\t{$l['t']}\t{$l['w']}\t{$l['h']}\t{$l['pinaxo_url']}\t{$l['img']}\n";
 
             if( $l['img'] !== '' )
             {
@@ -561,10 +630,22 @@ function PdfImprove()
         EchoNL( "Writing links list file" );
         file_put_contents( $linksPath, $linksText );
         EchoNL( "Links count: " . count( $linksList ) );
+        EchoNL( "Successful searches: $successful_searches ");
+        EchoNL( "Links sets produced: $links_sets_produced ");
+
+
+        //
+        // Write assets file
+        //
+
+        EchoNL( "Writing assets file" );
+        ArrayToFile( ROOT . '/assets.txt', $linksList );
+
     }
     else
     {
         EchoNL( "Using existing links-images file: " . FSPathRelative( $linksPath ) );
+        EchoNL( "Keeping assets file" );
 
         // Inspect file to detect links and/or images
 
@@ -669,7 +750,20 @@ function PdfImprove()
     // Add Outlines to PDF
     //
 
-    $outlinesPath = FSPathEditFilename( $pdfPath, 'outlines.', '', "txt" );
+    $outlinesPath = FSPathEditFilename( $pdfPath, 'outlines.', '', "txt" ); // try as a variation of the source pdf
+    if( ! FSFileExists( $outlinesPath ) )
+    {
+        $filepaths = FSFilesInDirectory( ROOT, FS_FULLPATH ); // search the files in the root directory
+        foreach( $filepaths as $p )
+        {
+            if( StringBegins( FSPathGetFilename( $p ), 'outlines' ) )
+            {
+                $outlinesPath = $p;
+                break;
+            }
+        }
+    }
+
     if( FSFileExists( $outlinesPath ) )
     {
         $inPath = $outPath;
@@ -703,7 +797,7 @@ function PdfImprove()
     }
     else
     {
-        EchoNL( "Outlines file not present, expected: " . FSPathRelative( $outlinesPath ) );
+        EchoNL( "Outlines file not present, expected: '[ROOT]/" . FSPathRelative( $outlinesPath ) . "' -or- '[ROOT]/outlines*.txt'" );
     }
 
 
@@ -735,4 +829,116 @@ function PdfInspectionMode()
     global $g_pdf_improve_document_inspection;
     return $g_pdf_improve_document_inspection;
 }
+
+
+
+//
+// Register assets into db loading them from assets file
+//
+
+function RegisterAssetsPrivate()
+{
+
+    // Load file
+
+    $path = ROOT . '/assets.txt';
+
+    if( ! FSFileExists( $path ) )
+    {
+        Error( "Assets file not found: $path" );
+    }
+
+    $assets = ArrayFromFile( $path );
+
+
+    // Pinaxo assets interface
+
+    $pinaxoAssets = new PinaxoAssets();
+
+
+    // File check
+
+    $row = 0;
+    foreach( $assets as $a )
+    {
+        $row++;
+        if( ! isset(  $a[ 'document_id'      ] ) ) Error( "`document_id` not specified on row $row"       );
+        if( ! isset(  $a[ 'product_code_id'  ] ) ) Error( "`product_code_id` not specified on row $row"   );
+        if( ! isset(  $a[ 'resource_type_id' ] ) ) Error( "`resource_type_id` not specified on row $row"  );
+        if( ! isset(  $a[ 'file_type_id'     ] ) ) Error( "`file_type_id` not specified on row $row"      );
+        if( ! isset(  $a[ 'language_id'      ] ) ) Error( "`language_id` not specified on row $row"       );
+        if( ! isset(  $a[ 'brand_id'         ] ) ) Error( "`brand_id` not specified on row $row"          );
+        if( ! isset(  $a[ 'value'            ] ) ) Error( "`value` not specified on row $row"             );
+        if( ! isset(  $a[ 'url'              ] ) ) Error( "`url` not specified on row $row"               );
+        if( ! isset(  $a[ 'pinaxo_url'       ] ) ) Error( "`pinaxo_url` not specified on row $row"        );
+        if( ! isset(  $a[ 'product_code'     ] ) ) Error( "`product_code` not specified on row $row"      );
+        if( ! is_int( $a[ 'document_id'      ] ) ) Error( "`document_id` is not integer on row $row"      );
+        if( ! is_int( $a[ 'product_code_id'  ] ) ) Error( "`product_code_id` is not integer on row $row"  );
+        if( ! is_int( $a[ 'resource_type_id' ] ) ) Error( "`resource_type_id` is not integer on row $row" );
+        if( ! is_int( $a[ 'file_type_id'     ] ) ) Error( "`file_type_id` is not integer on row $row"     );
+        if( ! is_int( $a[ 'language_id'      ] ) ) Error( "`language_id` is not integer on row $row"      );
+        if( ! is_int( $a[ 'brand_id'         ] ) ) Error( "`brand_id` is not integer on row $row"         );
+        if(!is_string($a[ 'product_code'     ] ) ) Error( "`product_code` is not string on row $row"      );
+        if(!is_string($a[ 'value'            ] ) ) Error( "`value` is not string on row $row"             );
+        if(!is_string($a[ 'url'              ] ) ) Error( "`url` is not string on row $row"               );
+        if(!is_string($a[ 'pinaxo_url'       ] ) ) Error( "`pinaxo_url` is not string on row $row"        );
+
+        if( $a[ 'value' ] !== '' )
+        {
+            if( $a[ 'value' ] !== $pinaxoAssets->value( $a ) ) Error( "bad asset value on row $row: {$a['value']}" );
+            if( $a[ 'pinaxo_url' ] !== "https://www.pinaxo.com/asset/{$a['value']}" ) Error( "bad Pinaxo URL on row $row: {$a['pinaxo_url']} -VS- https://www.pinaxo.com/asset/{$a['value']}" );
+            if( substr( $a[ 'url' ], 0, 8 ) !== 'https://' && substr( $a[ 'url' ], 0, 7 ) !== 'http://' ) Error( "bad target URL on row $row: {$a['url']}" );
+        }
+    }
+
+
+    // Filter assets to actually register
+
+    $data = []; foreach( $assets as $a ) if( $a[ 'value' ] !== '' ) $data[] = $a;
+    if( count( $data ) === 0 ) { EchoNL( 'no assets to register' ); exit( 0 );  }
+
+
+    // Remove duplicate assets but first check that values for the relevant keys are the same
+
+    ArrayRemoveDuplicates( $data, 'value', function( $duplicates )
+    {
+        $keys = [
+            'url',
+            'resource_type_id',
+            'file_type_id',
+            'language_id',
+            'product_code_id',
+            'product_code',
+            'brand_id',
+            'document_id',
+            'pinaxo_url'
+        ];
+
+        foreach( $duplicates as &$row )
+        {
+            $row[ 'score' ] = 0;
+            foreach( $keys as $key )
+            {
+                if( $row[ $key ] !== $duplicates[ 0 ][ $key ] )
+                {
+                    Error( "Found duplicate asset with different values: asset-value = {$duplicates[0]['value']}\n" . StringJSON( $duplicates[ 0 ] ) . "\n - - -\n" . StringJSON( $row ) );
+                }
+            }
+        } unset( $row );
+        $duplicates[ 0 ][ 'score' ] = 1;
+    } );
+
+
+    // Register assets
+
+    $pinaxoAssets->register( $data );
+
+
+    // Done
+
+    EchoNL( 'Done' );
+    exit( 0 );
+}
+
+
 
