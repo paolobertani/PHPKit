@@ -1,9 +1,12 @@
 <?php
 
+require_once ROOT . '/include/error.php';
+
+define( 'ARGUMENT_NO_OPTIONS', 0 );
 define( 'ARGUMENT_OPTIONAL', 1 );
 define( 'ARGUMENT_BOOLEAN', 2 );
 
-function ArgumentGet( $name, $options = 0 )
+function ArgumentGet( $name, $options = ARGUMENT_NO_OPTIONS )
 {
     global $argv;
 
@@ -35,6 +38,23 @@ function ArgumentGet( $name, $options = 0 )
         return false;
     }
 
-    echo "Expected parameter $name\n";
-    exit(0);
+    Error( "expected parameter: $name" );
+}
+
+
+
+function ArgumentSet( $name, $value = null )
+{
+    global $argv;
+
+    if( substr( $name, 0, 1 ) != '-' )
+    {
+        $name = "-$name";
+    }
+
+    $argv[] = $name;
+    if( $value !== null )
+    {
+        $argv[] = $value;
+    }
 }
