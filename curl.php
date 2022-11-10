@@ -7,8 +7,11 @@
 //
 
 
+
 require_once ROOT . '/include/error.php';
 require_once ROOT . '/include/fs.php';
+require_once ROOT . '/include/3rd-parts/phpuri/phpuri.php';
+
 
 
 //
@@ -86,6 +89,7 @@ function CurlArchiveCache()
         Error( "CurlArchiveCache: cache dir not found" );
     }
 }
+
 
 
 //
@@ -327,7 +331,9 @@ function Curl( $url = false, $post = null, $headers = null )
             /*--- EXIT LOOP ---*/
         }
 
-        $url = $response_headers['location'];
+        $redir = $response_headers['location'];
+
+        $url = phpUri::parse( $url )->join( $redir );
 
         $url = str_replace( " ", "%20", $url ); // some servers return location with spaces
 
