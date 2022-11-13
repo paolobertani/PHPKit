@@ -65,7 +65,16 @@ class PinaxoProductCodes
             $registered_codes = $session->response;
             foreach( $registered_codes as $rc )
             {
-                foreach( $products as &$p ) { if( $p[ 'code' ] === $rc[ 'code' ] ) { $p[ 'code_id' ] = $rc[ 'id' ]; } } unset( $p );
+                foreach( $products as &$p )
+                {
+                    if( $p[ 'code' ] === $rc[ 'code' ] )
+                    {
+                        foreach( $rc as $key => $value )
+                        {
+                            $p[ $key ] = $value;
+                        }
+                    }
+                } unset( $p );
             }
         }
 
