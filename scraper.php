@@ -53,7 +53,7 @@ class Scraper
         $this->silent = $silent ? 1 : false;
         $this->quit = false;
 
-        // manage cache dir and archive
+        // manage cache archive and compression
 
         $cache_arg = ArgumentGet( 'cache', ARGUMENT_OPTIONAL );
         if( $cache_arg === false )
@@ -79,6 +79,7 @@ class Scraper
             FSRemoveFile( "$path.tar.gz" );
             FSRemoveDirectory( $path );
             FSMakeDir( $path );
+            FSTMExclude( $path );
             $this->cache_path = $path;
         }
         else
@@ -94,6 +95,7 @@ class Scraper
             {
                 EchoCR( "Decompressing and unarchiving cache..." );
                 FSUnTarGz( "$path.tar.gz", FS_ZIP_DELETE );
+                FSTMExclude( $path );
             }
             elseif( ! $zip && $dir )
             {
@@ -102,6 +104,7 @@ class Scraper
             else//( ! zip && ! dir )
             {
                 FSMakeDir( $path );
+                FSTMExclude( $path );
             }
 
             $this->cache_path = $path;
@@ -242,6 +245,7 @@ class Scraper
             {
                 EchoCR( "Archiving and compressing cache..." );
                 FSTarGzDirectory( $this->cache_path, FS_ZIP_DELETE );
+                FSTMExclude( "$this->cache_path.tar.gz" );
                 EchoNL( "Cache archived and compressed", $this->silent );
             }
             else
