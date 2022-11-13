@@ -143,6 +143,11 @@ require_once ROOT . '/include/pdf_tools/pdf_inspect.php';
 
 require_once ROOT . '/include/pinaxo/assets.php';
 
+require_once ROOT . '/include/pinaxo/public_api.php';
+require_once ROOT . '/include/../pinaxo_private/apitoken.php';
+
+require_once ROOT . '/include/3rd-parts/fpdf/fpdf.php';
+
 
 
 //
@@ -175,6 +180,7 @@ function PdfImprove()
 
     $successful_searches = 0;
     $links_sets_produced = 0;
+
 
     //
     // Check PdfImproveLinksProcess is defined
@@ -249,9 +255,42 @@ function PdfImprove()
 
     $document_id = false;
     $dd = FSDirectoriesInDirectory( ROOT );
-    foreach( $dd as $d ) if( substr( $d, 0, 12 ) === 'document_id=' ) $document_id = intval( substr( $d, 12 ) );
-    if( $document_id === false ) $document_id = intval( ArgumentGet( 'document_id' ) );
-    EchoNL( "document id = $document_id" );
+    $prm = 'working_document_id=';
+    foreach( $dd as $d ) if( substr( $d, 0, strlen( $prm ) ) === $prm ) $document_id = intval( substr( $d, strlen( $prm ) ) );
+
+
+    //
+    // Maybe publish a new document
+    //
+
+    if( $document_id === false )
+    {
+        $working_brand_id = false;
+        $prm = 'working_brand_id=';
+        foreach( $dd as $d ) if( substr( $d, 0, strlen( $prm ) ) === $prm ) $working_brand_id = intval( substr( $d, strlen( $prm ) ) );
+        if( $working_brand_id === false ) Error( "PDF Improve: working brand id not specified; create a directory named `working_brand_id=<id>" );
+        $text = FSPathGetFilename( ROOT );
+        $pdf_ph_path = FSRoot( 'placeholder.pdf' );
+        FSRemoveFile( $pdf_ph_path );
+        $pdf_ph = new FPDF();
+        $pdf_ph->AddPage();
+        $pdf_ph->SetFont( 'Courier', '', 16 );
+        $pdf_ph->SetXY( 10, 50 );
+        $pdf_ph->Cell( min( 20, $pdf_ph->GetStringWidth( $text ) ), 20, $text );
+        $pdf_ph->Output( 'F', $pdf_ph_path, true );
+        $api_session = new PinaxoApiSession( PINAXO_API_TOKEN );
+        $api_session->documents_post( [ 'description' => $text, 'title' => $text, 'type' => 'L', 'brand_id' => $working_brand_id, 'category_id' => 9, 'hd' => 1 ] );
+        if( $api_session->status >= 300 ) Error( "PDF Improve: failed to create new document\n{$api_session->response_as_text}" );
+        if( ! isset( $api_session->response[ 'document_id' ] ) ) Error( "PDF Improve: api user needs `admin` privileges" );
+        $pdf_ph_document_id = $api_session->response[ 'document_id' ];
+        $pdf_ph_public_id   = $api_session->response[ 'public_id' ];
+        $api_session->documents_pdf_put( $pdf_ph_public_id, $pdf_ph_path );
+        if( $api_session->status >= 300 ) Error( "PDF Improve: failed to upload document's pdf\n{$api_session->response_as_text}" );
+        FSMakeDir( FSRoot( "working_document_id=$pdf_ph_document_id") );
+        FSRemoveFile( $pdf_ph_path );
+        EchoNL( "Created placeholder document with id = $pdf_ph_document_id" );
+        $document_id = $pdf_ph_document_id;
+    }
 
 
     //
