@@ -48,7 +48,7 @@ class Scraper
         $this->cache_zip = true;
         $this->visited = [];
         $this->attempts = 3;
-        $this->pause = 10;
+        $this->pause = 1;
         $this->level = 0;
         $this->silent = $silent ? 1 : false;
         $this->quit = false;
@@ -343,13 +343,7 @@ class Scraper
         }
 
 
-        // make root lowercase
-
-        $root = StringLowercase( $root );
-
-
-        // root url is stored lowercase
-        // and subsequently compared ci
+        // save root
 
         $this->root = $root;
 
@@ -366,7 +360,7 @@ class Scraper
             if( ! $this->url_is_good( $start ) ) { Error( "Scraper: bad start URL: $start" ); } /*--- QUIT POINT ---*/
             if( ! $this->url_is_absolute( $start ) ) { $start = $this->url_make_absolute( $start, $root ); }
             if( ! $this->url_is_below_root( $start ) ) { Error( "Scraper: start URL is below root: $start" ); } /*--- QUIT POINT ---*/
-            $start = $this->lowercase_root( $start );
+            // $start = $this->lowercase_root( $start );
         }
 
 
@@ -382,9 +376,8 @@ class Scraper
 
 
 
-    // parse web pages recursively; the  passed
-    // url must have not been visited  yet  and
-    // must have the root part lowercase
+    // parse web pages recursively; the passed
+    // url must have not been visited yet
 
     protected function scrape_url( $url, $level, $parent_url = '', $parent_html = '' )
     {
@@ -554,7 +547,7 @@ class Scraper
                 continue;
             }
 
-            $linkurl = $this->lowercase_root( $linkurl );
+            // $linkurl = $this->lowercase_root( $linkurl );
 
             if( in_array( $linkurl, $this->visited ) )
             {
@@ -665,7 +658,7 @@ class Scraper
 
     protected function cache_base_path_for_url( $url )
     {
-        $url = $this->lowercase_root( $url );
+        //$url = $this->lowercase_root( $url );
         $filename = md5( $url );
         $cache_file_path = $this->cache_path . "/" . $filename;
 
@@ -698,7 +691,7 @@ class Scraper
 
     protected function save_in_visited( $url )
     {
-        $url = $this->lowercase_root( $url );
+        //$url = $this->lowercase_root( $url );
         if( ! in_array ( $url, $this->visited ) )
         {
             $this->visited[] = $url;
