@@ -877,3 +877,33 @@ function FSRoot( $path = '' )
     if( substr( $path, 0, 1 ) !== '/' ) $path = "/$path";
     return ROOT . $path;
 }
+
+
+
+//
+// Exclude from TimeMachine backups
+//
+
+function FSTMExclude( $path )
+{
+    $output = FSExecute( [ 'tmutil addexclusion', $path ], $exitStatus );
+    if( $exitStatus != 0 )
+    {
+        Error( "tmutil: $output" );
+    }
+}
+
+
+
+//
+// Include in TimeMachine backups
+//
+
+function FSTMInclude( $path )
+{
+    $output = FSExecute( [ 'tmutil removeexclusion', $path ], $exitStatus );
+    if( $exitStatus != 0 )
+    {
+        Error( "tmutil: $output" );
+    }
+}
