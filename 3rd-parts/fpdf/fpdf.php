@@ -1548,7 +1548,7 @@ protected function _putpages()
 	{
 		$this->PageInfo[$i]['n'] = ++$n;
 		$n++;
-		foreach($this->PageLinks[$i] as &$pl)
+		foreach( $this->PageLinks[$i] as &$pl )
 			$pl[5] = ++$n;
 		unset($pl);
 	}

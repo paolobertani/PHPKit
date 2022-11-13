@@ -53,7 +53,8 @@ class PinaxoProductCodes
     {
         EchoCR( "Registering products..." );
         $data = $products; // since `$products` is modified save it into `$data` in order to pass the same data to `product_codes_post` at each iteration
-        foreach( $products as &$p ) $p[ 'code_id' ] = 0; unset( $p );
+        foreach( $products as &$p ) $p[ 'code_id' ] = 0;
+        unset( $p );
         $session = $this->api_session;
         $progress = '...';
         while( true )
