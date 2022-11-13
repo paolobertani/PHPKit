@@ -151,6 +151,14 @@ require_once ROOT . '/include/3rd-parts/fpdf/fpdf.php';
 
 
 //
+// Exclude the whole script's dir from TM backups
+//
+
+FSTMExclude( ROOT );
+
+
+
+//
 // REGISTER ASSETS
 //
 
