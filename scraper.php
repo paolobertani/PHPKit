@@ -242,8 +242,12 @@ class Scraper
             {
                 EchoCR( "Archiving and compressing cache..." );
                 FSTarGzDirectory( $this->cache_path, FS_ZIP_DELETE );
+                EchoNL( "Cache archived and compressed", $this->silent );
             }
-            EchoNL( "Cache archived and compressed", $this->silent );
+            else
+            {
+                EchoNL( "Cache archived", $this->silent );
+            }
         }
     }
 
