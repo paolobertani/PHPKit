@@ -864,3 +864,16 @@ function FSmd5( $path )
     }
     return trim( $md5 );
 }
+
+
+
+//
+// Path from ROOT
+//
+
+function FSRoot( $path = '' )
+{
+    if( $path === '' ) return ROOT;
+    if( substr( $path, 0, 1 ) !== '/' ) $path = "/$path";
+    return ROOT . $path;
+}
