@@ -113,17 +113,21 @@ class PinaxoAssets
 
     public function value( $params )
     {
-        if( ! is_array( $params )                    ) Error( "Expected associative array"        );
-        if( ! isset( $params[ 'document_id'      ] ) ) Error( "`document_id` not specified"       );
-        if( ! isset( $params[ 'product_code_id'  ] ) ) Error( "`product_code_id` not specified"   );
-        if( ! isset( $params[ 'resource_type_id' ] ) ) Error( "`resource_type_id` not specified"  );
-        if( ! isset( $params[ 'file_type_id'     ] ) ) Error( "`file_type_id` not specified"      );
-        if( ! isset( $params[ 'language_id'      ] ) ) Error( "`language_id` not specified"       );
-        if( ! is_int($params[ 'document_id'      ] ) ) Error( "`document_id` is not integer"      );
-        if( ! is_int($params[ 'product_code_id'  ] ) ) Error( "`product_code_id` is not integer"  );
-        if( ! is_int($params[ 'resource_type_id' ] ) ) Error( "`resource_type_id` is not integer" );
-        if( ! is_int($params[ 'file_type_id'     ] ) ) Error( "`file_type_id` is not integer"     );
-        if( ! is_int($params[ 'language_id'      ] ) ) Error( "`language_id` is not integer"      );
+        if( !  is_array( $params )                    ) Error( "Expected associative array"        );
+        if( !  isset( $params[ 'document_id'      ] ) ) Error( "`document_id` not specified"       );
+        if( !  isset( $params[ 'product_code_id'  ] ) ) Error( "`product_code_id` not specified"   );
+        if( !  isset( $params[ 'resource_type_id' ] ) ) Error( "`resource_type_id` not specified"  );
+        if( !  isset( $params[ 'file_type_id'     ] ) ) Error( "`file_type_id` not specified"      );
+        if( !  isset( $params[ 'language_id'      ] ) ) Error( "`language_id` not specified"       );
+        if( ! is_int( $params[ 'document_id'      ] ) ) Error( "`document_id` is not integer"      );
+        if( ! is_int( $params[ 'product_code_id'  ] ) ) Error( "`product_code_id` is not integer"  );
+        if( ! is_int( $params[ 'resource_type_id' ] ) ) Error( "`resource_type_id` is not integer" );
+        if( ! is_int( $params[ 'file_type_id'     ] ) ) Error( "`file_type_id` is not integer"     );
+        if( ! is_int( $params[ 'language_id'      ] ) ) Error( "`language_id` is not integer"      );
+        if(   0 === ( $params[ 'document_id'      ] ) ) Error( "`document_id` is zero `0`"         );
+        if(   0 === ( $params[ 'product_code_id'  ] ) ) Error( "`product_code_id` is zero `0`"     );
+        if(   0 === ( $params[ 'resource_type_id' ] ) ) Error( "`resource_type_id` is zero `0`"    );
+        if(   0 === ( $params[ 'file_type_id'     ] ) ) Error( "`file_type_id` is zero `0`"        );
 
 
         $document_id        = $params[ 'document_id'      ];

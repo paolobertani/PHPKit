@@ -26,6 +26,9 @@ define( 'FS_FULLPATH',          1 );
 define( 'FS_FULL_PATH',         1 );
 define( 'FS_ZIP_DELETE',        2 );
 define( 'FS_WITH_EXTENSION',    4 );
+define( 'FS_SYMLINKS',          8 );
+define( 'FS_NODOT',            16 );
+define( 'FS_NO_DOT',           16 );
 
 
 //
@@ -88,10 +91,17 @@ function FSGetLastCommand()
 // The given path points to an existing file
 //
 
-function FSFileExists( $f )
+function FSFileExists( $f, $options = FS_NO_OPTIONS )
 {
     clearstatcache( true );
-    return is_file( $f );
+    if( $options & FS_SYMLINKS )
+    {
+        return is_file( $f ) || is_link( $f );
+    }
+    else
+    {
+        return is_file( $f );
+    }
 }
 
 
@@ -232,91 +242,93 @@ function FSPathRelative( $path, $root = false )
 
 
 //
-// Given a path return a list with the filenames (not full paths) of the files (not directories)
-// in that directory. The directory must exists otherwise an error is raised.
-//
-// NOTE:
-// Items that begins with dot `.` are excluded
-// Symbolic links are excluded
-//
-// Option FS_FULLPATH will make the function FSreturn full paths
+// Given a full path return a list of the files in that directory.
 //
 
-function FSFilesInDirectory( $d, $options = FS_NO_OPTIONS )
+function FSFilesInDirectory( $dir, $options = FS_NO_OPTIONS )
 {
-    if( ! FSDirectoryExists( $d ) )
+    if( substr( $dir, 0, 1 ) !== '/' ) Error( "path is not absolute: $dir\n" );
+
+    if( ! FSDirectoryExists( $dir ) )
     {
-        echo "filesystem: FilesInDirectory: directory not found: $d\n";
+        Error( "directory not found: $dir\n" );
         exit(0);
         /*--- QUIT POINT ---*/
     }
 
-    $list = scandir( $d );
+    if( $options === true ) $options = FS_FULL_PATH;  // legacy `option` values:
+    if( $options === false) $options = FS_NO_OPTIONS; // `true` = full path, `false` = just dir names
 
-    $files = array();
+    $list = scandir( $dir );
 
-    FSPathAppendSlash( $d );
+    $elements = [];
 
-    foreach( $list as $item )
+    FSPathRemoveSlash( $dir );
+
+    FSPathFix( $dir );
+
+    foreach( $list as $name )
     {
-        if( is_file( "$d$item" ) && substr( $item, 0, 1 ) != '.' && ! is_link( "$d$item" ) )
-        {
-            if( $options === FS_FULLPATH )
-            {
-                $files[] = realpath( "$d$item" );
-            }
-            else
-            {
-                $files[] = "$item";
-            }
-        }
+        if( $name === '.' || $name === '..' ) continue;
+
+        if( ( $options & FS_NO_DOT ) && substr( $name, 0, 1 ) === '.' ) continue;
+
+        $path = "$dir/$name";
+
+        if( ! is_file( $path ) ) continue;
+
+        if( ! ( $options & FS_SYMLINKS ) && is_link( $path ) ) continue;
+
+        $elements[] = ( $options & FS_FULL_PATH ) ? $path : $name;
     }
 
-    return $files;
+    return $elements;
 }
 
 
+
 //
-// Given a full path return a list with the names (not full paths) of the directories
-// in that directory. The directory must exists otherwise an error is raised.
-//
-// NOTE:
-// Items that begins with dot `.` are excluded
-// Symbolic links are excluded
-// Optional `$fullpath` will make the function FSreturn full paths
+// Given a full path return a list of the directories in that directory.
 //
 
-function FSDirectoriesInDirectory( $d, $fullpath = false )
+function FSDirectoriesInDirectory( $dir, $options = FS_NO_OPTIONS )
 {
-    if( ! FSDirectoryExists( $d ) )
+    if( substr( $dir, 0, 1 ) !== '/' ) Error( "path is not absolute: $dir\n" );
+
+    if( ! FSDirectoryExists( $dir ) )
     {
-        echo "filesystem: DirectoriesInDirectory: directory not found: $d\n";
+        Error( "directory not found: $dir\n" );
         exit(0);
         /*--- QUIT POINT ---*/
     }
 
-    $list = scandir( $d );
+    if( $options === true ) $options = FS_FULL_PATH;  // legacy `option` values:
+    if( $options === false) $options = FS_NO_OPTIONS; // `true` = full path, `false` = just dir names
 
-    $dirs = array();
+    $list = scandir( $dir );
 
-    FSPathAppendSlash( $d );
+    $elements = [];
 
-    foreach( $list as $item )
+    FSPathRemoveSlash( $dir );
+
+    FSPathFix( $dir );
+
+    foreach( $list as $name )
     {
-        if( is_dir( "$d$item" ) && substr( $item, 0, 1 ) != '.' && ! is_link( "$d$item" ) )
-        {
-            if( $fullpath === FS_FULLPATH )
-            {
-                $dirs[] = realpath( "$d$item" );
-            }
-            else
-            {
-                $dirs[] = "$item";
-            }
-        }
+        if( $name === '.' || $name === '..' ) continue;
+
+        if( ( $options & FS_NO_DOT ) && substr( $name, 0, 1 ) === '.' ) continue;
+
+        $path = "$dir/$name";
+
+        if( ! is_dir( $path ) ) continue;
+
+        if( ! ( $options & FS_SYMLINKS ) && is_link( $path ) ) continue;
+
+        $elements[] = ( $options & FS_FULL_PATH ) ? $path : $name;
     }
 
-    return $dirs;
+    return $elements;
 }
 
 
@@ -906,4 +918,36 @@ function FSTMInclude( $path )
     {
         Error( "tmutil: $output" );
     }
+}
+
+
+
+//
+// Fix a path
+//
+
+function FSPathFix( &$path )
+{
+    $leadslash = substr( $path, 0, 1 ) === '/' ? '/' : '';
+    $trailslsh = substr( $path,-1, 1 ) === '/' ? '/' : '';
+
+    $parts = explode( '/', $path );
+    $n = count( $parts );
+    $out = [];
+
+    for( $i = 0; $i < $n; $i++ )
+    {
+        $part = $parts[ $i ];
+        if( $part === '.' ) continue;
+        if( $part === ''  ) continue;
+        if( $part === '..')
+        {
+            if( count( $out ) === 0 && $leadslash === '' ) Error( "cannot fix relative path: $path" );
+            array_pop( $out );
+            continue;
+        }
+        $out[] = $part;
+    }
+
+    $path = $leadslash . implode( '/', $out ) . $trailslsh;
 }

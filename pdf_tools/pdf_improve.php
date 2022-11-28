@@ -1,132 +1,137 @@
-<?php
+<?php if( isset( $argv[ 1 ] ) && $argv[ 1 ] === '-h' ) { echo <<<HEREDOC
 
-//
-// PdfImprove
-//
-// Add links to a PDF document and register the assets
-//
-//
-//
-// Params:
-//          -pdf        path to PDF file
-//          -prd        path to products file, with associated resources
-//          -out        path to PDF file with links to produce (opt.)
-//          -cleanup    discard temp files (opt.)
-//          -noimg      do not produce pdf with icons/images (opt.)
-//          -goffs      see "Offset" below
-//          -geths      see "Height" below
-//          -tol        see "Tolerance"
-//          -code       see "Code" below
-//
-//          or alone
-//
-//          -register   to register the assets file on Pinaxo
-//
-// Requirements:
-//
-// the products file must be a tab separated  text
-// file generated with `ArrayToFile`.
-//
-// Relevant columns are:
-// `code` the product code;
-// `code_id` the product code -registered- `id`;
-// `brand_id` the brand id of the producer on Px;
-//
-// Resource columns with URLs must be named  using
-// the resource type code:
-// web - drw - ins - tec - pho - sht - spa - m2d -
-// m3d - amb
-//
-// For each resource column the resource file type
-// must be specificed in a column named type_{rtc}
-//
-//
-//
-// Must be defined:
-//
-// function PdfImproveLinksProcess( (array)$product, (array)$location ) --> array[array] | false | []
-//
-// receives the record for a given  product/item.
-// Receives the  location  where  the  resource's
-// code was found as associative array with  keys
-// `p`, `l`, `t`, `w`, `h`;
-// the function may return:`false` nothing to do;
-// array of associative arrays each one with  the
-// following keys:
-// `p` (opt): page number
-// `l`, `t`, `w`, `h` (opt): location on the page
-// `z` (opt): z-index of the image
-// `img` (opt): path to the image to be applied
-// `res` (opt): create a link to the resource  of
-// type specified;
-// either `url` or `img` should be specified;
-// values for `res`:
-// "web": product web page
-// "sht": product sheet
-// "tec": technical sheet
-// "ins": installation instruct
-// "spa": spare parts
-// "drw": 2d drawing
-// "m3d": 3d model
-// "m2d": 2d model
-// "pho": photo
-// "amb": photo of ambientation
-//
-//
-//
-// May be defined:
-//
-// function PdfImproveLinksFilter( (string) $code ) --> (string) | false
-//
-// Receives a product code, returns  the  code  to
-// search  for  (generally  the  same  code   with
-// prepended a  modifier  search  character);  may
-// return false to instruct to skip the code    \x
-//
-//
-//
-// May be defined:
-//
-// function PdfImproveResultsFilter( (string)$search, (array)$results ) --> (array) | false
-//
-// Receives  the  search  query  (as   passed   to
-// pdfidxfind) an the search results  as  returned
-// by pdfidxfind and is  expected  to  return  the
-// same set or a subset; the returned results will
-// be  passed  to  PdfAddLinksProces;  may  return
-// `false` as an alias to a empty array         \x
-//
-//
-//
-// DOCUMENT INSPECTION
-//
-// Height: the argument `geths` does  not  require
-// any value; when specified a report is  produced
-// with all the character heights at 720dpi of the
-// codes found in the document; along  with  every
-// "height" found, the  pages  containing  one  or
-// more product codes with that height are listed.
-//
-// 'goffs`:the argument expect a value in the form
-// `hh` where `hh` express a character  height  at
-// 720 dpi; if `goffs`  is specified then a report
-// is produced with the X offsets where the  codes
-// (with specified height) are found on the  pages
-// of the document. If `goffs`  is specified  then
-// no output file is generated; several values may
-// be specified separated by comma: hh1,hh2,...
-//
-// Tolerance: `tol` expect a value that  represent
-// a 720dpi measure;  when  specified  along  with
-// `offset` or `height` the reports produced group
-// heights/offsets that differs equal or less  the
-// value specified (they fit into the tolerance).
-//
-// Code: `code` let the  Offsets report  (argument
-// `height`) produce also  code  for  setting  the
-// icons   offsets   for   each   combination   of
-// product-code x position and height
-//                                              \x
+   PdfImprove
+
+   Add links to a PDF document and register the assets
+
+
+
+   Params:
+            -pdf        path to PDF file
+            -prd        path to products file, with associated resources
+            -out        path to PDF file with links to produce (opt.)
+            -cleanup    discard temp files (opt.)
+            -noimg      do not produce pdf with icons/images (opt.)
+            -geto       see "Offset" below
+            -geth       see "Height" below
+            -tol        see "Tolerance"
+            -code       see "Code" below
+            -compress   compress the produced file using `cpdf`
+
+                    or alone
+
+            -register   to register the assets file on Pinaxo
+
+                    or alone
+
+            -h          display usage
+
+   Requirements:
+
+   the products file must be a tab separated  text
+   file generated with `ArrayToFile`.
+
+   Relevant columns are:
+   `code` the product code;
+   `code_id` the product code -registered- `id`;
+   `brand_id` the brand id of the producer on Px;
+
+   Resource columns with URLs must be named  using
+   the resource type code:
+   web - drw - ins - tec - pho - sht - spa - m2d -
+   m3d - amb
+
+   For each resource column the resource file type
+   must be specificed in a column named type_{rtc}
+
+
+
+   Must be defined:
+
+   function PdfImproveLinksProcess( (array)\$product, (array)\$location ) --> array[array] | false | []
+
+   receives the record for a given  product/item.
+   Receives the  location  where  the  resource's
+   code was found as associative array with  keys
+   `p`, `l`, `t`, `w`, `h`;
+   the function may return:`false` nothing to do;
+   array of associative arrays each one with  the
+   following keys:
+   `p` (opt): page number
+   `l`, `t`, `w`, `h` (opt): location on the page
+   `z` (opt): z-index of the image
+   `img` (opt): path to the image to be applied
+   `res` (opt): create a link to the resource  of
+   type specified;
+   either `url` or `img` should be specified;
+   values for `res`:
+   "web": product web page
+   "sht": product sheet
+   "tec": technical sheet
+   "ins": installation instruct
+   "spa": spare parts
+   "drw": 2d drawing
+   "m3d": 3d model
+   "m2d": 2d model
+   "pho": photo
+   "amb": photo of ambientation
+
+
+
+   May be defined:
+
+   function PdfImproveLinksFilter( (string) \$code ) --> (string) | false
+
+   Receives a product code, returns  the  code  to
+   search  for  (generally  the  same  code   with
+   prepended a  modifier  search  character);  may
+   return false to instruct to skip the code    \x
+
+
+
+   May be defined:
+
+   function PdfImproveResultsFilter( (string)\$search, (array)\$results ) --> (array) | false
+
+   Receives  the  search  query  (as   passed   to
+   pdfidxfind) an the search results  as  returned
+   by pdfidxfind and is  expected  to  return  the
+   same set or a subset; the returned results will
+   be  passed  to  PdfAddLinksProces;  may  return
+   `false` as an alias to a empty array         \x
+
+
+
+   DOCUMENT INSPECTION
+
+   Height: the argument `geth`  does  not  require
+   any value; when specified a report is  produced
+   with all the character heights at 720dpi of the
+   codes found in the document; along  with  every
+   "height" found, the  pages  containing  one  or
+   more product codes with that height are listed.
+
+   'geto`: the argument expect a value in the form
+   `hh` where `hh` express a character  height  at
+   720 dpi;  if  `geto` is specified then a report
+   is produced with the X offsets where the  codes
+   (with specified height) are found on the  pages
+   of the document.   If `geto` is specified  then
+   no output file is generated; several values may
+   be specified separated by comma: hh1,hh2,...
+
+   Tolerance: `tol` expect a value that  represent
+   a 720dpi measure;  when  specified  along  with
+   `offset` or `height` the reports produced group
+   heights/offsets that differs equal or less  the
+   value specified (they fit into the tolerance).
+
+   Code: `code` let the  Offsets report  (argument
+   `height`) produce also  code  for  setting  the
+   icons   offsets   for   each   combination   of
+   product-code x position and height
+
+HEREDOC . "\n"; exit( 0 ); }
 
 
 
@@ -159,7 +164,7 @@ FSTMExclude( ROOT );
 
 
 //
-// REGISTER ASSETS
+// REGISTER ASSETS AND QUIT MAYBE
 //
 
 if( ArgumentGet( '-register', ARGUMENT_BOOLEAN ) )
@@ -168,6 +173,16 @@ if( ArgumentGet( '-register', ARGUMENT_BOOLEAN ) )
     exit( 0 );
 }
 
+
+//
+// UPLOAD FILE AND QUIT MAYBE
+//
+
+if( ArgumentGet( '-upload', ARGUMENT_BOOLEAN ) )
+{
+    UploadFilePrivate();
+    exit( 0 );
+}
 
 
 //
@@ -196,7 +211,7 @@ function PdfImprove()
 
     if( ! function_exists( 'PdfImproveLinksProcess' ) )
     {
-        Error( "PdfImproveLinksProcess function is not defined." );
+        Error( "`PdfImproveLinksProcess()` function is not defined." );
         /*--- QUIT POINT ---*/
     }
 
@@ -237,7 +252,7 @@ function PdfImprove()
 
 
     //
-    // Discard temporary files (only if tool was called with `cleanup` argument)
+    // Discard temporary files maybe (only if tool was called with `cleanup` argument)
     //
 
 
@@ -253,18 +268,16 @@ function PdfImprove()
     $prdPath = ArgumentGet( 'prd' );
     $dstPath = ArgumentGet( 'out',     ARGUMENT_OPTIONAL );
     $noimg   = ArgumentGet( 'noimg',   ARGUMENT_BOOLEAN );
-    $offset  = ArgumentGet( 'goffs',   ARGUMENT_OPTIONAL );
-    $height  = ArgumentGet( 'geths',   ARGUMENT_BOOLEAN );
+    $offset  = ArgumentGet( 'geto',    ARGUMENT_OPTIONAL );
+    $height  = ArgumentGet( 'geth',    ARGUMENT_BOOLEAN );
+    $compress= ArgumentGet( 'compress',ARGUMENT_BOOLEAN );
 
 
     //
     // Get document id from directory name
     //
 
-    $document_id = false;
-    $dd = FSDirectoriesInDirectory( ROOT );
-    $prm = 'working_document_id=';
-    foreach( $dd as $d ) if( substr( $d, 0, strlen( $prm ) ) === $prm ) $document_id = intval( substr( $d, strlen( $prm ) ) );
+    $document_id = GetDocumentIDPrivate( $unused );
 
 
     //
@@ -275,9 +288,11 @@ function PdfImprove()
     {
         $working_brand_id = false;
         $prm = 'working_brand_id=';
+        $dd = FSDirectoriesInDirectory( ROOT );
         foreach( $dd as $d ) if( substr( $d, 0, strlen( $prm ) ) === $prm ) $working_brand_id = intval( substr( $d, strlen( $prm ) ) );
-        if( $working_brand_id === false ) Error( "PDF Improve: working brand id not specified; create a directory named `working_brand_id=<id>" );
-        $text = FSPathGetFilename( ROOT );
+        if( $working_brand_id === false ) Error( "PDF Improve: working brand id not specified; create a directory named `working_brand_id=<id>`" );
+        $text = explode( '/', ROOT );
+        $text = $text[ count( $text ) - 1 ];
         $pdf_ph_path = FSRoot( 'placeholder.pdf' );
         FSRemoveFile( $pdf_ph_path );
         $pdf_ph = new FPDF();
@@ -338,30 +353,38 @@ function PdfImprove()
         EchoNL( "`height` option specified. no output file will be produced" );
     }
 
-
     if( $dstPath === false )
     {
         $dstPath = substr( $pdfPath, 0, -4 ) . '.improved.pdf';
     }
 
+    $cmpPath = substr( $dstPath, 0, -4 ) . '.compressed.pdf';
+
     if( $offset === false && $height === false )
     {
         if( FSPathGetExtension( $dstPath ) !== 'pdf' )
         {
-            Error( "output pdf has not pdf extension: $outPath" );
+            Error( "output pdf has not pdf extension: $dstPath" );
             /*--- QUIT POINT ---*/
         }
 
         if( $pdfPath === $dstPath ) // don't overwrite source
         {
-            Error( "input and output pdf file must be different" );
+            Error( "input and output pdf file must be different: $pdfPath" );
             /*--- QUIT POINT ---*/
         }
 
-        if( FSFileExists( $dstPath ) ) // overwrite
+        if( $pdfPath === $cmpPath && $compress) // don't overwrite source
+        {
+            Error( "compressed file would overwrite source: $pdfPath" );
+            /*--- QUIT POINT ---*/
+        }
+
+        if( FSFileExists( $dstPath ) || FSFileExists( $cmpPath ) ) // overwrite
         {
             EchoNL( "output file exists, will be overwritten: $dstPath" );
             FSRemoveFile( $dstPath );
+            FSRemoveFile( $cmpPath );
         }
     }
 
@@ -856,6 +879,19 @@ function PdfImprove()
 
 
     //
+    // Compress produced file maybe
+    //
+
+    if( $compress )
+    {
+        EchoCR( 'Compressing file...' );
+        $output = FSExecute( [ '/usr/local/bin/cpdf -squeeze', $dstPath, '-o', $cmpPath ], $exitStatus );
+        $output = "Compressing file: " . ( $exitStatus == 0 ? 'done' : 'FAILED' ) . "\n--------\n    " . trim( str_replace( "\n", "\n    ", $output ) ) . "\n--------";
+        EchoNL( $output );
+    }
+
+
+    //
     // Done
     //
 
@@ -935,6 +971,14 @@ function RegisterAssetsPrivate()
             if( $a[ 'value' ] !== $pinaxoAssets->value( $a ) ) Error( "bad asset value on row $row: {$a['value']}" );
             if( $a[ 'pinaxo_url' ] !== "https://www.pinaxo.com/asset/{$a['value']}" ) Error( "bad Pinaxo URL on row $row: {$a['pinaxo_url']} -VS- https://www.pinaxo.com/asset/{$a['value']}" );
             if( substr( $a[ 'url' ], 0, 8 ) !== 'https://' && substr( $a[ 'url' ], 0, 7 ) !== 'http://' ) Error( "bad target URL on row $row: {$a['url']}" );
+
+            if( 0===( $a[ 'document_id'      ] ) ) Error( "`document_id` is `0` zero on row $row"         );
+            if( 0===( $a[ 'resource_type_id' ] ) ) Error( "`resource_type_id` is `0` zero on row $row"    );
+            if( 0===( $a[ 'file_type_id'     ] ) ) Error( "`file_type_id` is `0` zero on row $row"        );
+            if( 0===( $a[ 'language_id'      ] ) ) Error( "`language_id` is `0` zero on row $row"         );
+            if( 0===( $a[ 'brand_id'         ] ) ) Error( "`brand_id` is `0` zero on row $row"            );
+            if( 0===( $a[ 'product_code_id'  ] ) ) Error( "`product_code_id` is `0` zero on row $row" .
+                                                        ( $row === 1 ? "\n🤔 maybe you forgot to invoke the scraper with `-register` in order to register the product code?" : "" ) );
         }
     }
 
@@ -986,6 +1030,51 @@ function RegisterAssetsPrivate()
     EchoNL( 'Done' );
     exit( 0 );
 }
+
+
+
+function UploadFilePrivate()
+{
+    $document_id = GetDocumentIDPrivate( $x );
+    if( $document_id === false ) Error( "cannot retrieve document id from directory named $x<document_id>" );
+
+
+    // search file to upload in default `2. postflight` directory
+
+    $uplPath = false;
+    $dd = FSFilesInDirectory( FSRoot( '2. postflight' ), FS_FULL_PATH );
+    foreach( $dd as $d )
+    {
+        if( StringEnds( $d, '.improved.compressed.pdf' ) ) $uplPath = $d;
+        if( StringEnds( $d, '.improved.pdf' ) && $uplPath === false ) $uplPath = $d;
+    }
+    if( $uplPath === false ) Error( "cannot find document to upload in directory `2. postfight`:\n" . implode( "\n", $dd ) );
+
+
+    // up the tube
+
+    $api_session = new PinaxoApiSession( PINAXO_API_TOKEN );
+    $api_session->documents_get( $document_id );
+    if( $api_session->status >= 300 ) Error( "failed fetching document data; status: {$api_session->status}\n{$api_session->response_as_text}" );
+    if( ! isset( $api_session->response[ 'public_id' ] ) ) Error( "cannot fetch public_id from response:\n{$api_session->response_as_text}" );
+    if( $api_session->response[ 'lock' ] !== '' ) Error( "document is locked" );
+    EchoCR( "Uploading $uplPath to {$api_session->response['brand']} :: {$api_session->response['description']}..." );
+    $api_session->documents_pdf_put( $api_session->response[ 'public_id' ], $uplPath );
+    if( $api_session->status >= 300 ) EchoNL( "Uploading $uplPath: FAILED with status {$api_session->status}\n{$api_session->response_as_text}" );
+    else                              EchoNL( "Uploading $uplPath: done" );
+}
+
+
+function GetDocumentIDPrivate( &$prm )
+{
+    $document_id = false;
+    $dd = FSDirectoriesInDirectory( ROOT );
+    $prm = 'working_document_id=';
+    foreach( $dd as $d ) if( substr( $d, 0, strlen( $prm ) ) === $prm ) $document_id = intval( substr( $d, strlen( $prm ) ) );
+    return $document_id;
+}
+
+
 
 
 

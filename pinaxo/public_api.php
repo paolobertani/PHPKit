@@ -182,9 +182,9 @@ class PinaxoApiSession
     {
         $handle = curl_init();
 
-        $id = empty( $id ) ? "" : "/" . $id;
+        $url = ( $id === null || $id === false || $id === '' ) ? "{$this->domain}/api/v1/documents" : "{$this->domain}/api/v1/documents/$id";
 
-        curl_setopt( $handle, CURLOPT_URL,              "{$this->domain}/api/v1/documents/$id" );
+        curl_setopt( $handle, CURLOPT_URL,              $url );
         curl_setopt( $handle, CURLOPT_CUSTOMREQUEST,    "GET" );
         curl_setopt( $handle, CURLOPT_RETURNTRANSFER,   true );
 
