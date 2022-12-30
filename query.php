@@ -144,6 +144,13 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
 
     foreach( $params as $key => $value )
     {
+        // Leading :: in the param name means the value must be injected unescaped
+        $escape = true;
+        if( substr( $key, 0, 2 ) === '::' )
+        {
+            $escape = false;
+        }
+
         // Every passed parameter must be present
         $token = '{{' . $key . '}}';
         if( ! StringHas( $sql, $token ) )
@@ -153,7 +160,7 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
         }
 
         // Strings are escaped then enclosed between double quotes
-        if( is_string( $value ) )
+        if( is_string( $value ) && $escape )
         {
             $value = '"' . $mysqli->real_escape_string( $value ) . '"';
         }
