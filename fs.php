@@ -475,6 +475,30 @@ function FSPathGetExtension( $path )
 }
 
 
+
+//
+// Changes the extension to path
+//
+
+function FSPathSetExtension( $path, $e )
+{
+	$path = trim( $path );
+	if( $path === '/' ) return "/untitled.$e";
+    $path = explode( '/', $path );
+    if( $path[ count( $path ) - 1 ] === '' ) array_pop( $path );
+    if( count( $path ) === 0 ) return "untitled.$e";
+    $file = array_pop( $path );
+    $file = explode( '.', $file );
+    if( count( $file ) === 1 ) $file[] = '';
+    $file[ count( $file ) - 1 ] = $e;
+    $file = implode( '.', $file );
+    $path[] = $file;
+    $path = implode( '/', $path );
+    return $path;
+}
+
+
+
 //
 // edit the path appending and/or prepending  text
 // to the filename: if  `extension`  is  true  the
