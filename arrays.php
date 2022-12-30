@@ -110,7 +110,10 @@ function ArrayFromFile( $path, $null_on_empty = false )
     {
         $parts = explode( "\t", $lines[ $i ] );
 
-        if( count( $parts ) < $cols ) Error( "missing column(s) at row $i" );
+        if( count( $parts ) < $cols )
+        {
+             Error( "missing column(s) at row $i" );
+        }
 
         $row = [];
 
@@ -206,7 +209,7 @@ function ArrayToFile( $path, $array, $store_types = true )
         $row = '';
         foreach( $keys as $key )
         {
-            $value = $array[ $i ][ $key ];
+            if( isset( $array[ $i ][ $key ] ) ) $value = $array[ $i ][ $key ]; else $value = '';
 
             $value = str_replace( "\t", " ", $value );
             $value = str_replace( "\n", " ", $value );
@@ -309,7 +312,7 @@ function ArrayToFileCSV( $path, $array, $sep = ',', $txt = '"' )
         $values = [];
         foreach( $keys as $key )
         {
-            $values[] = $row[ $key ];
+            if( isset( $row[ $key ] ) ) $values[] = $row[ $key ]; else $values[] = '';
         }
         fputcsv ( $handle, $values, $sep, $txt );
     }
@@ -704,7 +707,6 @@ function ArrayRemoveColumn( &$array, $key )
 }
 
 
-
 //
 // ArraySplit
 //
@@ -845,3 +847,34 @@ function ArrayRowRequire( $row, $keys )
 
 
 
+
+
+
+//
+// ArrayJoin
+//
+// Join the second array to the first by key
+//
+
+function ArrayJoin( &$arrayLeft, $arrayRight, $keyLeft, $keyRight, $missing = NULL )
+{
+    if( $missing === null ) $missing = [];
+
+    foreach( $arrayLeft as &$leftRow )
+    {
+        $index = ArrayFind( $arrayRight, $keyRight, $leftRow[$keyLeft] );
+        if( $index !== false )
+        {
+            $rightRow = $arrayRight[$index];
+        }
+        else
+        {
+            $rightRow = $missing;
+        }
+
+        foreach( $rightRow as $k => $v )
+        {
+            if( $k !== $keyRight ) $leftRow[$k] = $v;
+        }
+    } unset( $leftRow );
+}
