@@ -232,6 +232,263 @@ function ArrayToFile( $path, $array, $store_types = true )
 }
 
 
+//
+// ArrayToCSV
+//
+// Turn an array into a CSV string
+//
+// options and the defaults are
+//
+// "delimiter"     => ";",
+// "enclosure"     => "\"",
+// "decimal"       => ".",
+// "null"          => "",
+// "true"          => "1",
+// "false"         => "0"
+//
+// "null" tells what to do in case a null value is encountered
+// default is no value, you may prefer `0` or empty string
+// to specify an empty string use the text separator you have choosen:
+// "\"\"" - the exact string you write will be put in the CSV string
+//
+
+function ArrayToCSV( $array, $options = [] )
+{
+    if( ! is_array( $array ) )
+    {
+        Error( "Expected array, " . gettype( $array) . "given" );
+    }
+
+    if( ! is_array( $options ) )
+    {
+        Error( "Expected array as `options` parameter, " . gettype( $options ) . "given" );
+    }
+
+    $defaults = [
+        "delimiter"     => ";",
+        "enclosure"     => "\"",
+        "decimal"       => ".",
+        "null"          => "",
+        "true"          => "1",
+        "false"         => "0"
+    ];
+
+    foreach( $defaults as $key => $value )
+    {
+        if( ! array_key_exists( $key, $options ) ) $options[ $key ] = $value;
+    }
+
+    $sep = $options[ 'delimiter' ];
+    $txt = $options[ 'enclosure' ];
+    $dec = $options[ 'decimal' ];
+    $nul = $options[ 'null' ];
+    $tru = $options[ 'true' ];
+    $fal = $options[ 'false' ];
+
+    foreach( $array as &$item )
+    {
+        ;;;;if( $item === null ) $item = $nul;
+        elseif( $item === true ) $item = $tru;
+        elseif( $item === false) $item = $fal;
+        elseif( is_int( $item ) )    $item = "$item";
+        elseif( is_string( $item ) ) $item = $txt . str_replace( $txt, $txt.$txt, $item ) . $txt;
+        elseif( is_float( $item ) )  $item = str_replace( ".", $dec, "$item" );
+        else Error( "Unknow type" );
+    } unset( $item );
+
+    return implode( $sep, $array );
+}
+
+
+
+//
+// ArrayFromCSV
+//
+// Turn a CSV string into an array
+//
+// set `is_header` to true when parsing the CSV file header passing also the wanted columns along with their type [ [ 'name' => '...', 'type' => 'i|f|s'], [ ... ], ... ]
+// the header is then parsed and the extra columns found will be added with type `x`. With this mode a `columns` array is returned so it can be passed to subsequent calls
+//
+
+function ArrayFromCSV( &$str, $options, $columns, $is_header = false )
+{
+    // Manage params
+
+    if( ! is_string( $str     ) ) Error( "Expected `str` as string, "    . gettype( $str     ) . " given" );
+    if( ! is_array ( $options ) ) Error( "Expected `options` as array, " . gettype( $options ) . " given" );
+    if( ! is_array ( $columns ) ) Error( "Expected `columns` as array, " . gettype( $columns ) . " given" );
+
+
+    // Manage options and defaults
+
+    $defaults = [
+        "delimiter"     => ";",
+        "enclosure"     => "\"",
+        "decimal"       => ".",
+        "null"          => NULL
+    ];
+
+    foreach( $defaults as $key => $value )
+    {
+        if( ! array_key_exists( $key, $options ) ) $options[ $key ] = $value;
+    }
+
+    $dlm = $options[ 'delimiter' ];
+    $qts = $options[ 'enclosure' ];
+    $dec = $options[ 'decimal' ];
+    $nul = $options[ 'null' ];
+
+
+    // Detect columns from first row? In case `columns` array is returned
+
+    if( $is_header )
+    {
+        $wanted_columns = $columns;
+
+        $idx = strpos( $str, "\n" );
+        if( $idx === false ) Error( "The file contains a single line" );
+
+        $str2 = substr( $str, 0, $idx );
+        $str = substr( $str, $idx + 1 );
+
+        $has_enc = strpos( $str2, $qts );
+        if( $has_enc !== false ) Error( "The header contains enclosure characters" );
+
+        $cols = explode( $dlm, $str2 );
+        $columns = [];
+
+        $cnt = count( $cols );
+
+        for( $idx = 0; $idx < $cnt; $idx++ )
+        {
+            $c = $cols[ $idx ];
+
+            if( isset( $wanted_columns[ $c ] ) )
+            {
+                $columns[ $idx ] = [ 'name' => $c, 'type' => $wanted_columns[ $c ] ];
+            }
+            else
+            {
+                $columns[ $idx ] = [ 'name' => $c, 'type' => 'x' ];
+            }
+        }
+
+        return $columns;
+
+        /*--- EXIT POINT ---*/
+    }
+
+    // ---
+
+
+    // Output
+
+    $array = [];
+
+
+    // End of file?
+
+    if( $str === "" || $str === "\n" ) return false;
+
+
+    // Vars
+
+    $colCnt = count( $columns );
+    $colIdx = 0;
+    $len = strlen( $str );
+    $idx = 0;
+
+    for( $colIdx = 0; $colIdx < $colCnt; $colIdx++ )
+    {
+        $type = $columns[ $colIdx ][ 'type' ];
+        $name = $columns[ $colIdx ][ 'name' ];
+
+        $instring = false;
+        $wasstring = false;
+
+        $value = '';
+
+        while( true )
+        {
+            $char = substr( $str, $idx, 1 );
+            $nextChar = substr( $str, $idx + 1, 1);
+
+            if( $idx >= $len )
+            {
+                $eol = true;
+                break;
+            }
+
+            if( $char === $dlm || $char === "\n" )
+            {
+                if( $instring )
+                {
+                    $value .= $char;
+                    $idx++;
+                    continue;
+                }
+                else
+                {
+                    $idx++;
+                    break;
+                }
+            }
+
+            if( $char === $qts )
+            {
+                if( $instring )
+                {
+                    if( $nextChar === $qts )
+                    {
+                        $value .= $char;
+                        $idx++;
+                        $idx++;
+                        continue;
+                    }
+                    else
+                    {
+                        $instring = false;
+                        $idx++;
+                        continue;
+                    }
+                }
+                else
+                {
+                    $wasstring = true;
+                    $instring = true;
+                    $idx++;
+                    continue;
+                }
+            }
+
+            $value .= $char;
+            $idx++;
+        }
+
+        if( $type === 'x' ) continue;
+
+        if( $value === '' )
+        {
+            if( ! $wasstring )
+            {
+                $value = $nul;
+            }
+        }
+        else
+        {
+            if( $type === 'f' ) $value = floatval( str_replace( $dec, '.', $value ) );
+            if( $type === 'i' ) $value = intval( $value );
+        }
+
+        $array[ $name ] = $value;
+    }
+
+    $str = substr( $str, $idx );
+
+    return $array;
+}
+
+
 
 //
 // ArrayFromFileCSV
@@ -243,42 +500,58 @@ function ArrayToFile( $path, $array, $store_types = true )
 // row is allowed (extra "\n" at the  end  of  the
 // file)                                        \x
 
-function ArrayFromFileCSV( $path, $sep = ',', $txt = '"' )
+function ArrayFromFileCSV( $path, $options = null, $requestedColumns = null )
 {
-    $handle = fopen( $path, 'r' );
-    if( $handle === false )
+    // manage params
+
+    if( $requestedColumns === null ) $requestedColumns = [];
+    if( $options === null ) $options = [];
+
+    if( ! is_array( $options ) ) Error( "Expected array as `options` parameter, " . gettype( $options ) . "given" );
+    if( ! is_array( $requestedColumns ) ) Error( "Expected array as `columns` parameter, " . gettype( $requestedColumns ) . "given" );
+
+
+    // load file
+
+    $text = file_get_contents( $path );
+
+    if( $text === false )
     {
         Error( "cannot read file: $path" );
     }
 
-    $lines = [];
+
+    // normalize line terminators
+
+    $text = str_replace( "\r\n", "\n", $text );
+    $text = str_replace( "\r", "\n", $text );
+    $text = trim( $text, "\n" );
+
+    $pro = isset( $options[ 'progress' ] ) && $options[ 'progress' ] === true;
+
+
+    // manage header
+
+    $columns = ArrayFromCSV( $text, $options, $requestedColumns, true );
+
+
+    // load data
+
+    $array = [];
+
+    $i = 1;
+
     while( true )
     {
-        $data = fgetcsv( $handle, 0, $sep, $txt );
-        if( $data === false )
-        {
-            break;
-        }
-        $lines[] = $data;
-    }
-    fclose( $handle );
+        $row = ArrayFromCSV( $text, $options, $columns );
 
-    $keys = $lines[0];
+        if( $row === false ) break;
+        $array[] = $row;
 
-    $n = count( $lines );
-    $records = [];
-    for( $i = 1; $i < $n; $i++ )
-    {
-        $record = [];
-        $m = count( $lines[ $i ] );
-        for( $j = 0; $j < $m; $j++ )
-        {
-            $record[ $keys[ $j ] ] = $lines[ $i ][ $j ];
-        }
-        $records[] = $record;
+        if( $pro && $i % 1000 === 0 ) { echo "."; $i++; }
     }
 
-    return $records;
+    return $array;
 }
 
 
@@ -290,34 +563,34 @@ function ArrayFromFileCSV( $path, $sep = ',', $txt = '"' )
 // text file; every  associative  array  into  the
 // main array must contain the same keys        \x
 
-function ArrayToFileCSV( $path, $array, $sep = ',', $txt = '"' )
+function ArrayToFileCSV( $path, $array, $options = [] )
 {
+    if( ! is_array( $options ) )
+    {
+        Error( "Expected array as `options` parameter, " . gettype( $options ) . "given" );
+    }
+
     if( count( $array ) === 0 )
     {
         file_put_contents( $path, "" );
         return;
     }
 
-    $handle = fopen( $path, 'w+' );
-    if( $handle === false )
-    {
-        Error( "cannot open file: $path" );
-    }
+    $text = "";
 
     $keys = array_keys( $array[ 0 ] );
-    fputcsv ( $handle, $keys, $sep, $txt );
+
+    $headerOptions = $options;
+    $headerOptions['text'] = '';
+
+    $text .= ArrayToCSV( $keys, $headerOptions ) . "\n";
 
     foreach( $array as $row )
     {
-        $values = [];
-        foreach( $keys as $key )
-        {
-            if( isset( $row[ $key ] ) ) $values[] = $row[ $key ]; else $values[] = '';
-        }
-        fputcsv ( $handle, $values, $sep, $txt );
+        $text .= ArrayToCSV( $row, $options ) . "\n";
     }
 
-    fclose( $handle );
+    file_put_contents( $path, $text );
 }
 
 
