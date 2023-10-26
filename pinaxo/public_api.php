@@ -10,7 +10,7 @@
 //
 //      Library version     3.0
 //
-//      Copyright 2013-2022 Kalei
+//      Copyright 2013-2023 Kalei
 //
 
 
@@ -411,6 +411,62 @@ class PinaxoApiSession
         $handle = curl_init();
 
         curl_setopt( $handle, CURLOPT_URL,              "{$this->domain}/api/v1/status" );
+        curl_setopt( $handle, CURLOPT_CUSTOMREQUEST,    "GET");
+        curl_setopt( $handle, CURLOPT_RETURNTRANSFER,   true );
+
+        curl_setopt( $handle, CURLOPT_HTTPHEADER,       [ "Authorization: {$this->token}" ] );
+
+        $text = curl_exec( $handle );
+        $this->status = curl_getinfo( $handle, CURLINFO_HTTP_CODE );
+
+        curl_close( $handle );
+
+        $this->set_response_from_text( $text );
+
+        return $this->status;
+    }
+
+
+
+    //
+    //      /brands
+    //
+    //      GET
+    //
+
+    function brands_get()
+    {
+        $handle = curl_init();
+
+        curl_setopt( $handle, CURLOPT_URL,              "{$this->domain}/api/v1/brands" );
+        curl_setopt( $handle, CURLOPT_CUSTOMREQUEST,    "GET");
+        curl_setopt( $handle, CURLOPT_RETURNTRANSFER,   true );
+
+        curl_setopt( $handle, CURLOPT_HTTPHEADER,       [ "Authorization: {$this->token}" ] );
+
+        $text = curl_exec( $handle );
+        $this->status = curl_getinfo( $handle, CURLINFO_HTTP_CODE );
+
+        curl_close( $handle );
+
+        $this->set_response_from_text( $text );
+
+        return $this->status;
+    }
+
+
+
+    //
+    //      /pricelist/{brand_id}
+    //
+    //      GET
+    //
+
+    function pricelist_get( $brand_id )
+    {
+        $handle = curl_init();
+
+        curl_setopt( $handle, CURLOPT_URL,              "{$this->domain}/api/v1/pricelist/$brand_id" );
         curl_setopt( $handle, CURLOPT_CUSTOMREQUEST,    "GET");
         curl_setopt( $handle, CURLOPT_RETURNTRANSFER,   true );
 
