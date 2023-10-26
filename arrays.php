@@ -892,7 +892,7 @@ function ArrayFind( $array, $key, $value, $offset = 0 )
         {
             Error( "ArrayFind: item at index $i is not an array: {$array[$i]}" );
         }
-        if( ! isset( $array[ $i ][ $key ] ) )
+        if( ! array_key_exists( $key, $array[ $i ] ) )
         {
             Error( "ArrayFind: item at index $i is missing key: $key" );
         }
@@ -953,7 +953,7 @@ function ArrayFix( &$array, $fix = '' )
     foreach( $array as $row )
     {
         foreach( $keys as $key )
-        if( ! isset( $row[ $key ] ) )
+        if( ! array_key_exists( $key, $row ) )
         {
             $row[ $key ] = $fix;
         }
@@ -1095,7 +1095,7 @@ function ArrayRequire( $array, $keys )
         $i++;
         foreach( $keys as $k )
         {
-            if( ! isset( $row[ $k ] ) ) $missing[] = $k;
+            if( ! array_key_exists( $k, $row ) ) $missing[] = $k;
         }
         if( count( $missing ) !== 0 )
         {
