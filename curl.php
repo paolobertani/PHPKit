@@ -148,6 +148,16 @@ function CurlEncode( $params )
 
 
 //
+// CurlDeleteCookiesFile
+//
+
+function CurlDeleteCookiesFile()
+{
+    FSRemoveFile( CURL_COOKIES );
+}
+
+
+//
 // Curl
 //
 // Execute a request via CURL
