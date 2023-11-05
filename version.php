@@ -1,2 +1,2 @@
 <?php
-define( 'INCLUDE_VERSION', '1.3.3' );
+define( 'INCLUDE_VERSION', '1.4.0' );

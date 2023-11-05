@@ -478,6 +478,7 @@ function ArrayFromCSV( &$str, $options, $columns, $is_header = false )
         {
             if( $type === 'f' ) $value = floatval( str_replace( $dec, '.', $value ) );
             if( $type === 'i' ) $value = intval( $value );
+            if( $type === 's' ) $value = "$value";
         }
 
         $array[ $name ] = $value;
