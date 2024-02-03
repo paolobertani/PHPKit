@@ -373,7 +373,7 @@ function Curl( $url = false, $post = null, $headers = null )
 
     // Store data into cache?
 
-    if( $g_CurlCache !== false && $errnum == 0 )
+    if( $g_CurlCache !== false && $errnum == 0 && $status >= 200 && $status < 300 )
     {
         file_put_contents( "$g_CurlCache/$urlhash.resp.txt", $response );
         file_put_contents( "$g_CurlCache/$urlhash.hdrs.txt", json_encode( $response_headers, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT ) );
