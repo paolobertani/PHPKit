@@ -9,6 +9,7 @@
 
 
 require_once ROOT . '/include/error.php';
+require_once ROOT . '/include/3rd-parts/phpspreadsheet/autoload.php';
 
 
 
@@ -592,6 +593,149 @@ function ArrayToFileCSV( $path, $array, $options = [] )
     }
 
     file_put_contents( $path, $text );
+}
+
+
+
+//
+// ArrayToXLS
+//
+// Write array to XLS file
+//
+
+function ArrayToXLS( $xlsPath, $array )
+{
+    $autosize = true;
+
+    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+
+    $cols = [ '', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+                 'AA','AB','AC','AD','AE','AF','AG','AH','AI','AJ','AK','AL','AM','AN','AO','AP','AQ','AR','AS','AT','AU','AV','AW','AX','AY','AZ',
+                 'BA','BB','BC','BD','BE','BF','BG','BH','BI','BJ','BK','BL','BM','BN','BO','BP','BQ','BR','BS','BT','BU','BV','BW','BX','BY','BZ',
+                 'CA','CB','CC','CD','CE','CF','CG','CH','CI','CJ','CK','CL','CM','CN','CO','CP','CQ','CR','CS','CT','CU','CV','CW','CX','CY','CZ' ];
+
+    $spreadsheet->getDefaultStyle()->getFont()->setName('Verdana');
+    $spreadsheet->getDefaultStyle()->getFont()->setSize(12);
+
+    $keys = array_keys( $array[0] );
+    $rows = count( $array ) + 1;
+
+    $w = count( $keys );
+    $spreadsheet->getActiveSheet()->getStyle("A1:{$cols[$w]}1")->getFont()->setBold( true );
+
+    $x = 1;
+    foreach( $keys as $k )
+    {
+        $spreadsheet->getActiveSheet()->setCellValueByColumnAndRow( $x, 1, $k );
+        $x++;
+    }
+
+    $y = 2;
+    foreach( $array as $item )
+    {
+        $x = 1;
+        foreach( $keys as $k )
+        {
+            $value = $item[$k];
+            if( is_string( $value ) )
+            {
+                $spreadsheet->getActiveSheet()->getStyle( "{$cols[$x]}$y" )->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_TEXT);
+                $spreadsheet->getActiveSheet()->setCellValueExplicit( "{$cols[$x]}$y", $value, PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING );
+            }
+            else
+            {
+                $spreadsheet->getActiveSheet()->setCellValue( "{$cols[$x]}$y", $value );
+            }
+            $x++;
+        }
+        $y++;
+    }
+
+    if( $autosize )
+    {
+        $x = 1;
+        foreach( $keys as $k )
+        {
+            $spreadsheet->getActiveSheet()->getColumnDimension( $cols[ $x ] )->setAutoSize(true);
+            $x++;
+        }
+    }
+
+    $spreadsheet->getActiveSheet()->setSelectedCell('A1');
+
+    $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter( $spreadsheet, 'Xls' );
+    $writer->save( $xlsPath );
+}
+
+
+
+//
+// ArrayFromXLS
+//
+// Read array from XLS or XLSX file
+//
+// Only one sheet can be selected, default 0 (first)
+//
+
+function ArrayFromXLS( $xlsPath, $sheet = 0 )
+{
+    if( substr( $xlsPath, -5 ,5 ) === '.xlsx' )
+    {
+        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xlsx();
+    }
+    elseif( substr( $xlsPath, -4 ,4 ) === '.xls' )
+    {
+        $reader = new \PhpOffice\PhpSpreadsheet\Reader\Xls();
+    }
+    else
+    {
+        Error( "Expected xls or xlsx file: $xlsPath given");
+    }
+
+    $reader->setReadDataOnly( true );
+    $spreadsheet = $reader->load( $xlsPath );
+
+    // Read only first sheet
+    // Assume columns names are in the first row
+
+    $columns = [];
+
+    for( $x = 1; $x < 52; $x++ )
+    {
+        $value = $spreadsheet->getSheet( $sheet )->getCellByColumnAndRow( $x, 1 )->getValue();
+        if( $value == '' ) break;
+        $columns[] = $value;
+    }
+
+
+    // Assume data ends on the first row with all cells empty
+
+    $array = [];
+    $n = count( $columns );
+    $y = 2;
+    while( true )
+    {
+        $row = [];
+
+        $end = true;
+        for( $x = 0; $x < $n; $x++ )
+        {
+            $value = $spreadsheet->getSheet( $sheet )->getCellByColumnAndRow( $x + 1, $y )->getCalculatedValue();
+            if( $value !== '' && $value !== null )
+            {
+                $end = false;
+            }
+            $row[ $columns[ $x ] ] = $value;
+        }
+
+        if( $end ) break;
+
+        $array[] = $row;
+
+        $y++;
+    }
+
+    return $array;
 }
 
 
