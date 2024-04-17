@@ -665,6 +665,9 @@ function ArrayToXLS( $xlsPath, $array )
 
     $writer = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter( $spreadsheet, 'Xls' );
     $writer->save( $xlsPath );
+
+    unset( $writer );
+    unset( $spreadsheet );
 }
 
 
@@ -734,6 +737,9 @@ function ArrayFromXLS( $xlsPath, $sheet = 0 )
 
         $y++;
     }
+
+    unset( $reader );
+    unset( $spreadsheet );
 
     return $array;
 }
