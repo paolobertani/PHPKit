@@ -6,7 +6,7 @@ define( 'ARGUMENT_NO_OPTIONS', 0 );
 define( 'ARGUMENT_OPTIONAL', 1 );
 define( 'ARGUMENT_BOOLEAN', 2 );
 
-function ArgumentGet( $name, $options = ARGUMENT_NO_OPTIONS )
+function ArgumentGet( $name, $options = ARGUMENT_NO_OPTIONS, $default = false )
 {
     global $argv;
 
@@ -35,7 +35,7 @@ function ArgumentGet( $name, $options = ARGUMENT_NO_OPTIONS )
 
     if( $options == ARGUMENT_OPTIONAL )
     {
-        return false;
+        return $default;
     }
 
     Error( "expected parameter: $name" );
