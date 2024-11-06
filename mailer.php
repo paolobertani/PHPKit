@@ -5,6 +5,7 @@ require_once ROOT . '/include/3rd-parts/phpmailer/SMTP.php';
 require_once ROOT . '/include/3rd-parts/phpmailer/Exception.php';
 
 require_once ROOT . '/include/strings.php';
+require_once ROOT . '/include/error.php';
 
 
 // Global
@@ -21,6 +22,7 @@ $g_MailerError = '';
 // $config = [
 //     'host' smtp server
 //     'auth' authentication true|false
+//     'port' port
 //     'user' user
 //     'pass' password
 //     'encr' encryption: '' | 'tls' | 'ssl'
@@ -39,6 +41,16 @@ function MailerSend( $config, $subject, $body, $altBody, $from, $to, $replyTo = 
 
     $error = '';
 
+    $confParams = [ 'host', 'auth', 'port', 'user', 'pass', 'encr', 'user', 'pass' ];
+
+    foreach( $confParams as $cp )
+    {
+        if( ! isset( $confing[$cp] ) )
+        {
+            Error( "Missing configuration parameter '$cp'" );
+        }
+    }
+
     try
     {
         $mailer->isSMTP(); // Set mailer to use SMTP
@@ -52,11 +64,9 @@ function MailerSend( $config, $subject, $body, $altBody, $from, $to, $replyTo = 
 
         $mailer->Host       = $config['host'];
         $mailer->SMTPAuth   = $config['auth'];
-        if( $config['auth'] )
-        {
-            $mailer->Username   = $config['user'];
-            $mailer->Password   = $config['pass'];
-        }
+        $mailer->Port       = $config['port'];
+        $mailer->Username   = $config['user'];
+        $mailer->Password   = $config['pass'];
         $mailer->SMTPSecure = $config['encr']; // '' | 'tls' | 'ssl'
 
         $addr = MailerAddress( $from );
