@@ -4,12 +4,15 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\MathTrig;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class Lcm
 {
-    //
-    //    Private method to return an array of the factors of the input value
-    //
+    /**
+     *  Private method to return an array of the factors of the input value.
+     *
+     * @return int[]
+     */
     private static function factors(float $value): array
     {
         $startVal = floor(sqrt($value));
@@ -26,6 +29,7 @@ class Lcm
         }
         if (!empty($factorArray)) {
             rsort($factorArray);
+            /** @var int[] $factorArray */
 
             return $factorArray;
         }
@@ -48,7 +52,7 @@ class Lcm
      *
      * @return int|string Lowest Common Multiplier, or a string containing an error
      */
-    public static function evaluate(...$args)
+    public static function evaluate(mixed ...$args): int|string
     {
         try {
             $arrayArgs = [];
@@ -82,12 +86,17 @@ class Lcm
             self::processPoweredFactors($allPoweredFactors, $myPoweredFactors);
         }
         foreach ($allPoweredFactors as $allPoweredFactor) {
+            /** @var scalar $allPoweredFactor */
             $returnValue *= (int) $allPoweredFactor;
         }
 
         return $returnValue;
     }
 
+    /**
+     * @param mixed[] $allPoweredFactors
+     * @param mixed[] $myPoweredFactors
+     */
     private static function processPoweredFactors(array &$allPoweredFactors, array &$myPoweredFactors): void
     {
         foreach ($myPoweredFactors as $myPoweredValue => $myPoweredFactor) {
@@ -104,7 +113,7 @@ class Lcm
     private static function testNonNulls(int $anyNonNulls): void
     {
         if (!$anyNonNulls) {
-            throw new Exception(Functions::VALUE());
+            throw new Exception(ExcelError::VALUE());
         }
     }
 }

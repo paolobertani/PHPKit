@@ -7,6 +7,7 @@ use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Financial\Constants as FinancialConstants;
 use PhpOffice\PhpSpreadsheet\Calculation\Financial\Helpers;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use PhpOffice\PhpSpreadsheet\Shared\StringHelper;
 
 class Yields
 {
@@ -32,19 +33,17 @@ class Yields
      * @return float|string Result, or a string containing an error
      */
     public static function yieldDiscounted(
-        $settlement,
-        $maturity,
-        $price,
-        $redemption,
-        $basis = FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
+        mixed $settlement,
+        mixed $maturity,
+        mixed $price,
+        mixed $redemption,
+        mixed $basis = FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
     ) {
         $settlement = Functions::flattenSingleValue($settlement);
         $maturity = Functions::flattenSingleValue($maturity);
         $price = Functions::flattenSingleValue($price);
         $redemption = Functions::flattenSingleValue($redemption);
-        $basis = ($basis === null)
-            ? FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
-            : Functions::flattenSingleValue($basis);
+        $basis = Functions::flattenSingleValue($basis) ?? FinancialConstants::BASIS_DAYS_PER_YEAR_NASD;
 
         try {
             $settlement = SecurityValidations::validateSettlementDate($settlement);
@@ -57,14 +56,14 @@ class Yields
             return $e->getMessage();
         }
 
-        $daysPerYear = Helpers::daysPerYear(DateTimeExcel\DateParts::year($settlement), $basis);
+        $daysPerYear = Helpers::daysPerYear(Functions::scalar(DateTimeExcel\DateParts::year($settlement)), $basis);
         if (!is_numeric($daysPerYear)) {
             return $daysPerYear;
         }
-        $daysBetweenSettlementAndMaturity = DateTimeExcel\YearFrac::fraction($settlement, $maturity, $basis);
+        $daysBetweenSettlementAndMaturity = Functions::scalar(DateTimeExcel\YearFrac::fraction($settlement, $maturity, $basis));
         if (!is_numeric($daysBetweenSettlementAndMaturity)) {
             //    return date error
-            return $daysBetweenSettlementAndMaturity;
+            return StringHelper::convertToString($daysBetweenSettlementAndMaturity);
         }
         $daysBetweenSettlementAndMaturity *= $daysPerYear;
 
@@ -94,21 +93,19 @@ class Yields
      * @return float|string Result, or a string containing an error
      */
     public static function yieldAtMaturity(
-        $settlement,
-        $maturity,
-        $issue,
-        $rate,
-        $price,
-        $basis = FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
+        mixed $settlement,
+        mixed $maturity,
+        mixed $issue,
+        mixed $rate,
+        mixed $price,
+        mixed $basis = FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
     ) {
         $settlement = Functions::flattenSingleValue($settlement);
         $maturity = Functions::flattenSingleValue($maturity);
         $issue = Functions::flattenSingleValue($issue);
         $rate = Functions::flattenSingleValue($rate);
         $price = Functions::flattenSingleValue($price);
-        $basis = ($basis === null)
-            ? FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
-            : Functions::flattenSingleValue($basis);
+        $basis = Functions::flattenSingleValue($basis) ?? FinancialConstants::BASIS_DAYS_PER_YEAR_NASD;
 
         try {
             $settlement = SecurityValidations::validateSettlementDate($settlement);
@@ -122,32 +119,32 @@ class Yields
             return $e->getMessage();
         }
 
-        $daysPerYear = Helpers::daysPerYear(DateTimeExcel\DateParts::year($settlement), $basis);
+        $daysPerYear = Helpers::daysPerYear(Functions::scalar(DateTimeExcel\DateParts::year($settlement)), $basis);
         if (!is_numeric($daysPerYear)) {
             return $daysPerYear;
         }
-        $daysBetweenIssueAndSettlement = DateTimeExcel\YearFrac::fraction($issue, $settlement, $basis);
+        $daysBetweenIssueAndSettlement = Functions::scalar(DateTimeExcel\YearFrac::fraction($issue, $settlement, $basis));
         if (!is_numeric($daysBetweenIssueAndSettlement)) {
             //    return date error
-            return $daysBetweenIssueAndSettlement;
+            return StringHelper::convertToString($daysBetweenIssueAndSettlement);
         }
         $daysBetweenIssueAndSettlement *= $daysPerYear;
-        $daysBetweenIssueAndMaturity = DateTimeExcel\YearFrac::fraction($issue, $maturity, $basis);
+        $daysBetweenIssueAndMaturity = Functions::scalar(DateTimeExcel\YearFrac::fraction($issue, $maturity, $basis));
         if (!is_numeric($daysBetweenIssueAndMaturity)) {
             //    return date error
-            return $daysBetweenIssueAndMaturity;
+            return StringHelper::convertToString($daysBetweenIssueAndMaturity);
         }
         $daysBetweenIssueAndMaturity *= $daysPerYear;
-        $daysBetweenSettlementAndMaturity = DateTimeExcel\YearFrac::fraction($settlement, $maturity, $basis);
+        $daysBetweenSettlementAndMaturity = Functions::scalar(DateTimeExcel\YearFrac::fraction($settlement, $maturity, $basis));
         if (!is_numeric($daysBetweenSettlementAndMaturity)) {
             //    return date error
-            return $daysBetweenSettlementAndMaturity;
+            return StringHelper::convertToString($daysBetweenSettlementAndMaturity);
         }
         $daysBetweenSettlementAndMaturity *= $daysPerYear;
 
-        return ((1 + (($daysBetweenIssueAndMaturity / $daysPerYear) * $rate) -
-                    (($price / 100) + (($daysBetweenIssueAndSettlement / $daysPerYear) * $rate))) /
-                (($price / 100) + (($daysBetweenIssueAndSettlement / $daysPerYear) * $rate))) *
-            ($daysPerYear / $daysBetweenSettlementAndMaturity);
+        return ((1 + (($daysBetweenIssueAndMaturity / $daysPerYear) * $rate)
+                    - (($price / 100) + (($daysBetweenIssueAndSettlement / $daysPerYear) * $rate)))
+                / (($price / 100) + (($daysBetweenIssueAndSettlement / $daysPerYear) * $rate)))
+            * ($daysPerYear / $daysBetweenSettlementAndMaturity);
     }
 }

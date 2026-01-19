@@ -6,6 +6,8 @@ use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel;
 use PhpOffice\PhpSpreadsheet\Calculation\Exception;
 use PhpOffice\PhpSpreadsheet\Calculation\Financial\Constants as FinancialConstants;
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
+use PhpOffice\PhpSpreadsheet\Shared\StringHelper;
 
 class Rates
 {
@@ -30,23 +32,19 @@ class Rates
      *                         2               Actual/360
      *                         3               Actual/365
      *                         4               European 30/360
-     *
-     * @return float|string
      */
     public static function discount(
-        $settlement,
-        $maturity,
-        $price,
-        $redemption,
-        $basis = FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
-    ) {
+        mixed $settlement,
+        mixed $maturity,
+        mixed $price,
+        mixed $redemption,
+        mixed $basis = FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
+    ): float|string {
         $settlement = Functions::flattenSingleValue($settlement);
         $maturity = Functions::flattenSingleValue($maturity);
         $price = Functions::flattenSingleValue($price);
         $redemption = Functions::flattenSingleValue($redemption);
-        $basis = ($basis === null)
-            ? FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
-            : Functions::flattenSingleValue($basis);
+        $basis = Functions::flattenSingleValue($basis) ?? FinancialConstants::BASIS_DAYS_PER_YEAR_NASD;
 
         try {
             $settlement = SecurityValidations::validateSettlementDate($settlement);
@@ -60,13 +58,13 @@ class Rates
         }
 
         if ($price <= 0.0) {
-            return Functions::NAN();
+            return ExcelError::NAN();
         }
 
-        $daysBetweenSettlementAndMaturity = DateTimeExcel\YearFrac::fraction($settlement, $maturity, $basis);
+        $daysBetweenSettlementAndMaturity = Functions::scalar(DateTimeExcel\YearFrac::fraction($settlement, $maturity, $basis));
         if (!is_numeric($daysBetweenSettlementAndMaturity)) {
             //    return date error
-            return $daysBetweenSettlementAndMaturity;
+            return StringHelper::convertToString($daysBetweenSettlementAndMaturity);
         }
 
         return (1 - $price / $redemption) / $daysBetweenSettlementAndMaturity;
@@ -93,23 +91,19 @@ class Rates
      *                         2               Actual/360
      *                         3               Actual/365
      *                         4               European 30/360
-     *
-     * @return float|string
      */
     public static function interest(
-        $settlement,
-        $maturity,
-        $investment,
-        $redemption,
-        $basis = FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
-    ) {
+        mixed $settlement,
+        mixed $maturity,
+        mixed $investment,
+        mixed $redemption,
+        mixed $basis = FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
+    ): float|string {
         $settlement = Functions::flattenSingleValue($settlement);
         $maturity = Functions::flattenSingleValue($maturity);
         $investment = Functions::flattenSingleValue($investment);
         $redemption = Functions::flattenSingleValue($redemption);
-        $basis = ($basis === null)
-            ? FinancialConstants::BASIS_DAYS_PER_YEAR_NASD
-            : Functions::flattenSingleValue($basis);
+        $basis = Functions::flattenSingleValue($basis) ?? FinancialConstants::BASIS_DAYS_PER_YEAR_NASD;
 
         try {
             $settlement = SecurityValidations::validateSettlementDate($settlement);
@@ -123,13 +117,13 @@ class Rates
         }
 
         if ($investment <= 0) {
-            return Functions::NAN();
+            return ExcelError::NAN();
         }
 
-        $daysBetweenSettlementAndMaturity = DateTimeExcel\YearFrac::fraction($settlement, $maturity, $basis);
+        $daysBetweenSettlementAndMaturity = Functions::scalar(DateTimeExcel\YearFrac::fraction($settlement, $maturity, $basis));
         if (!is_numeric($daysBetweenSettlementAndMaturity)) {
             //    return date error
-            return $daysBetweenSettlementAndMaturity;
+            return StringHelper::convertToString($daysBetweenSettlementAndMaturity);
         }
 
         return (($redemption / $investment) - 1) / ($daysBetweenSettlementAndMaturity);

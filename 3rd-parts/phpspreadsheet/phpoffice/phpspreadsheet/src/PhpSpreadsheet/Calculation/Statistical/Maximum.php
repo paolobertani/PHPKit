@@ -3,6 +3,7 @@
 namespace PhpOffice\PhpSpreadsheet\Calculation\Statistical;
 
 use PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use PhpOffice\PhpSpreadsheet\Calculation\Information\ErrorValue;
 
 class Maximum extends MaxMinBase
 {
@@ -16,16 +17,19 @@ class Maximum extends MaxMinBase
      *        MAX(value1[,value2[, ...]])
      *
      * @param mixed ...$args Data values
-     *
-     * @return float
      */
-    public static function max(...$args)
+    public static function max(mixed ...$args): float|int|string
     {
         $returnValue = null;
 
         // Loop through arguments
         $aArgs = Functions::flattenArray($args);
         foreach ($aArgs as $arg) {
+            if (ErrorValue::isError($arg, true)) {
+                $returnValue = $arg;
+
+                break;
+            }
             // Is it a numeric value?
             if ((is_numeric($arg)) && (!is_string($arg))) {
                 if (($returnValue === null) || ($arg > $returnValue)) {
@@ -37,6 +41,7 @@ class Maximum extends MaxMinBase
         if ($returnValue === null) {
             return 0;
         }
+        /** @var float|int|string $returnValue */
 
         return $returnValue;
     }
@@ -50,16 +55,19 @@ class Maximum extends MaxMinBase
      *        MAXA(value1[,value2[, ...]])
      *
      * @param mixed ...$args Data values
-     *
-     * @return float
      */
-    public static function maxA(...$args)
+    public static function maxA(mixed ...$args): float|int|string
     {
         $returnValue = null;
 
         // Loop through arguments
         $aArgs = Functions::flattenArray($args);
         foreach ($aArgs as $arg) {
+            if (ErrorValue::isError($arg, true)) {
+                $returnValue = $arg;
+
+                break;
+            }
             // Is it a numeric value?
             if ((is_numeric($arg)) || (is_bool($arg)) || ((is_string($arg) && ($arg != '')))) {
                 $arg = self::datatypeAdjustmentAllowStrings($arg);
@@ -72,6 +80,7 @@ class Maximum extends MaxMinBase
         if ($returnValue === null) {
             return 0;
         }
+        /** @var float|int|string $returnValue */
 
         return $returnValue;
     }

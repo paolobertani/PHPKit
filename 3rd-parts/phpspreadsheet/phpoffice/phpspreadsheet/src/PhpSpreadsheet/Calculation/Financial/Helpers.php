@@ -5,7 +5,7 @@ namespace PhpOffice\PhpSpreadsheet\Calculation\Financial;
 use DateTimeInterface;
 use PhpOffice\PhpSpreadsheet\Calculation\DateTimeExcel;
 use PhpOffice\PhpSpreadsheet\Calculation\Financial\Constants as FinancialConstants;
-use PhpOffice\PhpSpreadsheet\Calculation\Functions;
+use PhpOffice\PhpSpreadsheet\Calculation\Information\ExcelError;
 
 class Helpers
 {
@@ -14,7 +14,7 @@ class Helpers
      *
      * Returns the number of days in a specified year, as defined by the "basis" value
      *
-     * @param int|string $year The year against which we're testing
+     * @param mixed $year The year against which we're testing, expect int|string
      * @param int|string $basis The type of day count:
      *                              0 or omitted US (NASD)   360
      *                              1                        Actual (365 or 366 in a leap year)
@@ -24,10 +24,13 @@ class Helpers
      *
      * @return int|string Result, or a string containing an error
      */
-    public static function daysPerYear($year, $basis = 0)
+    public static function daysPerYear(mixed $year, $basis = 0): string|int
     {
+        if (!is_int($year) && !is_string($year)) {
+            return ExcelError::VALUE();
+        }
         if (!is_numeric($basis)) {
-            return Functions::NAN();
+            return ExcelError::NAN();
         }
 
         switch ($basis) {
@@ -41,7 +44,7 @@ class Helpers
                 return (DateTimeExcel\Helpers::isLeapYear($year)) ? 366 : 365;
         }
 
-        return Functions::NAN();
+        return ExcelError::NAN();
     }
 
     /**

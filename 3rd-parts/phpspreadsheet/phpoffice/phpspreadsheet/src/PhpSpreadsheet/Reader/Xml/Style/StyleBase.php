@@ -6,6 +6,7 @@ use SimpleXMLElement;
 
 abstract class StyleBase
 {
+    /** @param string[] $styleList */
     protected static function identifyFixedStyleValue(array $styleList, string &$styleAttributeValue): bool
     {
         $returnValue = false;
@@ -25,8 +26,6 @@ abstract class StyleBase
 
     protected static function getAttributes(?SimpleXMLElement $simple, string $node): SimpleXMLElement
     {
-        return ($simple === null)
-            ? new SimpleXMLElement('<xml></xml>')
-            : ($simple->attributes($node) ?? new SimpleXMLElement('<xml></xml>'));
+        return ($simple === null) ? new SimpleXMLElement('<xml></xml>') : ($simple->attributes($node) ?? new SimpleXMLElement('<xml></xml>'));
     }
 }
