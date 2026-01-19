@@ -45,7 +45,7 @@ function MailerSend( $config, $subject, $body, $altBody, $from, $to, $replyTo = 
 
     foreach( $confParams as $cp )
     {
-        if( ! isset( $confing[$cp] ) )
+        if( ! isset( $config[$cp] ) )
         {
             Error( "Missing configuration parameter '$cp'" );
         }
