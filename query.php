@@ -24,7 +24,7 @@ $gQueryCache = []; // query files (not results) are cached
 // Returns false on error
 //
 
-function QueryExecute( $name, &$error, $params = null )
+function QueryExecute( $name, &$error, $params = null, $honorTypes = false )
 {
     $error = "";
 
@@ -47,6 +47,11 @@ function QueryExecute( $name, &$error, $params = null )
         $error = "$name: Unable to set charset to UTF-8: {$mysqli->error}";
         $mysqli->close();
         return false;
+    }
+
+    if( $honorTypes )
+    {
+        $mysqli->options( MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true );
     }
 
     $query = QueryLoad( $mysqli, $name, $error, $params );
@@ -121,7 +126,7 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
 
             if( $sql === false )
             {
-                $error = "Unable to find query named `{$name}`";
+                $error = "Unable to find query `" . ROOT ."/sql/' . $name`";
                 return false;
             }
 
