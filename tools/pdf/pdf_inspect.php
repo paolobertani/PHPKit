@@ -1,8 +1,10 @@
 <?php
 
-//
-// PdfInspect
-//
+/*
+ *
+ *  PdfInspect
+ *
+ */
 
 
 
@@ -10,15 +12,19 @@ require_once ROOT . '/include/pdf_tools/pdf_tools.php';
 
 
 
-//
-// PdfOffset
-//
+/*
+ *
+ *  PdfOffset
+ *
+ */
 
 function PdfOffset( $heights, $products, $pdfidxPath )
 {
-    //
-    // Check for tolerance argument
-    //
+    /*
+     *
+     *  Check for tolerance argument
+     *
+     */
 
     $tolerance = ArgumentGet( 'tol', ARGUMENT_OPTIONAL );
 
@@ -36,16 +42,20 @@ function PdfOffset( $heights, $products, $pdfidxPath )
     $tolerance = (int)$tolerance;
 
 
-    //
-    // Show report type
-    //
+    /*
+     *
+     *  Show report type
+     *
+     */
 
     EchoNL( "Dumping `x` offsets for text height(s) $heights; tolerance = $tolerance" );
 
 
-    //
-    // Check PdfImproveLinksFilter is defined
-    //
+    /*
+     *
+     *  Check PdfImproveLinksFilter is defined
+     *
+     */
 
     if( function_exists( 'PdfImproveLinksFilter' ) )
     {
@@ -57,9 +67,11 @@ function PdfOffset( $heights, $products, $pdfidxPath )
     }
 
 
-    //
-    // Check height value
-    //
+    /*
+     *
+     *  Check height value
+     *
+     */
 
     $heights = explode( ",", $heights );
     $n = count( $heights );
@@ -74,9 +86,11 @@ function PdfOffset( $heights, $products, $pdfidxPath )
     }
 
 
-    //
-    // Search codes
-    //
+    /*
+     *
+     *  Search codes
+     *
+     */
 
     $offsets = [];
     $n = count( $products );
@@ -126,9 +140,11 @@ function PdfOffset( $heights, $products, $pdfidxPath )
     }
 
 
-    //
-    // Dump offsets and pages
-    //
+    /*
+     *
+     *  Dump offsets and pages
+     *
+     */
 
     ksort( $offsets );
 
@@ -196,9 +212,11 @@ function PdfOffset( $heights, $products, $pdfidxPath )
     }
 
 
-    //
-    // Group offsets inside tolerance
-    //
+    /*
+     *
+     *  Group offsets inside tolerance
+     *
+     */
 
     $goff = [];
     $min = -99999;
@@ -222,9 +240,11 @@ function PdfOffset( $heights, $products, $pdfidxPath )
     }
 
 
-    //
-    // Dump offsets with tolerance and pages
-    //
+    /*
+     *
+     *  Dump offsets with tolerance and pages
+     *
+     */
 
     foreach( $goff as $g )
     {
@@ -296,15 +316,19 @@ function PdfOffset( $heights, $products, $pdfidxPath )
 
 
 
-//
-// PdfHeight
-//
+/*
+ *
+ *  PdfHeight
+ *
+ */
 
 function PdfHeight( $products, $pdfidxPath )
 {
-    //
-    // Check for tolerance argument
-    //
+    /*
+     *
+     *  Check for tolerance argument
+     *
+     */
 
     $tolerance = ArgumentGet( 'tol', ARGUMENT_OPTIONAL );
 
@@ -322,16 +346,20 @@ function PdfHeight( $products, $pdfidxPath )
     $tolerance = (int)$tolerance;
 
 
-    //
-    // Show report type
-    //
+    /*
+     *
+     *  Show report type
+     *
+     */
 
     EchoNL( "Dumping heights for codes' text, tolerance = $tolerance" );
 
 
-    //
-    // Check PdfImproveLinksFilter is defined
-    //
+    /*
+     *
+     *  Check PdfImproveLinksFilter is defined
+     *
+     */
 
     if( function_exists( 'PdfImproveLinksFilter' ) )
     {
@@ -343,9 +371,11 @@ function PdfHeight( $products, $pdfidxPath )
     }
 
 
-    //
-    // Search codes
-    //
+    /*
+     *
+     *  Search codes
+     *
+     */
 
     $heigths = [];
     $n = count( $products );
@@ -390,9 +420,11 @@ function PdfHeight( $products, $pdfidxPath )
     }
 
 
-    //
-    // Dump heights and pages
-    //
+    /*
+     *
+     *  Dump heights and pages
+     *
+     */
 
     ksort( $heights );
 
@@ -430,9 +462,11 @@ function PdfHeight( $products, $pdfidxPath )
 
 
 
-    //
-    // Group heights inside tolerance
-    //
+    /*
+     *
+     *  Group heights inside tolerance
+     *
+     */
 
     $gheights = [];
     $min = -99999;
@@ -456,9 +490,11 @@ function PdfHeight( $products, $pdfidxPath )
     }
 
 
-    //
-    // Dump offsets with tolerance and pages
-    //
+    /*
+     *
+     *  Dump offsets with tolerance and pages
+     *
+     */
 
     foreach( $gheights as $g )
     {

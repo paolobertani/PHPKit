@@ -1,8 +1,10 @@
 <?php
 
-//
-// PdfProducts
-//
+/*
+ *
+ *  PdfProducts
+ *
+ */
 
 
 
@@ -10,23 +12,25 @@ require_once ROOT . '/include/pdf_tools/pdf_tools.php';
 
 
 
-//
-// PdfToolsBuildProductsFile
-//
-// Build   a   `products.txt`    file    from    a
-// `resources.txt` file; the file is built in  the
-// same location of the resources file;  resources
-// file must contain  column  headers  `code`  and
-// `description`; optional `modifier` is a  search
-// modifier appended to each code; if `search`  is
-// not false (default) then each code is  searched
-// using the pdfidx file in the `/temp` directory;
-// when `search` is requested each product will be
-// added to the file only if found.
-// This  tool  can  be  used  either  just   after
-// scraping (but normally no pdfidx is  available)
-// or after building improved pdf
-//                                              \x
+/*
+ *
+ *  PdfToolsBuildProductsFile
+ *
+ *  Build   a   `products.txt`    file    from    a
+ *  `resources.txt` file; the file is built in  the
+ *  same location of the resources file;  resources
+ *  file must contain  column  headers  `code`  and
+ *  `description`; optional `modifier` is a  search
+ *  modifier appended to each code; if `search`  is
+ *  not false (default) then each code is  searched
+ *  using the pdfidx file in the `/temp` directory;
+ *  when `search` is requested each product will be
+ *  added to the file only if found.
+ *  This  tool  can  be  used  either  just   after
+ *  scraping (but normally no pdfidx is  available)
+ *  or after building improved pdf
+ *  \x
+ */
 
 function PdfToolsBuildProductsFile( $res_path, $modifier = '', $search = false )
 {

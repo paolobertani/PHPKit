@@ -1,26 +1,32 @@
 <?php
 
-//
-//
-//
-// Strings
-//
-//
-//
+/*
+ *
+ *
+ *
+ *  Strings
+ *
+ *
+ *
+ */
 
 
 
-//
-// Include
-//
+/*
+ *
+ *  Include
+ *
+ */
 
 require_once ROOT . "/include/error.php";
 
 
 
-//
-// Constants/options
-//
+/*
+ *
+ *  Constants/options
+ *
+ */
 
 define( 'STRING_NO_OPTIONS',    0 );
 define( 'STRING_FIRST',         2 );
@@ -33,30 +39,36 @@ define( 'STRING_REPEAT',      128 );
 
 
 
-//
-// GENERAL RULES:
-//
-// unless  otherwise  specified,   all   functions
-// accept as first parameter a string or an  array
-// of strings; when an array of string  is  passed
-// the function iterates over all the items of the
-// array; in case the function returns an array of
-// strings and may alter the items the  count  the
-// array may be empty;
-//
-//                                              \x
+/*
+ *
+ *  GENERAL RULES:
+ *
+ *  unless  otherwise  specified,   all   functions
+ *  accept as first parameter a string or an  array
+ *  of strings; when an array of string  is  passed
+ *  the function iterates over all the items of the
+ *  array; in case the function returns an array of
+ *  strings and may alter the items the  count  the
+ *  array may be empty;
+ *
+ *  \x
+ */
 
 
 
-//
-// StringLowercase
-//
+/*
+ *
+ *  StringLowercase
+ *
+ */
 
 function StringLowercase( $string )
 {
     if( is_string( $string ) || is_array( $string ) )
     {
-        //
+        /*
+         *
+         */
     }
     else
     {
@@ -85,15 +97,19 @@ function StringLowercase( $string )
 
 
 
-//
-// StringUppercase
-//
+/*
+ *
+ *  StringUppercase
+ *
+ */
 
 function StringUppercase( $string )
 {
     if( is_string( $string ) || is_array( $string ) )
     {
-        //
+        /*
+         *
+         */
     }
     else
     {
@@ -122,40 +138,46 @@ function StringUppercase( $string )
 
 
 
-//
-// StringHas
-//
-// returns true if `$string` contains `$has`
-//
-// an array can be passed as second  parameter  in
-// which case the function  returns  true  if  the
-// string contains at least one of the strings  in
-// the array;
-// if `$has` is an empty string  returns  true  if
-// `$string` is not empty
-//
-// an array of strings  can  be  passed  as  first
-// parameter: in this case  the  function  returns
-// the original array  removing  all  the  strings
-// that do not meet  the  `$has`  requirement;
-//
-// the  option  STRING_NOT  reverses  the   logic:
-// `true`  is  returned  if  `$string`  does   not
-// contain `$has`
-//
-// allowed options:
-// STRING_NOT
-// STRING_CI
-//                                              \x
+/*
+ *
+ *  StringHas
+ *
+ *  returns true if `$string` contains `$has`
+ *
+ *  an array can be passed as second  parameter  in
+ *  which case the function  returns  true  if  the
+ *  string contains at least one of the strings  in
+ *  the array;
+ *  if `$has` is an empty string  returns  true  if
+ *  `$string` is not empty
+ *
+ *  an array of strings  can  be  passed  as  first
+ *  parameter: in this case  the  function  returns
+ *  the original array  removing  all  the  strings
+ *  that do not meet  the  `$has`  requirement;
+ *
+ *  the  option  STRING_NOT  reverses  the   logic:
+ *  `true`  is  returned  if  `$string`  does   not
+ *  contain `$has`
+ *
+ *  allowed options:
+ *  STRING_NOT
+ *  STRING_CI
+ *  \x
+ */
 
 function StringHas( $string, $has, $options = STRING_NO_OPTIONS )
 {
 
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( ( is_string( $string ) || is_array( $string ) ) && ( is_string( $has ) || is_array( $has ) ) && is_int( $options ) )
     {
-        // OK
+        /*
+         *  OK
+         */
     }
     else
     {
@@ -163,7 +185,9 @@ function StringHas( $string, $has, $options = STRING_NO_OPTIONS )
         /*--- QUIT POINT ---*/
     }
 
-    // case insensitive
+    /*
+     *  case insensitive
+     */
 
     if( $options & STRING_CI )
     {
@@ -171,11 +195,15 @@ function StringHas( $string, $has, $options = STRING_NO_OPTIONS )
         $has = StringLowercase( $has );
     }
 
-    // has not
+    /*
+     *  has not
+     */
 
     $not = ( $options & STRING_NOT ) === STRING_NOT;
 
-    //
+    /*
+     *
+     */
 
     if( ! is_array( $string ) )
     {
@@ -202,20 +230,26 @@ function StringHas( $string, $has, $options = STRING_NO_OPTIONS )
     return $out;
 }
 
-// operates on a single string, returns `true` or `false`
+/*
+ *  operates on a single string, returns `true` or `false`
+ */
 
 function StringHasPrivate( $str, $has, $not )
 {
     $yes = ! $not;
 
-    // empty `has`
+    /*
+     *  empty `has`
+     */
 
     if( $has === '' )
     {
         return ( $str !== '' ) xor $not;
     }
 
-    // array `has`
+    /*
+     *  array `has`
+     */
 
     if( is_array( $has ) )
     {
@@ -237,75 +271,83 @@ function StringHasPrivate( $str, $has, $not )
         /*--- EXIT POINT --*/
     }
 
-    // single `has`
+    /*
+     *  single `has`
+     */
 
     return ( strpos( $str, $has ) !== false ) xor $not;
 }
 
 
 
-//
-// StringsBetween
-//
-// this  function  always  returns  an  array   of
-// strings (note that the array may be empty);
-//
-// given the input string `$string`  an  array  is
-// returned with the substrings surrounded by  the
-// start marker and end marker `$sm` and `$em`;
-//
-// the start marker is searched  FIRST,  then  the
-// end marker is searched AFTER the start  marker.
-// A start marker  is  skipped  if  another  start
-// marker is present before the end marker; when a
-// "string  between"  is   found   the   iteration
-// proceeds after the found end marker; if an  end
-// marker is present before the next start  marker
-// it is ignored;
-//
-// an array of strings  can  be  passed  as  first
-// parameter in which case the  function  operates
-// on every item and  returns  the  union  of  the
-// results found for each item;
-//
-// `$sm`  as  empty  string  means  beginning   of
-// `$string`. `$em` as empty string means  end  of
-// `$string;
-//
-// option STRING_MARKERS: let the  start  and  end
-// markers be included in the result(s);
-//
-// option STRING_FIRST: let the  function  returns
-// only the first occurrence;
-//
-// option STRING_WIDE: does not  attempt  to  find
-// the "closest" start mark and end  mark  as  per
-// behaviour described above; once a start mark is
-// found the function will seek for the first  end
-// mark ignoring  start  markers  before  the  end
-// mark;
-//
-// option  STRING_SINGLEMARKER:  this  option   is
-// allowed only if `$sm` and `$em`  are  the  same
-// and are not empty; end and start marker act  as
-// a single marker: an end marker can be the start
-// marker of the subsequent "string between";
-//
-// allowed options:
-// STRING_SINGLEMARKER
-// STRING_MARKERS
-// STRING_FIRST
-// STRING_WIDE
-//                                              \x
+/*
+ *
+ *  StringBetweenMany
+ *
+ *  this  function  always  returns  an  array   of
+ *  strings (note that the array may be empty);
+ *
+ *  given the input string `$string`  an  array  is
+ *  returned with the substrings surrounded by  the
+ *  start marker and end marker `$sm` and `$em`;
+ *
+ *  the start marker is searched  FIRST,  then  the
+ *  end marker is searched AFTER the start  marker.
+ *  A start marker  is  skipped  if  another  start
+ *  marker is present before the end marker; when a
+ *  "string  between"  is   found   the   iteration
+ *  proceeds after the found end marker; if an  end
+ *  marker is present before the next start  marker
+ *  it is ignored;
+ *
+ *  an array of strings  can  be  passed  as  first
+ *  parameter in which case the  function  operates
+ *  on every item and  returns  the  union  of  the
+ *  results found for each item;
+ *
+ *  `$sm`  as  empty  string  means  beginning   of
+ *  `$string`. `$em` as empty string means  end  of
+ *  `$string;
+ *
+ *  option STRING_MARKERS: let the  start  and  end
+ *  markers be included in the result(s);
+ *
+ *  option STRING_FIRST: let the  function  returns
+ *  only the first occurrence;
+ *
+ *  option STRING_WIDE: does not  attempt  to  find
+ *  the "closest" start mark and end  mark  as  per
+ *  behaviour described above; once a start mark is
+ *  found the function will seek for the first  end
+ *  mark ignoring  start  markers  before  the  end
+ *  mark;
+ *
+ *  option  STRING_SINGLEMARKER:  this  option   is
+ *  allowed only if `$sm` and `$em`  are  the  same
+ *  and are not empty; end and start marker act  as
+ *  a single marker: an end marker can be the start
+ *  marker of the subsequent "string between";
+ *
+ *  allowed options:
+ *  STRING_SINGLEMARKER
+ *  STRING_MARKERS
+ *  STRING_FIRST
+ *  STRING_WIDE
+ *  \x
+ */
 
-function StringsBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
+function StringBetweenMany( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 {
 
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( ( is_string( $string ) || is_array( $string ) ) && ( is_string( $sm ) && is_string( $em ) && is_int( $options ) ) )
     {
-        // OK
+        /*
+         *  OK
+         */
     }
     else
     {
@@ -313,23 +355,29 @@ function StringsBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
         /*--- QUIT POINT ---*/
     }
 
-    // end marker begins with start marker
+    /*
+     *  end marker begins with start marker
+     */
 
     if( $sm !== '' && $em !== '' && StringBegins( $em, $sm ) )
     {
         $options = $options | STRING_WIDE; // force wide option
     }
 
-    // single string
+    /*
+     *  single string
+     */
 
     if( is_string( $string ) )
     {
-        return StringsBetweenPrivate( $string, $sm, $em, $options );
+        return StringBetweenManyPrivate( $string, $sm, $em, $options );
         /*--- EXIT POINT ---*/
     }
 
 
-    // array of strings
+    /*
+     *  array of strings
+     */
 
     $results = [];
     foreach( $string as $str )
@@ -340,23 +388,29 @@ function StringsBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
             /*--- QUIT POINT ---*/
         }
 
-        $res = StringsBetweenPrivate( $str, $sm, $em, $options );
+        $res = StringBetweenManyPrivate( $str, $sm, $em, $options );
 
         $results = array_merge( $results, $res );
     }
 
 
-    // return matches array
+    /*
+     *  return matches array
+     */
 
     return $results;
 }
 
-// operates on single string
+/*
+ *  operates on single string
+ */
 
-function StringsBetweenPrivate( $str, $sm, $em, $options )
+function StringBetweenManyPrivate( $str, $sm, $em, $options )
 {
 
-    // parse options
+    /*
+     *  parse options
+     */
 
     $markers = $options & STRING_MARKERS;
     $first   = $options & STRING_FIRST;
@@ -364,7 +418,9 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
     $single  = $options & STRING_SINGLEMARKER;
 
 
-    // check single marker
+    /*
+     *  check single marker
+     */
 
     if( $single && ( $sm !== $em || $sm === '' ) )
     {
@@ -372,7 +428,9 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
     }
 
 
-    // collect results
+    /*
+     *  collect results
+     */
 
     $results = [];
 
@@ -457,50 +515,60 @@ function StringsBetweenPrivate( $str, $sm, $em, $options )
     }
 
 
-    // return matches array
+    /*
+     *  return matches array
+     */
 
     return $results;
 }
 
 
 
-//
-// StringBetween
-//
-// operates like StringsBetween but only the first
-// occurrence is returned as string; if  an  array
-// of strings is passed as first parameter then an
-// array of strings is returned;
-//
-// EXCEPTION:  this  is  the  only  function  that
-// accepts `false` as input string;  the  function
-// will return `false`; this allow nesting two ore
-// more `StringBetween`
-//
-// options: see StringsBetween;
-//
-// NOTE: when a string is passed and there  is  no
-// match then `false` is returned;
-//
-// allowed options:
-// STRING_MARKERS
-// STRING_WIDE
-//                                              \x
+/*
+ *
+ *  StringBetween
+ *
+ *  operates like StringBetweenMany but only the first
+ *  occurrence is returned as string; if  an  array
+ *  of strings is passed as first parameter then an
+ *  array of strings is returned;
+ *
+ *  EXCEPTION:  this  is  the  only  function  that
+ *  accepts `false` as input string;  the  function
+ *  will return `false`; this allow nesting two ore
+ *  more `StringBetween`
+ *
+ *  options: see StringBetweenMany;
+ *
+ *  NOTE: when a string is passed and there  is  no
+ *  match then `false` is returned;
+ *
+ *  allowed options:
+ *  STRING_MARKERS
+ *  STRING_WIDE
+ *  \x
+ */
 
 function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 {
-    // false string
+    /*
+     *  false string
+     */
 
     if( $string === false )
     {
         return false;
     }
 
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( ( is_string( $string ) || is_array( $string ) ) && ( is_string( $sm ) && is_string( $em ) && is_int( $options ) ) )
     {
-        // OK
+        /*
+         *  OK
+         */
     }
     else
     {
@@ -509,9 +577,11 @@ function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
     }
 
 
-    // use StringsBetween
+    /*
+     *  use StringBetweenMany
+     */
 
-    $result = StringsBetween( $string, $sm, $em, $options | STRING_FIRST );
+    $result = StringBetweenMany( $string, $sm, $em, $options | STRING_FIRST );
 
     if( is_array( $string ) )
     {
@@ -530,26 +600,32 @@ function StringBetween( $string, $sm, $em, $options = STRING_NO_OPTIONS )
 
 
 
-//
-// StringBegins
-//
-// Returns true if `$string` begins  with  `$with`;
-// `$with` can  be  an  array  in  which  case  the
-// function returns true if `$string`  begins  with
-// at least one of the items of `$with`;
-//
-// allowed options:
-// STRING_CI
-//
+/*
+ *
+ *  StringBegins
+ *
+ *  Returns true if `$string` begins  with  `$with`;
+ *  `$with` can  be  an  array  in  which  case  the
+ *  function returns true if `$string`  begins  with
+ *  at least one of the items of `$with`;
+ *
+ *  allowed options:
+ *  STRING_CI
+ *
+ */
 
 function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
 {
 
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( is_string( $string ) && ( is_array( $with ) || is_string( $with ) ) && is_int( $options ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -558,7 +634,9 @@ function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
     }
 
 
-    // array case: multiple $with
+    /*
+     *  array case: multiple $with
+     */
 
     if( is_array( $with ) )
     {
@@ -581,7 +659,9 @@ function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
     }
 
 
-    // string case: single $with
+    /*
+     *  string case: single $with
+     */
 
     $len = strlen( $with );
 
@@ -592,12 +672,16 @@ function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
     }
 
 
-    // cut string
+    /*
+     *  cut string
+     */
 
     $string = substr( $string, 0, $len );
 
 
-    // case insensitive ?
+    /*
+     *  case insensitive ?
+     */
 
     if( $options & STRING_CI )
     {
@@ -606,33 +690,41 @@ function StringBegins( $string, $with, $options = STRING_NO_OPTIONS )
     }
 
 
-    // compare
+    /*
+     *  compare
+     */
 
     return $string === $with;
 }
 
 
 
-//
-// StringEnds
-//
-// Returns true if  `$string`  ends  with  `$with`;
-// `$with` can  be  an  array  in  which  case  the
-// function returns true if `$string`  begins  with
-// at least one of the items of `$with`;
-//
-// allowed options:
-// STRING_CI
-//
+/*
+ *
+ *  StringEnds
+ *
+ *  Returns true if  `$string`  ends  with  `$with`;
+ *  `$with` can  be  an  array  in  which  case  the
+ *  function returns true if `$string`  begins  with
+ *  at least one of the items of `$with`;
+ *
+ *  allowed options:
+ *  STRING_CI
+ *
+ */
 
 function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
 {
 
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( is_string( $string ) && ( is_array( $with ) || is_string( $with ) ) && is_int( $options ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -641,7 +733,9 @@ function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
     }
 
 
-    // `false` on `false` input
+    /*
+     *  `false` on `false` input
+     */
 
     if( $string === false )
     {
@@ -649,7 +743,9 @@ function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
     }
 
 
-    // array case: multiple $with
+    /*
+     *  array case: multiple $with
+     */
 
     if( is_array( $with ) )
     {
@@ -672,7 +768,9 @@ function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
     }
 
 
-    // string case: single $with
+    /*
+     *  string case: single $with
+     */
 
     $len = strlen( $with );
 
@@ -683,12 +781,16 @@ function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
     }
 
 
-    // cut string
+    /*
+     *  cut string
+     */
 
     $string = substr( $string, -$len, $len );
 
 
-    // case insensitive ?
+    /*
+     *  case insensitive ?
+     */
 
     if( $options & STRING_CI )
     {
@@ -697,32 +799,40 @@ function StringEnds( $string, $with, $options = STRING_NO_OPTIONS )
     }
 
 
-    // compare
+    /*
+     *  compare
+     */
 
     return $string === $with;
 }
 
 
 
-//
-// StringReplaceAtBeginning
-//
-// Replace `src` with `rep` at the beginning of `str`
-// Returns `false` if `str` does not begin with `src`
-// All parameters must be strings;
-//
-// allowed options:
-// STRING_CI
-//
+/*
+ *
+ *  StringReplaceAtBeginning
+ *
+ *  Replace `src` with `rep` at the beginning of `str`
+ *  Returns `false` if `str` does not begin with `src`
+ *  All parameters must be strings;
+ *
+ *  allowed options:
+ *  STRING_CI
+ *
+ */
 
 function StringReplaceAtBeginning( $string, $src, $rep, $options = STRING_NO_OPTIONS )
 {
 
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( is_string( $string ) && is_string( $src ) && is_string( $rep ) && is_int( $options ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -731,7 +841,9 @@ function StringReplaceAtBeginning( $string, $src, $rep, $options = STRING_NO_OPT
     }
 
 
-    // purge options from unsupported flags
+    /*
+     *  purge options from unsupported flags
+     */
 
     $options = $options & STRING_CI;
 
@@ -749,21 +861,25 @@ function StringReplaceAtBeginning( $string, $src, $rep, $options = STRING_NO_OPT
 
 
 
-//
-// StringCompare
-//
-// compare the two strings passed  as  parameters;
-// both parameters must be string.
-//
-// allowed options:
-// STRING_CI
-//
+/*
+ *
+ *  StringCompare
+ *
+ *  compare the two strings passed  as  parameters;
+ *  both parameters must be string.
+ *
+ *  allowed options:
+ *  STRING_CI
+ *
+ */
 
 function StringCompare( $a, $b, $options = STRING_NO_OPTIONS )
 {
     if( is_string( $a ) && is_string( $b ) && is_int( $options ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -782,18 +898,24 @@ function StringCompare( $a, $b, $options = STRING_NO_OPTIONS )
 
 
 
-//
-// StringReplace
-//
+/*
+ *
+ *  StringReplace
+ *
+ */
 
 function StringReplace( $string, $search, $replace, $options = STRING_NO_OPTIONS )
 {
 
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( ( is_string( $string ) || is_array( $string ) ) && is_string( $search ) && is_string( $replace ) && is_int( $options ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -807,7 +929,9 @@ function StringReplace( $string, $search, $replace, $options = STRING_NO_OPTIONS
         /*--- EXIT POINT ---*/
     }
 
-    // single string
+    /*
+     *  single string
+     */
 
     if( is_string( $string ) )
     {
@@ -824,7 +948,9 @@ function StringReplace( $string, $search, $replace, $options = STRING_NO_OPTIONS
         /*--- EXIT POINT ---*/
     }
 
-    // array of strings
+    /*
+     *  array of strings
+     */
 
     $out = [];
     foreach( $string as $str )
@@ -851,25 +977,31 @@ function StringReplace( $string, $search, $replace, $options = STRING_NO_OPTIONS
 
 
 
-//
-// StringRemove
-//
-// remove  every  occurrency   of   `$what`   from
-// `$string`; `$string` can be an array of strings
-// in wich case the operation is performed on each
-// element; `$what` can be an array of strings  in
-// wich case every string in the array is  removed
-// from  the  source;  the  function  removes  the
-// strings from the longest to the shortes      \x
-//
+/*
+ *
+ *  StringRemove
+ *
+ *  remove  every  occurrency   of   `$what`   from
+ *  `$string`; `$string` can be an array of strings
+ *  in wich case the operation is performed on each
+ *  element; `$what` can be an array of strings  in
+ *  wich case every string in the array is  removed
+ *  from  the  source;  the  function  removes  the
+ *  strings from the longest to the shortes      \x
+ *
+ */
 
 function StringRemove( $string, $what )
 {
-    // parameter check
+    /*
+     *  parameter check
+     */
 
     if( ( is_string( $string ) || is_array( $string ) ) && ( is_string( $what ) || is_array( $what ) ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -877,7 +1009,9 @@ function StringRemove( $string, $what )
         /*--- QUIT POINT ---*/
     }
 
-    // single "what" case
+    /*
+     *  single "what" case
+     */
 
     if( is_string( $what ) )
     {
@@ -886,7 +1020,9 @@ function StringRemove( $string, $what )
         /*--- EXIT POINT ---*/
     }
 
-    // get lengths
+    /*
+     *  get lengths
+     */
 
     $len = [];
 
@@ -895,33 +1031,43 @@ function StringRemove( $string, $what )
         $len[] = strlen( $w );
     }
 
-    // order $what by lenght desc
+    /*
+     *  order $what by lenght desc
+     */
 
     array_multisort( $len, $what );
 
     $what = array_reverse( $what );
 
-    // remove occurrencies
+    /*
+     *  remove occurrencies
+     */
 
     foreach( $what as $w )
     {
         $string = StringReplace( $string, $w, "" );
     }
 
-    // return result
+    /*
+     *  return result
+     */
 
     return $string;
 }
 
 
 
-//
-// StringTrim
-//
+/*
+ *
+ *  StringTrim
+ *
+ */
 
 function StringTrim( $string, $mask = " \t\n\r\0\x0B" )
 {
-    // false case
+    /*
+     *  false case
+     */
 
     if( $string === false )
     {
@@ -929,11 +1075,15 @@ function StringTrim( $string, $mask = " \t\n\r\0\x0B" )
         /*--- EXIT POINT ---*/
     }
 
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( ( is_string( $string ) || is_array( $string ) ) && is_string( $mask ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -941,7 +1091,9 @@ function StringTrim( $string, $mask = " \t\n\r\0\x0B" )
         /*--- QUIT POINT ---*/
     }
 
-    // single string
+    /*
+     *  single string
+     */
 
     if( is_string( $string ) )
     {
@@ -949,7 +1101,9 @@ function StringTrim( $string, $mask = " \t\n\r\0\x0B" )
         /*--- EXIT POINT ---*/
     }
 
-    // array of strings
+    /*
+     *  array of strings
+     */
 
     $out = [];
     foreach( $string as $str )
@@ -966,41 +1120,51 @@ function StringTrim( $string, $mask = " \t\n\r\0\x0B" )
 
 
 
-//
-// StringSubstring
-//
-// in the simplest form acts as mb_substr  on  the
-// passed  string  with  `start`  and  `len`;   if
-// `start` is `false`  then  an  empty  string  is
-// returned; `string` can be an array of  strings,
-// in this case an array of strings  is  returned;
-// each string get substring applied;  if  `start`
-// is `false` an empty array is returned;  `start`
-// and `len` can be (both) arrays: the item  count
-// of `string`,  `start`  and  `len`  must  match,
-// every string get substring  applied  using  the
-// start and len  value  from  `start`  and  `len`
-// arrays at the same index.  Again  if  start  is
-// `false` then  the  corresponding  item  in  the
-// strings array is removed
-//                                              \x
+/*
+ *
+ *  StringSubstring
+ *
+ *  in the simplest form acts as mb_substr  on  the
+ *  passed  string  with  `start`  and  `len`;   if
+ *  `start` is `false`  then  an  empty  string  is
+ *  returned; `string` can be an array of  strings,
+ *  in this case an array of strings  is  returned;
+ *  each string get substring applied;  if  `start`
+ *  is `false` an empty array is returned;  `start`
+ *  and `len` can be (both) arrays: the item  count
+ *  of `string`,  `start`  and  `len`  must  match,
+ *  every string get substring  applied  using  the
+ *  start and len  value  from  `start`  and  `len`
+ *  arrays at the same index.  Again  if  start  is
+ *  `false` then  the  corresponding  item  in  the
+ *  strings array is removed
+ *  \x
+ */
 
 function StringSubstring( $string, $start, $len )
 {
 
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     /**/if( is_string( $string ) && ( is_int( $start ) || $start === false) && is_int( $len ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     elseif( is_array ( $string ) && ( is_int( $start ) || $start === false) && is_int( $len ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     elseif( is_array ( $string ) && is_array( $start ) && is_array( $len ) && count( $string ) === count( $start ) && count( $start ) === count( $len ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -1008,7 +1172,9 @@ function StringSubstring( $string, $start, $len )
         /*--- QUIT POINT ---*/
     }
 
-    // single string
+    /*
+     *  single string
+     */
 
     if( is_string( $string ) )
     {
@@ -1022,7 +1188,9 @@ function StringSubstring( $string, $start, $len )
         /*--- EXIT POINT ---*/
     }
 
-    // array of strings with single `start`, `len`
+    /*
+     *  array of strings with single `start`, `len`
+     */
 
     if( is_int( $start ) || $start === false )
     {
@@ -1048,7 +1216,9 @@ function StringSubstring( $string, $start, $len )
         /*--- EXIT POINT ---*/
     }
 
-    // array of strings with arrays of `start`, `len`
+    /*
+     *  array of strings with arrays of `start`, `len`
+     */
 
     $out = [];
     $n = count( $string );
@@ -1076,23 +1246,27 @@ function StringSubstring( $string, $start, $len )
 
 
 
-//
-// StringPosition
-//
-// `string` can ba a  string,  in  this  case  the
-// function operates just as  mb_strpos;  `string`
-// can be an array of strings in  which  case  the
-// function operates as mb_strpos on  each  string
-// returning an array of results of the same  size
-// of `string`; the  returned  array  may  contain
-// integer values or `false` (string not found)
-//                                              \x
+/*
+ *
+ *  StringPosition
+ *
+ *  `string` can ba a  string,  in  this  case  the
+ *  function operates just as  mb_strpos;  `string`
+ *  can be an array of strings in  which  case  the
+ *  function operates as mb_strpos on  each  string
+ *  returning an array of results of the same  size
+ *  of `string`; the  returned  array  may  contain
+ *  integer values or `false` (string not found)
+ *  \x
+ */
 
 function StringPosition( $string, $search, $offset = 0 )
 {
     if( ( is_string( $string ) || is_array( $string ) ) && is_string( $search ) && is_int( $offset ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -1100,7 +1274,9 @@ function StringPosition( $string, $search, $offset = 0 )
         /*--- QUIT POINT ---*/
     }
 
-    // string
+    /*
+     *  string
+     */
 
     if( is_string( $string ) )
     {
@@ -1108,7 +1284,9 @@ function StringPosition( $string, $search, $offset = 0 )
         /*--- EXIT POINT ---*/
     }
 
-    // array
+    /*
+     *  array
+     */
 
     $out = [];
     foreach( $string as $str )
@@ -1126,26 +1304,32 @@ function StringPosition( $string, $search, $offset = 0 )
 
 
 
-//
-// StringHtmlToText
-//
-// Convert html to text stripping  html  tags  and
-// converting  html  entities   to   corresponding
-// characters; the `flags` parameter is passed  to
-// `html_entity_decode`;
-// ADDITIONALLY:  LN,  CR  are  removed;  mupliple
-// spaces   are   turned    in    single    space;
-// subsequently,  &nbsp;  is  turned  into  space,
-// line-breaks tags are turned into newlines;
-//                                              \x
+/*
+ *
+ *  StringHtmlToText
+ *
+ *  Convert html to text stripping  html  tags  and
+ *  converting  html  entities   to   corresponding
+ *  characters; the `flags` parameter is passed  to
+ *  `html_entity_decode`;
+ *  ADDITIONALLY:  LN,  CR  are  removed;  mupliple
+ *  spaces   are   turned    in    single    space;
+ *  subsequently,  &nbsp;  is  turned  into  space,
+ *  line-breaks tags are turned into newlines;
+ *  \x
+ */
 
 function StringHtmlToText( $string, $flags = ENT_QUOTES | ENT_HTML5 )
 {
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( is_string( $string ) || is_array( $string ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -1153,7 +1337,9 @@ function StringHtmlToText( $string, $flags = ENT_QUOTES | ENT_HTML5 )
         /*--- QUIT POINT ---*/
     }
 
-    // string
+    /*
+     *  string
+     */
 
     if( is_string( $string ) )
     {
@@ -1162,7 +1348,9 @@ function StringHtmlToText( $string, $flags = ENT_QUOTES | ENT_HTML5 )
         /*--- EXIT POINT ---*/
     }
 
-    // array
+    /*
+     *  array
+     */
 
     $out = [];
     foreach( $string as $str )
@@ -1192,21 +1380,27 @@ function StringHtmlToText( $string, $flags = ENT_QUOTES | ENT_HTML5 )
 
 
 
-//
-// StringPercentEscape
-//
-// escapes  with  the  percent  %hh   form   every
-// character except the ones passed to  `$except`;
-// alphanumerical characters are never escaped
-//                                              \x
+/*
+ *
+ *  StringPercentEscape
+ *
+ *  escapes  with  the  percent  %hh   form   every
+ *  character except the ones passed to  `$except`;
+ *  alphanumerical characters are never escaped
+ *  \x
+ */
 
 function StringPercentEscape( $string, $except = "" )
 {
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( ( is_string( $string ) || is_array( $string ) ) && is_string( $except ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -1214,11 +1408,15 @@ function StringPercentEscape( $string, $except = "" )
         /*--- QUIT POINT ---*/
     }
 
-    // default exceptions
+    /*
+     *  default exceptions
+     */
 
     $except = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$except";
 
-    // string
+    /*
+     *  string
+     */
 
     if( is_string( $string ) )
     {
@@ -1227,7 +1425,9 @@ function StringPercentEscape( $string, $except = "" )
         /*--- EXIT POINT ---*/
     }
 
-    // array
+    /*
+     *  array
+     */
 
     $out = [];
     foreach( $string as $str )
@@ -1259,20 +1459,26 @@ function StringPercentEscape( $string, $except = "" )
 
 
 
-//
-// StringCompact
-//
-// convert newlines, tabs, etc.. into  space  then
-// remove multiple spaces and trim the string
-//                                              \x
+/*
+ *
+ *  StringCompact
+ *
+ *  convert newlines, tabs, etc.. into  space  then
+ *  remove multiple spaces and trim the string
+ *  \x
+ */
 
 function StringCompact( $string, $preserve = "" )
 {
-    // parameter type check
+    /*
+     *  parameter type check
+     */
 
     if( ( is_string( $string ) || is_array( $string ) ) && is_string( $preserve ) )
     {
-        // ok
+        /*
+         *  ok
+         */
     }
     else
     {
@@ -1280,7 +1486,9 @@ function StringCompact( $string, $preserve = "" )
         /*--- QUIT POINT ---*/
     }
 
-    // string
+    /*
+     *  string
+     */
 
     if( is_string( $string ) )
     {
@@ -1289,18 +1497,24 @@ function StringCompact( $string, $preserve = "" )
         /*--- EXIT POINT ---*/
     }
 
-    // entities to turn into space
+    /*
+     *  entities to turn into space
+     */
 
     $remove = [ "\n", "\r", "\t" ];
 
 
-    // entities to preserve
+    /*
+     *  entities to preserve
+     */
 
     $preserve = str_split( $preserve );
     $remove = array_diff( $remove, $preserve );
     $preserve[] = ' ';
 
-    // array
+    /*
+     *  array
+     */
 
     $out = [];
     foreach( $string as $str )
@@ -1334,12 +1548,14 @@ function StringCompact( $string, $preserve = "" )
 
 
 
-//
-// StringFromFloat
-//
-// convert float to string ignoring locale
-// optionally using specified precision
-//
+/*
+ *
+ *  StringFromFloat
+ *
+ *  convert float to string ignoring locale
+ *  optionally using specified precision
+ *
+ */
 
 function StringFromFloat( $f, $p = null )
 {
@@ -1351,11 +1567,13 @@ function StringFromFloat( $f, $p = null )
 
 
 
-//
-// StringTruncateMaybe
-//
-// Truncate a string if exceeds length
-//
+/*
+ *
+ *  StringTruncateMaybe
+ *
+ *  Truncate a string if exceeds length
+ *
+ */
 
 function StringTruncateMaybe( $str, $len, $end='...' )
 {
@@ -1368,9 +1586,11 @@ function StringTruncateMaybe( $str, $len, $end='...' )
 
 
 
-//
-// StringJSON
-//
+/*
+ *
+ *  StringJSON
+ *
+ */
 
 function StringJSON( $array )
 {

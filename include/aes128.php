@@ -36,7 +36,9 @@ function aes128EncryptParams( $params, $key, $psize = null )
 
 
 
-// return false if source data is encrypted incorrectly, array otherwise
+/*
+ *  return false if source data is encrypted incorrectly, array otherwise
+ */
 
 function aes128DecryptParams( $hexdata, $key, $map )
 {

@@ -155,17 +155,21 @@ require_once ROOT . '/include/3rd-parts/fpdf/fpdf.php';
 
 
 
-//
-// Exclude the whole script's dir from TM backups
-//
+/*
+ *
+ *  Exclude the whole script's dir from TM backups
+ *
+ */
 
 FSTMExclude( ROOT );
 
 
 
-//
-// REGISTER ASSETS AND QUIT MAYBE
-//
+/*
+ *
+ *  REGISTER ASSETS AND QUIT MAYBE
+ *
+ */
 
 if( ArgumentGet( '-register', ARGUMENT_BOOLEAN ) )
 {
@@ -174,9 +178,11 @@ if( ArgumentGet( '-register', ARGUMENT_BOOLEAN ) )
 }
 
 
-//
-// UPLOAD FILE AND QUIT MAYBE
-//
+/*
+ *
+ *  UPLOAD FILE AND QUIT MAYBE
+ *
+ */
 
 if( ArgumentGet( '-upload', ARGUMENT_BOOLEAN ) )
 {
@@ -185,17 +191,21 @@ if( ArgumentGet( '-upload', ARGUMENT_BOOLEAN ) )
 }
 
 
-//
-// Globals
-//
+/*
+ *
+ *  Globals
+ *
+ */
 
 $g_pdf_improve_document_inspection = false;
 
 
 
-//
-// PdfImprove
-//
+/*
+ *
+ *  PdfImprove
+ *
+ */
 
 function PdfImprove()
 {
@@ -205,9 +215,11 @@ function PdfImprove()
     $links_sets_produced = 0;
 
 
-    //
-    // Check PdfImproveLinksProcess is defined
-    //
+    /*
+     *
+     *  Check PdfImproveLinksProcess is defined
+     *
+     */
 
     if( ! function_exists( 'PdfImproveLinksProcess' ) )
     {
@@ -216,9 +228,11 @@ function PdfImprove()
     }
 
 
-    //
-    // Check PdfImproveLinksFilter is defined
-    //
+    /*
+     *
+     *  Check PdfImproveLinksFilter is defined
+     *
+     */
 
     if( function_exists( 'PdfImproveLinksFilter' ) )
     {
@@ -230,9 +244,11 @@ function PdfImprove()
     }
 
 
-    //
-    // Check PdfImproveResultsFilter is defined
-    //
+    /*
+     *
+     *  Check PdfImproveResultsFilter is defined
+     *
+     */
 
     if( function_exists( 'PdfImproveResultsFilter' ) )
     {
@@ -244,24 +260,30 @@ function PdfImprove()
     }
 
 
-    //
-    // Pinaxo Assets Interface
-    //
+    /*
+     *
+     *  Pinaxo Assets Interface
+     *
+     */
 
-    $pinaxoAssets = new PinaxoAssets();
+    $pinaxoAssets = new \Kalei\PinaxoApi\Assets();
 
 
-    //
-    // Discard temporary files maybe (only if tool was called with `cleanup` argument)
-    //
+    /*
+     *
+     *  Discard temporary files maybe (only if tool was called with `cleanup` argument)
+     *
+     */
 
 
     PdfToolsDeleteTempDir();
 
 
-    //
-    // Get params
-    //
+    /*
+     *
+     *  Get params
+     *
+     */
 
     if( ArgumentGet( 'res', ARGUMENT_OPTIONAL ) !== false ) Error( "PDF Improve: `-res` argument is no longer in use; use `-prd` instead" );
     $pdfPath = ArgumentGet( 'pdf' );
@@ -273,16 +295,20 @@ function PdfImprove()
     $compress= ArgumentGet( 'compress',ARGUMENT_BOOLEAN );
 
 
-    //
-    // Get document id from directory name
-    //
+    /*
+     *
+     *  Get document id from directory name
+     *
+     */
 
     $document_id = GetDocumentIDPrivate( $unused );
 
 
-    //
-    // Maybe publish a new document
-    //
+    /*
+     *
+     *  Maybe publish a new document
+     *
+     */
 
     if( $document_id === false )
     {
@@ -301,7 +327,7 @@ function PdfImprove()
         $pdf_ph->SetXY( 10, 50 );
         $pdf_ph->Cell( min( 20, $pdf_ph->GetStringWidth( $text ) ), 20, $text );
         $pdf_ph->Output( 'F', $pdf_ph_path, true );
-        $api_session = new PinaxoApiSession( PINAXO_API_TOKEN );
+        $api_session = new \Kalei\PinaxoApi\Session( PINAXO_API_TOKEN );
         $api_session->documents_post( [ 'description' => $text, 'title' => $text, 'type' => 'L', 'brand_id' => $working_brand_id, 'category_id' => 9, 'hd' => 1 ] );
         if( $api_session->status >= 300 ) Error( "PDF Improve: failed to create new document\n{$api_session->response_as_text}" );
         if( ! isset( $api_session->response[ 'document_id' ] ) ) Error( "PDF Improve: api user needs `admin` privileges" );
@@ -316,9 +342,11 @@ function PdfImprove()
     }
 
 
-    //
-    // Temp files paths
-    //
+    /*
+     *
+     *  Temp files paths
+     *
+     */
 
     $linksPath      = PdfToolsTempFileLinks();
     $pdfImagesPath  = PdfToolsTempFilePdfIm();
@@ -326,9 +354,11 @@ function PdfImprove()
     $pdfOutlinesPath= PdfToolsTempFilePdfOL();
 
 
-    //
-    // File & arguments check
-    //
+    /*
+     *
+     *  File & arguments check
+     *
+     */
 
     if( ! FSFileExists( $pdfPath ) || FSPathGetExtension( $pdfPath ) !== 'pdf' )
     {
@@ -389,24 +419,30 @@ function PdfImprove()
     }
 
 
-    //
-    // Temp dir, pdfff and pdfidx
-    //
+    /*
+     *
+     *  Temp dir, pdfff and pdfidx
+     *
+     */
 
     $pdfidxPath = PdfToolsPdfidx( $pdfPath );
 
 
-    //
-    // Parse Products file
-    //
+    /*
+     *
+     *  Parse Products file
+     *
+     */
 
     $products = ArrayFromFile( $prdPath );
     EchoNL( ( count( $products ) ) . " links/products parsed" );
 
 
-    //
-    // OFFSET mode
-    //
+    /*
+     *
+     *  OFFSET mode
+     *
+     */
 
     if( $offset !== false )
     {
@@ -417,9 +453,11 @@ function PdfImprove()
     }
 
 
-    //
-    // HEIGHT mode
-    //
+    /*
+     *
+     *  HEIGHT mode
+     *
+     */
 
     if( $height !== false )
     {
@@ -432,9 +470,11 @@ function PdfImprove()
 
     if( ! FSFileExists( $linksPath ) )
     {
-        //
-        // Search for text to be linked, build links+images list
-        //
+        /*
+         *
+         *  Search for text to be linked, build links+images list
+         *
+         */
 
         $linksList = [];
 
@@ -448,7 +488,9 @@ function PdfImprove()
 
             $code = $p[ 'code' ];
 
-            // skip empty line (no code)
+            /*
+             *  skip empty line (no code)
+             */
 
             if( $code === '' )
             {
@@ -490,9 +532,11 @@ function PdfImprove()
             $successful_searches += ( count( $results ) > 0 ) ? 1 : 0;
 
 
-            //
-            // Filter the whole set of results (if the filter function is defined)
-            //
+            /*
+             *
+             *  Filter the whole set of results (if the filter function is defined)
+             *
+             */
 
             if( $results_filter && count( $results ) > 0 )
             {
@@ -504,29 +548,37 @@ function PdfImprove()
             }
 
 
-            //
-            // Pass each result to the icon-link generator function
-            //
+            /*
+             *
+             *  Pass each result to the icon-link generator function
+             *
+             */
 
             foreach( $results as $r )
             {
                 $links = PdfImproveLinksProcess( $p, $r );
 
-                // false: no links/images
+                /*
+                 *  false: no links/images
+                 */
 
                 if( $links === false )
                 {
                     continue;
                 }
 
-                // empty array: no links/images
+                /*
+                 *  empty array: no links/images
+                 */
 
                 if( is_array( $links ) && count( $links ) === 0 )
                 {
                     continue;
                 }
 
-                // no array: raise error
+                /*
+                 *  no array: raise error
+                 */
 
                 if( ! is_array( $links ) )
                 {
@@ -535,7 +587,9 @@ function PdfImprove()
 
                 $links_sets_produced += ( count( $links ) > 0 ) ? 1 : 0;
 
-                // for each link autocomplete the page, url, img if not present with their default values
+                /*
+                 *  for each link autocomplete the page, url, img if not present with their default values
+                 */
 
                 foreach( $links as $l )
                 {
@@ -583,7 +637,9 @@ function PdfImprove()
 
                     $l['hash'] = md5(  $l['p'] . "," . $l['l'] . "," . $l['t'] . "," . $l['w'] . "," . $l['h'] );
 
-                    // raise a warning if both `res` and `img` are missing, skip the item
+                    /*
+                     *  raise a warning if both `res` and `img` are missing, skip the item
+                     */
 
                     if( $l['img'] === '' && $l['res'] === '' )
                     {
@@ -591,7 +647,9 @@ function PdfImprove()
                         continue;
                     }
 
-                    // Fetch URL and other resource info from resource record
+                    /*
+                     *  Fetch URL and other resource info from resource record
+                     */
 
                     $res = $l['res'];
                     $err_trailer = "for code-search $code, in page " . ( $r['p'] + 1 );
@@ -631,7 +689,9 @@ function PdfImprove()
                         $l[ 'pinaxo_url'       ] = '';
                     }
 
-                    // each link is finally added to the global list
+                    /*
+                     *  each link is finally added to the global list
+                     */
 
                     $linksList[] = $l;
 
@@ -641,9 +701,11 @@ function PdfImprove()
         }
 
 
-        //
-        // Check for duplicate locations
-        //
+        /*
+         *
+         *  Check for duplicate locations
+         *
+         */
 
         $duplicates = [];
 
@@ -658,16 +720,20 @@ function PdfImprove()
         }
 
 
-        //
-        // Links/images list MUST be sorted by page
-        //
+        /*
+         *
+         *  Links/images list MUST be sorted by page
+         *
+         */
 
         ArraySortByKey( $linksList, [ 'p', 'z', 't', 'l' ] );
 
 
-        //
-        // Build links/images output, check for images and urls
-        //
+        /*
+         *
+         *  Build links/images output, check for images and urls
+         *
+         */
 
         $linksText = "";
 
@@ -691,9 +757,11 @@ function PdfImprove()
         }
 
 
-        //
-        // Write links file
-        //
+        /*
+         *
+         *  Write links file
+         *
+         */
 
         $milliseconds = (int) ( $milliseconds / $n );
         EchoNL( "Search average time: $milliseconds ms" );
@@ -704,9 +772,11 @@ function PdfImprove()
         EchoNL( "Links sets produced: $links_sets_produced ");
 
 
-        //
-        // Write assets file
-        //
+        /*
+         *
+         *  Write assets file
+         *
+         */
 
         EchoNL( "Writing assets file" );
         ArrayToFile( ROOT . '/assets.txt', $linksList );
@@ -717,7 +787,9 @@ function PdfImprove()
         EchoNL( "Using existing links-images file: " . FSPathRelative( $linksPath ) );
         EchoNL( "Keeping assets file" );
 
-        // Inspect file to detect links and/or images
+        /*
+         *  Inspect file to detect links and/or images
+         */
 
         $hasimg = false;
         $hasurl = false;
@@ -734,26 +806,32 @@ function PdfImprove()
     }
 
 
-    //
-    // Small report
-    //
+    /*
+     *
+     *  Small report
+     *
+     */
 
 
     EchoNL( "Links:  " . ( $hasurl ? "YES" : "NO" ) );
     EchoNL( "Images: " . ( $hasimg ? "YES" : "NO" ) );
 
 
-    //
-    // First input file
-    //
+    /*
+     *
+     *  First input file
+     *
+     */
 
     $inPath  = $pdfPath;
     $outPath = $pdfPath;
 
 
-    //
-    // Add images to PDF
-    //
+    /*
+     *
+     *  Add images to PDF
+     *
+     */
 
     if( $hasimg && ! $noimg )
     {
@@ -784,9 +862,11 @@ function PdfImprove()
     }
 
 
-    //
-    // Add PDF links to PDF
-    //
+    /*
+     *
+     *  Add PDF links to PDF
+     *
+     */
 
     if( $hasurl )
     {
@@ -816,9 +896,11 @@ function PdfImprove()
     }
 
 
-    //
-    // Add Outlines to PDF
-    //
+    /*
+     *
+     *  Add Outlines to PDF
+     *
+     */
 
     $outlinesPath = FSPathEditFilename( $pdfPath, 'outlines.', '', "txt" ); // try as a variation of the source pdf
     if( ! FSFileExists( $outlinesPath ) )
@@ -871,16 +953,20 @@ function PdfImprove()
     }
 
 
-    //
-    // Take last produced file and copy to destination output file
-    //
+    /*
+     *
+     *  Take last produced file and copy to destination output file
+     *
+     */
 
     FSCopyFile( $outPath, $dstPath );
 
 
-    //
-    // Compress produced file maybe
-    //
+    /*
+     *
+     *  Compress produced file maybe
+     *
+     */
 
     if( $compress )
     {
@@ -891,21 +977,25 @@ function PdfImprove()
     }
 
 
-    //
-    // Done
-    //
+    /*
+     *
+     *  Done
+     *
+     */
 
     EchoNL( "Done" );
 }
 
 
 
-//
-// PdfIsInspecting
-//
-// Return `true` if  PdfImprove()  is  running  in
-// document inspection mode                     \x
-//
+/*
+ *
+ *  PdfIsInspecting
+ *
+ *  Return `true` if  PdfImprove()  is  running  in
+ *  document inspection mode                     \x
+ *
+ */
 
 function PdfInspectionMode()
 {
@@ -915,14 +1005,18 @@ function PdfInspectionMode()
 
 
 
-//
-// Register assets into db loading them from assets file
-//
+/*
+ *
+ *  Register assets into db loading them from assets file
+ *
+ */
 
 function RegisterAssetsPrivate()
 {
 
-    // Load file
+    /*
+     *  Load file
+     */
 
     $path = ROOT . '/assets.txt';
 
@@ -934,12 +1028,16 @@ function RegisterAssetsPrivate()
     $assets = ArrayFromFile( $path );
 
 
-    // Pinaxo assets interface
+    /*
+     *  Pinaxo assets interface
+     */
 
-    $pinaxoAssets = new PinaxoAssets();
+    $pinaxoAssets = new \Kalei\PinaxoApi\Assets();
 
 
-    // File check
+    /*
+     *  File check
+     */
 
     $row = 0;
     foreach( $assets as $a )
@@ -983,13 +1081,17 @@ function RegisterAssetsPrivate()
     }
 
 
-    // Filter assets to actually register
+    /*
+     *  Filter assets to actually register
+     */
 
     $data = []; foreach( $assets as $a ) if( $a[ 'value' ] !== '' ) $data[] = $a;
     if( count( $data ) === 0 ) { EchoNL( 'no assets to register' ); exit( 0 );  }
 
 
-    // Remove duplicate assets but first check that values for the relevant keys are the same
+    /*
+     *  Remove duplicate assets but first check that values for the relevant keys are the same
+     */
 
     ArrayRemoveDuplicates( $data, 'value', function( $duplicates )
     {
@@ -1020,12 +1122,16 @@ function RegisterAssetsPrivate()
     } );
 
 
-    // Register assets
+    /*
+     *  Register assets
+     */
 
     $pinaxoAssets->register( $data );
 
 
-    // Done
+    /*
+     *  Done
+     */
 
     EchoNL( 'Done' );
     exit( 0 );
@@ -1039,7 +1145,9 @@ function UploadFilePrivate()
     if( $document_id === false ) Error( "cannot retrieve document id from directory named $x<document_id>" );
 
 
-    // search file to upload in default `2. postflight` directory
+    /*
+     *  search file to upload in default `2. postflight` directory
+     */
 
     $uplPath = false;
     $dd = FSFilesInDirectory( FSRoot( '2. postflight' ), FS_FULL_PATH );
@@ -1051,9 +1159,11 @@ function UploadFilePrivate()
     if( $uplPath === false ) Error( "cannot find document to upload in directory `2. postfight`:\n" . implode( "\n", $dd ) );
 
 
-    // up the tube
+    /*
+     *  up the tube
+     */
 
-    $api_session = new PinaxoApiSession( PINAXO_API_TOKEN );
+    $api_session = new \Kalei\PinaxoApi\Session( PINAXO_API_TOKEN );
     $api_session->documents_get( $document_id );
     if( $api_session->status >= 300 ) Error( "failed fetching document data; status: {$api_session->status}\n{$api_session->response_as_text}" );
     if( ! isset( $api_session->response[ 'public_id' ] ) ) Error( "cannot fetch public_id from response:\n{$api_session->response_as_text}" );

@@ -1,16 +1,20 @@
 <?php
 
-//
-//
-// Scraper
-//
-//
+/*
+ *
+ *
+ *  Scraper
+ *
+ *
+ */
 
 
 
-//
-// Includes
-//
+/*
+ *
+ *  Includes
+ *
+ */
 
 require_once ROOT . '/include/curl.php';
 require_once ROOT . '/include/echo.php';
@@ -53,7 +57,9 @@ class Scraper
         $this->silent = $silent ? 1 : false;
         $this->quit = false;
 
-        // manage cache archive and compression
+        /*
+         *  manage cache archive and compression
+         */
 
         $cache_arg = ArgumentGet( 'cache', ARGUMENT_OPTIONAL );
         if( $cache_arg === false )
@@ -112,7 +118,9 @@ class Scraper
     }
 
 
-    // has the scraper been interrupted
+    /*
+     *  has the scraper been interrupted
+     */
 
     public function has_quit()
     {
@@ -121,12 +129,16 @@ class Scraper
 
 
 
-    // --- Override to provide a custom info string
+    /*
+     *  --- Override to provide a custom info string
+     */
 
-    //
-    // returns info to be displayed on the terminal
-    // during scraping
-    //
+    /*
+     *
+     *  returns info to be displayed on the terminal
+     *  during scraping
+     *
+     */
 
     protected function get_info( $url, $count, $level, $memory )
     {
@@ -135,7 +147,9 @@ class Scraper
 
 
 
-    // --- Override to provide a handler for failed curls
+    /*
+     *  --- Override to provide a handler for failed curls
+     */
 
     protected function failed( $url, $status, $error )
     {
@@ -144,21 +158,25 @@ class Scraper
 
 
 
-    // --- Override to implement a URL filter
+    /*
+     *  --- Override to implement a URL filter
+     */
 
-    //
-    // filter the URLs retrieved;
-    // the function may return:
-    // `true`  let  load  and  parse  the  URL;
-    // `false`  URL  should  not   be   loaded;
-    // <string> let parse this URL instead;
-    //
-    // default filter removes the fragment part
-    // of the url, converts spaces to `%20`
-    //
-    // may inspect `$this->parent_url` to  know
-    // the parent url
-    //                                       \p
+    /*
+     *
+     *  filter the URLs retrieved;
+     *  the function may return:
+     *  `true`  let  load  and  parse  the  URL;
+     *  `false`  URL  should  not   be   loaded;
+     *  <string> let parse this URL instead;
+     *
+     *  default filter removes the fragment part
+     *  of the url, converts spaces to `%20`
+     *
+     *  may inspect `$this->parent_url` to  know
+     *  the parent url
+     *  \p
+     */
 
     protected function filter( $url )
     {
@@ -174,37 +192,49 @@ class Scraper
 
 
 
-    // --- Override to implement a contents processor
+    /*
+     *  --- Override to implement a contents processor
+     */
 
-    //
-    // process the response;
-    // the function may return a string  or  an
-    // array  of  strings   representing   urls
-    // (aboslute o relative) to be scraped;
-    // in case `false` is returned links in the
-    // page are not scraped                  \p
+    /*
+     *
+     *  process the response;
+     *  the function may return a string  or  an
+     *  array  of  strings   representing   urls
+     *  (aboslute o relative) to be scraped;
+     *  in case `false` is returned links in the
+     *  page are not scraped                  \p
+     */
 
     protected function process( $url, $response, $headers, $dom, $is_html )
     {
-        //
+        /*
+         *
+         */
     }
 
 
 
-    //
-    // gets called when a url is encountered again
-    //
+    /*
+     *
+     *  gets called when a url is encountered again
+     *
+     */
 
     protected function reprocess( $url )
     {
-        //
+        /*
+         *
+         */
     }
 
 
 
-    //
-    // set "retry" values
-    //
+    /*
+     *
+     *  set "retry" values
+     *
+     */
 
     public function set_retry( $attempts, $pause )
     {
@@ -216,9 +246,11 @@ class Scraper
     }
 
 
-    //
-    // make the Scraper silent (writes only inline)
-    //
+    /*
+     *
+     *  make the Scraper silent (writes only inline)
+     *
+     */
 
     public function silent()
     {
@@ -227,17 +259,23 @@ class Scraper
 
 
 
-    //
-    // scraping done
-    //
+    /*
+     *
+     *  scraping done
+     *
+     */
 
     public function done()
     {
-        // clear cookies
+        /*
+         *  clear cookies
+         */
 
         Curl();
 
-        // manage cache archive
+        /*
+         *  manage cache archive
+         */
 
         if( $this->cache_path !== false )
         {
@@ -257,9 +295,11 @@ class Scraper
 
 
 
-    //
-    // is the url absolute
-    //
+    /*
+     *
+     *  is the url absolute
+     *
+     */
 
     protected function url_is_absolute( $url )
     {
@@ -268,9 +308,11 @@ class Scraper
 
 
 
-    //
-    // is the url good
-    //
+    /*
+     *
+     *  is the url good
+     *
+     */
 
     protected function url_is_good( $url )
     {
@@ -288,16 +330,20 @@ class Scraper
 
         $scheme = StringLowercase( $scheme );
 
-        // check scheme is supported
+        /*
+         *  check scheme is supported
+         */
 
         return in_array( $scheme, [ 'http', 'https' ] );
     }
 
 
 
-    //
-    // make relative path absolute
-    //
+    /*
+     *
+     *  make relative path absolute
+     *
+     */
 
     protected function url_make_absolute( $relative, $from )
     {
@@ -306,18 +352,22 @@ class Scraper
 
 
 
-    //
-    // scrape
-    //
-    // parse the  site  from  `$root`  then  go
-    // (only) deeper with recursion;
-    // optionally a url to start  from  may  be
-    // specified
-    //
+    /*
+     *
+     *  scrape
+     *
+     *  parse the  site  from  `$root`  then  go
+     *  (only) deeper with recursion;
+     *  optionally a url to start  from  may  be
+     *  specified
+     *
+     */
 
     public function scrape( $root, $start = false )
     {
-        // manage optional `start`
+        /*
+         *  manage optional `start`
+         */
 
         if( $start === false )
         {
@@ -325,7 +375,9 @@ class Scraper
         }
 
 
-        // check root url is good
+        /*
+         *  check root url is good
+         */
 
         if( ! $this->url_is_good( $root ) )
         {
@@ -334,7 +386,9 @@ class Scraper
         }
 
 
-        // check url is absolute
+        /*
+         *  check url is absolute
+         */
 
         if( ! $this->url_is_absolute( $root ) )
         {
@@ -343,51 +397,69 @@ class Scraper
         }
 
 
-        // save root
+        /*
+         *  save root
+         */
 
         $this->root = $root;
 
 
-        // store domain (scheme+domain)
+        /*
+         *  store domain (scheme+domain)
+         */
 
         $this->domain = $this->domain_from_url( $root );
 
 
-        // manage start URL
+        /*
+         *  manage start URL
+         */
 
         if( $start !== $root )
         {
             if( ! $this->url_is_good( $start ) ) { Error( "Scraper: bad start URL: $start" ); } /*--- QUIT POINT ---*/
             if( ! $this->url_is_absolute( $start ) ) { $start = $this->url_make_absolute( $start, $root ); }
             if( ! $this->url_is_below_root( $start ) ) { Error( "Scraper: start URL is below root: $start" ); } /*--- QUIT POINT ---*/
-            // $start = $this->lowercase_root( $start );
+            /*
+             *  $start = $this->lowercase_root( $start );
+             */
         }
 
 
-        // start recursive scraping
+        /*
+         *  start recursive scraping
+         */
 
         $this->scrape_url( $start, 1 );
 
 
-        // Done
+        /*
+         *  Done
+         */
 
         EchoNL( "Done scraping {$this->root}", $this->silent );
     }
 
 
 
-    // parse web pages recursively; the passed
-    // url must have not been visited yet
+    /*
+     *  parse web pages recursively; the passed
+     *  url must have not been visited yet
+     */
 
     protected function scrape_url( $url, $level, $parent_url = '', $parent_html = '' )
     {
-        // add URL to visited pages
+        /*
+         *  add URL to visited pages
+         */
 
         $this->visited[] = $url;
         $n = count( $this->visited );
 
 
-        // provide info during parsing
+        /*
+         *  provide info during parsing
+         */
 
         $memory = round( memory_get_usage() / ( 1024 * 1024 ), 0 );
         $count = count( $this->visited );
@@ -395,7 +467,9 @@ class Scraper
         EchoCR( $info );
 
 
-        // retrieve page contents
+        /*
+         *  retrieve page contents
+         */
 
         $result = $this->curl_or_fetch_cache( $url );
         if( $result['status'] >= 300 || $result['error'] != '' )
@@ -407,7 +481,9 @@ class Scraper
         $headers  = $result['headers'];
 
 
-        // redirected? save destination url in the visited list
+        /*
+         *  redirected? save destination url in the visited list
+         */
 
         if( $result['url'] !== $url )
         {
@@ -415,7 +491,9 @@ class Scraper
         }
 
 
-        // is html?
+        /*
+         *  is html?
+         */
 
         $is_html = false;
 
@@ -429,7 +507,9 @@ class Scraper
         }
 
 
-        // parse html with DOMDocument
+        /*
+         *  parse html with DOMDocument
+         */
 
         if( $is_html )
         {
@@ -457,7 +537,9 @@ class Scraper
         }
 
 
-        // process/parse contents
+        /*
+         *  process/parse contents
+         */
 
         $this->level = $level;
         $this->parent_url = $parent_url;
@@ -465,8 +547,10 @@ class Scraper
         $more = $this->process( $url, $response, $headers, $dom, $is_html );
 
 
-        // if not html there are no links
-        // to parse: exit here
+        /*
+         *  if not html there are no links
+         *  to parse: exit here
+         */
 
         if( ! $is_html || $dom === false )
         {
@@ -476,7 +560,9 @@ class Scraper
 
 
 
-        // retrieve links and go thru the linked pages
+        /*
+         *  retrieve links and go thru the linked pages
+         */
 
         $hrefs = [];
         foreach( $dom->getElementsByTagName( 'a' ) as $node )
@@ -487,7 +573,9 @@ class Scraper
         }
 
 
-        // add links returned by process function
+        /*
+         *  add links returned by process function
+         */
 
         if( is_string( $more ) )
         {
@@ -515,13 +603,17 @@ class Scraper
         }
 
 
-        // free some memory
+        /*
+         *  free some memory
+         */
 
         unset( $node );
         unset( $dom );
 
 
-        // iterates over hyperlinks
+        /*
+         *  iterates over hyperlinks
+         */
 
         $n = count( $hrefs );
         for( $i = 0; $i < $n; $i++ )
@@ -547,7 +639,9 @@ class Scraper
                 continue;
             }
 
-            // $linkurl = $this->lowercase_root( $linkurl );
+            /*
+             *  $linkurl = $this->lowercase_root( $linkurl );
+             */
 
             if( in_array( $linkurl, $this->visited ) )
             {
@@ -584,7 +678,9 @@ class Scraper
 
             $this->scrape_url( $linkurl, $level + 1 );
 
-            // check for CTRL-C
+            /*
+             *  check for CTRL-C
+             */
 
             if( SignalIsInstalled() && SignalQuitReceived() )
             {
@@ -635,7 +731,9 @@ class Scraper
             {
                 EchoCR( "Failed loading $url - Status: " . $result['status'] . " - Error: " . $result['error'] . " - pause... $i" );
 
-                // check for CTRL-C
+                /*
+                 *  check for CTRL-C
+                 */
 
                 if( SignalIsInstalled() && SignalQuitReceived() )
                 {
@@ -653,12 +751,16 @@ class Scraper
 
 
 
-    // return path to  base  file  path  for  a
-    // given URL;                            \p
+    /*
+     *  return path to  base  file  path  for  a
+     *  given URL;                            \p
+     */
 
     protected function cache_base_path_for_url( $url )
     {
-        //$url = $this->lowercase_root( $url );
+        /*
+         *  $url = $this->lowercase_root( $url );
+         */
         $filename = md5( $url );
         $cache_file_path = $this->cache_path . "/" . $filename;
 
@@ -667,7 +769,9 @@ class Scraper
 
 
 
-    // path to response cache file
+    /*
+     *  path to response cache file
+     */
 
     protected function cache_response_path_for_url( $url )
     {
@@ -677,7 +781,9 @@ class Scraper
 
 
 
-    // path to response-headers cache file
+    /*
+     *  path to response-headers cache file
+     */
 
     protected function cache_headers_path_for_url( $url )
     {
@@ -687,11 +793,15 @@ class Scraper
 
 
 
-    // save the url in the visited list
+    /*
+     *  save the url in the visited list
+     */
 
     protected function save_in_visited( $url )
     {
-        //$url = $this->lowercase_root( $url );
+        /*
+         *  $url = $this->lowercase_root( $url );
+         */
         if( ! in_array ( $url, $this->visited ) )
         {
             $this->visited[] = $url;
@@ -700,7 +810,9 @@ class Scraper
 
 
 
-    // returns the scheme+domain
+    /*
+     *  returns the scheme+domain
+     */
 
     protected function domain_from_url( $url )
     {
@@ -711,14 +823,16 @@ class Scraper
 
 
 
-    // takes the absolute path  passed  and  if
-    // begins with  root  turn  the  root  part
-    // lowercase  otherwise  returns  the   url
-    // unmodified
-    // the absolute path passed may be  shorter
-    // than root: in this case if  root  begins
-    // with the url it is  returned  lowercase,
-    // if not is returned unmodified
+    /*
+     *  takes the absolute path  passed  and  if
+     *  begins with  root  turn  the  root  part
+     *  lowercase  otherwise  returns  the   url
+     *  unmodified
+     *  the absolute path passed may be  shorter
+     *  than root: in this case if  root  begins
+     *  with the url it is  returned  lowercase,
+     *  if not is returned unmodified
+     */
 
     protected function lowercase_root( $url )
     {
@@ -731,7 +845,9 @@ class Scraper
             return $url;
         }
 
-        // the url is shorter than root
+        /*
+         *  the url is shorter than root
+         */
 
         if( StringBegins( $this->root, $url, STRING_CI ) )
         {
@@ -741,7 +857,9 @@ class Scraper
     }
 
 
-    // is the absolute url below root
+    /*
+     *  is the absolute url below root
+     */
 
     protected function url_is_below_root( $url )
     {
@@ -750,7 +868,9 @@ class Scraper
 
 
 
-    // warn if a url with issues comes from the filter function
+    /*
+     *  warn if a url with issues comes from the filter function
+     */
 
     protected function warn_if_url_comes_from_filter( $warn, $new, $original )
     {
@@ -763,9 +883,11 @@ class Scraper
 
 
 
-    //
-    // test
-    //
+    /*
+     *
+     *  test
+     *
+     */
 
     public function test( $root )
     {

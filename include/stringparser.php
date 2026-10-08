@@ -6,15 +6,17 @@ require_once ROOT . '/include/strings.php';
 
 
 
-//
-// StringParser
-//
-// a parser  can  be  initialized  either  with  a
-// string or an array of strings;
-//
-// every parser operator will  return  the  parser
-// object allowing method chaining
-//                                              \x
+/*
+ *
+ *  StringParser
+ *
+ *  a parser  can  be  initialized  either  with  a
+ *  string or an array of strings;
+ *
+ *  every parser operator will  return  the  parser
+ *  object allowing method chaining
+ *  \x
+ */
 
 class StringParser
 {
@@ -24,14 +26,18 @@ class StringParser
             $storage;
 
 
-            // the internal `result` must always be  an  array
-            // of strings
-            //                                              \x
+            /*
+             *  the internal `result` must always be  an  array
+             *  of strings
+             *  \x
+             */
 
 
-    //
-    // CONSTRUCTOR
-    //
+    /*
+     *
+     *  CONSTRUCTOR
+     *
+     */
 
 
 
@@ -64,9 +70,11 @@ class StringParser
 
 
 
-    //
-    // GETTING OUTPUT
-    //
+    /*
+     *
+     *  GETTING OUTPUT
+     *
+     */
 
 
 
@@ -112,9 +120,11 @@ class StringParser
 
 
 
-    //
-    // CHAINABLE OPERATORS
-    //
+    /*
+     *
+     *  CHAINABLE OPERATORS
+     *
+     */
 
 
 
@@ -218,7 +228,9 @@ class StringParser
     {
         if( ( ( is_int( $start ) && $start >= 0 ) || $start === false ) && is_int( $count ) && $count >= 0 )
         {
-            // ok
+            /*
+             *  ok
+             */
         }
         else
         {
@@ -255,7 +267,7 @@ class StringParser
 
     public function between( $sm, $em, $options = STRING_NO_OPTIONS )
     {
-        $this->result = StringsBetween( $this->result, $sm, $em, $options );
+        $this->result = StringBetweenMany( $this->result, $sm, $em, $options );
         return $this;
     }
 
@@ -379,11 +391,13 @@ class StringParser
 
 
 
-    // executes the callback `function`: the  function
-    // receives a string  as  input  and  must  return
-    // either `false` (the item will be  removed  from
-    // the  results  array)  or  a  string  that  will
-    // replace the input string                     \x
+    /*
+     *  executes the callback `function`: the  function
+     *  receives a string  as  input  and  must  return
+     *  either `false` (the item will be  removed  from
+     *  the  results  array)  or  a  string  that  will
+     *  replace the input string                     \x
+     */
 
     public function execute( $function )
     {
@@ -417,7 +431,9 @@ class StringParser
 
 
 
-    // join result items in a single item
+    /*
+     *  join result items in a single item
+     */
 
     public function join( $glue = '' )
     {

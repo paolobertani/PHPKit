@@ -8,30 +8,34 @@ require_once ROOT . '/include/strings.php';
 require_once ROOT . '/include/error.php';
 
 
-// Global
+/*
+ *  Global
+ */
 
 $g_MailerError = '';
 
 
 
-//
-// Send a email
-//
-// config array:
-//
-// $config = [
-//     'host' smtp server
-//     'auth' authentication true|false
-//     'port' port
-//     'user' user
-//     'pass' password
-//     'encr' encryption: '' | 'tls' | 'ssl'
-// ];
-//
-// `to`, `replyTo`, `cc`, `bcc` can be strings or array of strings for multiple adresses
-//
-// recipient format: `Example <example@example.com>` or simply `example@example.com`
-//
+/*
+ *
+ *  Send an email through SMTP and reset the previous error before each attempt.
+ *
+ *  config array:
+ *
+ *  $config = [
+ *  'host' smtp server
+ *  'auth' authentication true|false
+ *  'port' port
+ *  'user' user
+ *  'pass' password
+ *  'encr' encryption: '' | 'tls' | 'ssl'
+ *  ];
+ *
+ *  `to`, `replyTo`, `cc`, `bcc` can be strings or array of strings for multiple adresses
+ *
+ *  recipient format: `Example <example@example.com>` or simply `example@example.com`
+ *
+ */
 
 function MailerSend( $config, $subject, $body, $altBody, $from, $to, $replyTo = false, $cc = false, $bcc = false )
 {
@@ -39,7 +43,7 @@ function MailerSend( $config, $subject, $body, $altBody, $from, $to, $replyTo = 
 
     $mailer = new \PHPMailer\PHPMailer\PHPMailer( true );
 
-    $error = '';
+    $g_MailerError = '';
 
     $confParams = [ 'host', 'auth', 'port', 'user', 'pass', 'encr', 'user', 'pass' ];
 
@@ -68,6 +72,8 @@ function MailerSend( $config, $subject, $body, $altBody, $from, $to, $replyTo = 
         $mailer->Username   = $config['user'];
         $mailer->Password   = $config['pass'];
         $mailer->SMTPSecure = $config['encr']; // '' | 'tls' | 'ssl'
+        $mailer->Timeout    = 15;
+        $mailer->getSMTPInstance()->Timelimit = 15;
 
         $addr = MailerAddress( $from );
 
@@ -85,8 +91,13 @@ function MailerSend( $config, $subject, $body, $altBody, $from, $to, $replyTo = 
 
         if( $replyTo !== false )
         {
-            $addr = MailerAddress( $replyTo );
-            $mailer->addReplyTo( $addr['email'], $addr['email'] );
+            if( is_string( $replyTo ) ) { $replyTo = [ $replyTo ]; }
+
+            foreach( $replyTo as $replyToAddress )
+            {
+                $addr = MailerAddress( $replyToAddress );
+                $mailer->addReplyTo( $addr['email'], $addr['name'] );
+            }
         }
 
         if( is_string( $to ) ) { $to = [ $to ]; }
@@ -170,6 +181,8 @@ function MailerSend( $config, $subject, $body, $altBody, $from, $to, $replyTo = 
 
 
 
+// Return the error from the most recent send attempt, or an empty string after success.
+
 function MailerError()
 {
     global $g_MailerError;
@@ -178,9 +191,11 @@ function MailerError()
 
 
 
-//
-// Private
-//
+/*
+ *
+ *  Extract the email address and optional display name from a composed address.
+ *
+ */
 
 function MailerAddress( $addr )
 {
@@ -194,5 +209,4 @@ function MailerAddress( $addr )
 
     return [ 'name' => $name, 'email' => $email ];
 }
-
 

@@ -1,24 +1,30 @@
 <?php
 
-//
-//
-// Filesystem
-//
-//
+/*
+ *
+ *
+ *  Filesystem
+ *
+ *
+ */
 
 
 
-//
-// INCLUDE
-//
+/*
+ *
+ *  INCLUDE
+ *
+ */
 
 require_once ROOT . "/include/error.php";
 
 
 
-//
-// CONSTANTS AND OPTIONS
-//
+/*
+ *
+ *  CONSTANTS AND OPTIONS
+ *
+ */
 
 
 define( 'FS_NO_OPTIONS',        0 );
@@ -31,38 +37,44 @@ define( 'FS_NODOT',            16 );
 define( 'FS_NO_DOT',           16 );
 
 
-//
-// GLOBALS
-//
 
-$g_LastCommand = '';
+/*
+ *
+ *  GLOBALS
+ *
+ */
+
+$g_FSLastCommand = '';
+$g_FSProcs = [];
+$g_FSMaxProcs = (int) trim( (string) ( shell_exec( '/usr/sbin/sysctl -n hw.physicalcpu 2>/dev/null' ) ?? '' ) ) ?: 1;
 
 
 
-
-//
-// Execute a command line tool
-// Accepts a string or array of strings
-// When an array is passed arguments are escaped except first
-//
-// Note: stderr is redirected into stdout;
-//       both are catched into `$output`
-//       none go directly on the terminal
-//
+/*
+ *
+ *  Execute a shell command
+ *  Accepts a string or array of strings
+ *  When an array is passed arguments are escaped except first one
+ *
+ *  Note: stderr is redirected into stdout;
+ *  both are catched into `$output`
+ *  none go directly on the terminal
+ *
+ */
 
 function FSExecute( $cmd, &$exitStatus )
 {
-    global $g_LastCommand;
-    $output = array();
+    global $g_FSLastCommand;
+    $output = [];
     $exitStatus = 0;
 
     if( is_array( $cmd ) )
     {
         $arr = $cmd;
 
-        $cmd = $arr[0];
+        $cmd = $arr[ 0 ];
 
-        for( $i = 1; $i < count($arr); $i++ )
+        for( $i = 1; $i < count( $arr ); $i++ )
         {
             $cmd .= ' ' . escapeshellarg( $arr[ $i ] );
         }
@@ -74,22 +86,138 @@ function FSExecute( $cmd, &$exitStatus )
 
     $output = implode( "\n", $output );
 
-    $g_LastCommand = $cmd;
+    $g_FSLastCommand = $cmd;
 
     return $output;
 }
 
 
 
-function FSGetLastCommand()
+/*
+ *
+ *  Execute shell command asyncronously (non-blocking)
+ *
+ *  When an array is passed to $cmd arguments are escaped except first one
+ *
+ *  As the number of process running equals cpu cores count it
+ *  awaits for a process to finish before starting a new one
+ *
+ */
+
+function FSExecuteAsync( $cmd, &$descriptors = null, &$pipes = null )
 {
-    global $g_LastCommand;
-    return $g_LastCommand;
+    global $g_FSLastCommand;
+    global $g_FSProcs;
+    global $g_FSMaxProcs;
+
+    while( count( $g_FSProcs ) >= $g_FSMaxProcs )
+    {
+        foreach( $g_FSProcs as $idx => $proc )
+        {
+            $status = proc_get_status( $proc );
+
+            if( ! $status[ 'running' ] )
+            {
+                proc_close( $proc );
+                unset( $g_FSProcs[ $idx ] );
+            }
+        }
+
+        $g_FSProcs = array_values( $g_FSProcs );
+
+        usleep( 5000 );
+    }
+
+    if( is_array( $cmd ) )
+    {
+        $arr = $cmd;
+
+        $cmd = $arr[ 0 ];
+
+        for( $idx = 1; $idx < count( $arr ); $idx++ )
+        {
+            $cmd .= ' ' . escapeshellarg( $arr[ $idx ] );
+        }
+    }
+
+    if( ! is_array( $descriptors ) )
+    {
+        $descriptors = [
+            0 => [ 'file', '/dev/null', 'r' ],
+            1 => [ 'file', '/dev/null', 'w' ],
+            2 => [ 'file', '/dev/null', 'w' ],
+        ];
+    }
+
+    $proc = proc_open( $cmd, $descriptors, $pipes );
+
+    if( ! is_resource( $proc ) )
+    {
+        Error( "failed executing `$cmd`" );
+    }
+
+    $g_FSProcs[] = $proc;
+    $g_FSLastCommand = $cmd;
+
+    return $proc;
 }
 
-//
-// The given path points to an existing file
-//
+
+
+/*
+ *
+ *  Retuns true if any job is running
+ *
+ */
+
+function FSAnyProcessRunning( &$cnt = null )
+{
+    global $g_FSProcs;
+
+    $running = false;
+
+    foreach( $g_FSProcs as $idx => $proc )
+    {
+        if( ! is_resource( $proc ) )
+        {
+            unset( $g_FSProcs[ $idx ] );
+            continue;
+        }
+
+        $status = proc_get_status( $proc );
+
+        if( $status[ 'running' ] )
+        {
+            $running = true;
+            continue;
+        }
+
+        proc_close( $proc );
+        unset( $g_FSProcs[ $idx ] );
+    }
+
+    $g_FSProcs = array_values( $g_FSProcs );
+
+    $cnt = count( $g_FSProcs );
+
+    return $running;
+}
+
+
+
+function FSGetLastCommand()
+{
+    global $g_FSLastCommand;
+    return $g_FSLastCommand;
+}
+
+
+
+/*
+ *
+ *  The given path points to an existing file
+ *
+ */
 
 function FSFileExists( $f, $options = FS_NO_OPTIONS )
 {
@@ -106,9 +234,11 @@ function FSFileExists( $f, $options = FS_NO_OPTIONS )
 
 
 
-//
-// The given path points to an existing directory
-//
+/*
+ *
+ *  The given path points to an existing directory
+ *
+ */
 
 function FSDirectoryExists( $d )
 {
@@ -118,9 +248,11 @@ function FSDirectoryExists( $d )
 
 
 
-//
-// Make all the directories to build up the path provided
-//
+/*
+ *
+ *  Make all the directories to build up the path provided
+ *
+ */
 
 function FSMakeDirectoryTree( $d, $mode = 0755 )
 {
@@ -138,7 +270,9 @@ function FSMakeDirectoryTree( $d, $mode = 0755 )
     }
 }
 
-// Shortcut
+/*
+ *  Shortcut
+ */
 
 function FSMakeDir( $d, $mode = 0755 )
 {
@@ -147,7 +281,9 @@ function FSMakeDir( $d, $mode = 0755 )
 
 
 
-// Rename
+/*
+ *  Rename
+ */
 
 function FSRenameItem( $old, $new )
 {
@@ -162,9 +298,11 @@ function FSRenameItem( $old, $new )
 
 
 
-//
-// Copy a file, overwite the destination
-//
+/*
+ *
+ *  Copy a file, overwite the destination
+ *
+ */
 
 function FSCopyFile( $s, $d )
 {
@@ -177,9 +315,11 @@ function FSCopyFile( $s, $d )
 
 
 
-//
-// Copy a directory, overwite the destination
-//
+/*
+ *
+ *  Copy a directory, overwite the destination
+ *
+ */
 
 function FSCopyDirectory( $s, $d )
 {
@@ -203,9 +343,11 @@ function FSCopyDirectory( $s, $d )
 
 
 
-//
-// Attempt to produce a relative path
-//
+/*
+ *
+ *  Attempt to produce a relative path
+ *
+ */
 
 function FSPathRelative( $path, $root = false )
 {
@@ -241,9 +383,11 @@ function FSPathRelative( $path, $root = false )
 
 
 
-//
-// Given a full path return a list of the files in that directory.
-//
+/*
+ *
+ *  Given a full path return a list of the files in that directory.
+ *
+ */
 
 function FSFilesInDirectory( $dir, $options = FS_NO_OPTIONS )
 {
@@ -287,9 +431,11 @@ function FSFilesInDirectory( $dir, $options = FS_NO_OPTIONS )
 
 
 
-//
-// Given a full path return a list of the directories in that directory.
-//
+/*
+ *
+ *  Given a full path return a list of the directories in that directory.
+ *
+ */
 
 function FSDirectoriesInDirectory( $dir, $options = FS_NO_OPTIONS )
 {
@@ -333,9 +479,11 @@ function FSDirectoriesInDirectory( $dir, $options = FS_NO_OPTIONS )
 
 
 
-//
-// Remove the file at the path provided
-//
+/*
+ *
+ *  Remove the file at the path provided
+ *
+ */
 
 function FSRemoveFile( $path )
 {
@@ -355,9 +503,11 @@ function FSRemoveFile( $path )
 
 
 
-//
-// Remove the directory at the path provided and everything it contains
-//
+/*
+ *
+ *  Remove the directory at the path provided and everything it contains
+ *
+ */
 
 function FSRemoveDirectory( $path )
 {
@@ -378,9 +528,11 @@ function FSRemoveDirectory( $path )
 
 
 
-//
-// Returns the size of a file
-//
+/*
+ *
+ *  Returns the size of a file
+ *
+ */
 
 function FSGetFileSize( $f )
 {
@@ -400,9 +552,11 @@ function FSGetFileSize( $f )
 
 
 
-//
-// Returns the size of the whole contents of a directory
-//
+/*
+ *
+ *  Returns the size of the whole contents of a directory
+ *
+ */
 
 function FSGetDirectorySize( $d )
 {
@@ -436,9 +590,11 @@ function FSGetDirectorySize( $d )
 
 
 
-//
-// Append a trailing slash to a path if missing
-//
+/*
+ *
+ *  Append a trailing slash to a path if missing
+ *
+ */
 
 function FSPathAppendSlash( &$path )
 {
@@ -450,9 +606,11 @@ function FSPathAppendSlash( &$path )
 
 
 
-//
-// Remove a trailing slash to a path if present
-//
+/*
+ *
+ *  Remove a trailing slash to a path if present
+ *
+ */
 
 function FSPathRemoveSlash( &$path )
 {
@@ -464,10 +622,12 @@ function FSPathRemoveSlash( &$path )
 
 
 
-//
-// Get extension for file path
-// Extension is returned lowercase
-//
+/*
+ *
+ *  Get extension for file path
+ *  Extension is returned lowercase
+ *
+ */
 
 function FSPathGetExtension( $path )
 {
@@ -476,9 +636,11 @@ function FSPathGetExtension( $path )
 
 
 
-//
-// Changes the extension to path
-//
+/*
+ *
+ *  Changes the extension to path
+ *
+ */
 
 function FSPathSetExtension( $path, $e )
 {
@@ -499,27 +661,35 @@ function FSPathSetExtension( $path, $e )
 
 
 
-//
-// edit the path appending and/or prepending  text
-// to the filename: if  `extension`  is  true  the
-// existing extension (if any)  is  preserved;  if
-// `false` the extension is removed; if  a  string
-// is  passed  the  extension  is  changed;  if  a
-// trailing slash is present it  is  preserved  in
-// the returned path
-//                                              \x
+/*
+ *
+ *  edit the path appending and/or prepending  text
+ *  to the filename: if  `extension`  is  true  the
+ *  existing extension (if any)  is  preserved;  if
+ *  `false` the extension is removed; if  a  string
+ *  is  passed  the  extension  is  changed;  if  a
+ *  trailing slash is present it  is  preserved  in
+ *  the returned path
+ *  \x
+ */
 
 function FSPathEditFilename( $path, $prepend = '', $append = '', $extension = true )
 {
-    // preserve trailing slash
+    /*
+     *  preserve trailing slash
+     */
 
     $slash = substr( $path, -1, 1 ) === '/' ? '/' : '';
 
-    // split path in parts
+    /*
+     *  split path in parts
+     */
 
     $pi = pathinfo( $path );
 
-    // remove leading ./ for relative paths to items in the current directory
+    /*
+     *  remove leading ./ for relative paths to items in the current directory
+     */
 
     if( $pi['dirname'] === '.' )
     {
@@ -530,13 +700,17 @@ function FSPathEditFilename( $path, $prepend = '', $append = '', $extension = tr
         $dir = $pi['dirname'] . "/";
     }
 
-    // manage the extension
+    /*
+     *  manage the extension
+     */
 
     $dotext = "";
 
     if( $extension === false )
     {
-        //
+        /*
+         *
+         */
     }
     elseif( $extension === true )
     {
@@ -557,7 +731,9 @@ function FSPathEditFilename( $path, $prepend = '', $append = '', $extension = tr
         Error( "`extension` must be true, false or string" );
     }
 
-    // assemble parts
+    /*
+     *  assemble parts
+     */
 
     $path = "$dir$prepend{$pi['filename']}$append$dotext$slash";
 
@@ -566,11 +742,13 @@ function FSPathEditFilename( $path, $prepend = '', $append = '', $extension = tr
 
 
 
-//
-// PathGetFilename
-//
-// returns the filename for a given path
-//
+/*
+ *
+ *  PathGetFilename
+ *
+ *  returns the filename for a given path
+ *
+ */
 
 function FSPathGetFilename( $path, $options = FS_NO_OPTIONS )
 {
@@ -586,14 +764,16 @@ function FSPathGetFilename( $path, $options = FS_NO_OPTIONS )
 }
 
 
-//
-// TarGzDirectory
-//
-// archive and compress a  directory  using  `tar`
-// and `pigz (parallelized gzip) producing a file
-// with extension `.tar.gz`.
-// Usage is the same as `ZipDirectory` below.
-//
+/*
+ *
+ *  TarGzDirectory
+ *
+ *  archive and compress a  directory  using  `tar`
+ *  and `pigz (parallelized gzip) producing a file
+ *  with extension `.tar.gz`.
+ *  Usage is the same as `ZipDirectory` below.
+ *
+ */
 
 function FSTarGzDirectory( $path, $options = FS_NO_OPTIONS )
 {
@@ -662,14 +842,16 @@ function FSTarGzDirectory( $path, $options = FS_NO_OPTIONS )
 
 
 
-//
-// UnTarGz
-//
-// decompress and expand a `.tar.gz` archive
-//
-// option FS_ZIP_DELETE  will  delete  the  source
-// archive
-//                                              \x
+/*
+ *
+ *  UnTarGz
+ *
+ *  decompress and expand a `.tar.gz` archive
+ *
+ *  option FS_ZIP_DELETE  will  delete  the  source
+ *  archive
+ *  \x
+ */
 
 function FSUnTarGz( $path, $options = FS_NO_OPTIONS  )
 {
@@ -739,17 +921,19 @@ function FSUnTarGz( $path, $options = FS_NO_OPTIONS  )
 
 
 
-//
-// ZipDirectory
-//
-// zip  a  directory  contents;  an   archive   is
-// producted with `.zip`  extension  in  the  same
-// directory  of  the  source  directory;  if  the
-// target file already exists an error is produced
-//
-// option FS_ZIP_DELETE will delete the source
-// directory after compression
-//                                              \x
+/*
+ *
+ *  ZipDirectory
+ *
+ *  zip  a  directory  contents;  an   archive   is
+ *  producted with `.zip`  extension  in  the  same
+ *  directory  of  the  source  directory;  if  the
+ *  target file already exists an error is produced
+ *
+ *  option FS_ZIP_DELETE will delete the source
+ *  directory after compression
+ *  \x
+ */
 
 function FSZipDirectory( $path, $options = FS_NO_OPTIONS )
 {
@@ -782,7 +966,7 @@ function FSZipDirectory( $path, $options = FS_NO_OPTIONS )
     $name = basename( $path );
 
     $exitStatus = 0;
-    $toolcall = [ "zip -rq", "$name.zip", $name ];
+    $toolcall = [ "zip", "-r" ,"-q", "$name.zip", $name ];
     $output = FSExecute( $toolcall, $exitStatus );
     if( $exitStatus != 0 )
     {
@@ -804,14 +988,16 @@ function FSZipDirectory( $path, $options = FS_NO_OPTIONS )
 
 
 
-//
-// Unzip
-//
-// unzip an archive
-//
-// option FS_ZIP_DELETE will  delete  the  archive
-// after unzip
-//                                              \x
+/*
+ *
+ *  Unzip
+ *
+ *  unzip an archive
+ *
+ *  option FS_ZIP_DELETE will  delete  the  archive
+ *  after unzip
+ *  \x
+ */
 
 function FSUnzip( $path, $options = FS_NO_OPTIONS  )
 {
@@ -862,12 +1048,14 @@ function FSUnzip( $path, $options = FS_NO_OPTIONS  )
 
 
 
-//
-// DirectoryOfItem
-//
-// Get the parent directory of an item (file or directory)
-// without trailing slash
-//
+/*
+ *
+ *  DirectoryOfItem
+ *
+ *  Get the parent directory of an item (file or directory)
+ *  without trailing slash
+ *
+ */
 
 function FSDirectoryOfItem( $path )
 {
@@ -887,9 +1075,11 @@ function FSDirectoryOfItem( $path )
 
 
 
-//
-// Get MD5 of file
-//
+/*
+ *
+ *  Get MD5 of file
+ *
+ */
 
 function FSmd5( $path )
 {
@@ -903,9 +1093,11 @@ function FSmd5( $path )
 
 
 
-//
-// Path from ROOT
-//
+/*
+ *
+ *  Path from ROOT
+ *
+ */
 
 function FSRoot( $path = '' )
 {
@@ -916,9 +1108,11 @@ function FSRoot( $path = '' )
 
 
 
-//
-// Exclude from TimeMachine backups
-//
+/*
+ *
+ *  Exclude from TimeMachine backups
+ *
+ */
 
 function FSTMExclude( $path )
 {
@@ -931,9 +1125,11 @@ function FSTMExclude( $path )
 
 
 
-//
-// Include in TimeMachine backups
-//
+/*
+ *
+ *  Include in TimeMachine backups
+ *
+ */
 
 function FSTMInclude( $path )
 {
@@ -946,9 +1142,11 @@ function FSTMInclude( $path )
 
 
 
-//
-// Fix a path
-//
+/*
+ *
+ *  Fix a path
+ *
+ */
 
 function FSPathFix( &$path )
 {

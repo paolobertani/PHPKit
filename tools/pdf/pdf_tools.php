@@ -1,8 +1,10 @@
 <?php
 
-//
-// PdfTools
-//
+/*
+ *
+ *  PdfTools
+ *
+ */
 
 require_once ROOT . '/include/echo.php';
 require_once ROOT . '/include/error.php';

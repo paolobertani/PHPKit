@@ -1,16 +1,20 @@
 <?php
 
-//
-//
-// Product Scraper
-//
-//
+/*
+ *
+ *
+ *  Product Scraper
+ *
+ *
+ */
 
 
 
-//
-// Includes
-//
+/*
+ *
+ *  Includes
+ *
+ */
 
 require_once ROOT . '/include/scraper.php';
 
@@ -25,12 +29,16 @@ class ProductScraper extends Scraper
 
 
 
-    // --- Override to provide a custom info string
+    /*
+     *  --- Override to provide a custom info string
+     */
 
-    //
-    // returns info  to  be  displayed  on  the
-    // terminal during scraping              \p
-    //
+    /*
+     *
+     *  returns info  to  be  displayed  on  the
+     *  terminal during scraping              \p
+     *
+     */
 
     protected function get_info( $url, $count, $level, $memory )
     {
@@ -40,12 +48,16 @@ class ProductScraper extends Scraper
 
 
 
-    // --- Override to implement custom duplicates deletion
+    /*
+     *  --- Override to implement custom duplicates deletion
+     */
 
-    //
-    // default function:  keep  the  code  with
-    // more resources and shorter URL        \p
-    //
+    /*
+     *
+     *  default function:  keep  the  code  with
+     *  more resources and shorter URL        \p
+     *
+     */
 
     protected function duplicates()
     {
@@ -69,18 +81,22 @@ class ProductScraper extends Scraper
 
 
 
-    // --- Override to implement a URL filter
+    /*
+     *  --- Override to implement a URL filter
+     */
 
-    //
-    // filter the URLs retrieved;
-    // the function may return:
-    // `true`  let  load  and  parse  the  URL;
-    // `false`  URL  should  not   be   loaded;
-    // <string> let parse this URL instead;
-    //
-    // default filter removes the fragment part
-    // of the url, converts spaces to `%20`
-    //                                       \p
+    /*
+     *
+     *  filter the URLs retrieved;
+     *  the function may return:
+     *  `true`  let  load  and  parse  the  URL;
+     *  `false`  URL  should  not   be   loaded;
+     *  <string> let parse this URL instead;
+     *
+     *  default filter removes the fragment part
+     *  of the url, converts spaces to `%20`
+     *  \p
+     */
 
     /*
     protected function filter( $url ) { }
@@ -88,16 +104,20 @@ class ProductScraper extends Scraper
 
 
 
-    // --- Override to implement a contents processor
+    /*
+     *  --- Override to implement a contents processor
+     */
 
-    //
-    // process the response;
-    // the function may return a string  or  an
-    // array  of  strings   representing   urls
-    // (aboslute o relative) to be scraped; the
-    // function is  expected  to  populate  the
-    // array     of     associative      arrays
-    // $this->products                       \p
+    /*
+     *
+     *  process the response;
+     *  the function may return a string  or  an
+     *  array  of  strings   representing   urls
+     *  (aboslute o relative) to be scraped; the
+     *  function is  expected  to  populate  the
+     *  array     of     associative      arrays
+     *  $this->products                       \p
+     */
 
     /*
     protected function process( $url, $response, $headers, $dom, $is_html ) { }
@@ -105,11 +125,13 @@ class ProductScraper extends Scraper
 
 
 
-    //
-    // map each resource key to a  filename  if
-    // the filename begins with  `!`  then  the
-    // file contents will be the resource value
-    //                                       \p
+    /*
+     *
+     *  map each resource key to a  filename  if
+     *  the filename begins with  `!`  then  the
+     *  file contents will be the resource value
+     *  \p
+     */
 
     public function filemap( $map )
     {
@@ -118,11 +140,13 @@ class ProductScraper extends Scraper
 
 
 
-    //
-    // scrape recursively the website  starting
-    // from the url  provided  and  going  only
-    // deeper and in the same domain         \p
-    //
+    /*
+     *
+     *  scrape recursively the website  starting
+     *  from the url  provided  and  going  only
+     *  deeper and in the same domain         \p
+     *
+     */
 
     /*
     public function scrape( $url ) { .... }
@@ -130,10 +154,12 @@ class ProductScraper extends Scraper
 
 
 
-    //
-    // save resources file
-    // download resources if requested
-    //
+    /*
+     *
+     *  save resources file
+     *  download resources if requested
+     *
+     */
 
     public function save()
     {
@@ -155,11 +181,15 @@ class ProductScraper extends Scraper
             /*--- EXIT POINT ---*/
         }
 
-        // make resources directory if missing
+        /*
+         *  make resources directory if missing
+         */
 
         MakeDir( ROOT . "/resources" );
 
-        // download resources
+        /*
+         *  download resources
+         */
 
         foreach( $this->products as $product )
         {
@@ -218,9 +248,11 @@ class ProductScraper extends Scraper
 
 
 
-    //
-    // cleanup
-    //
+    /*
+     *
+     *  cleanup
+     *
+     */
 
     /*
     public function done() { .... }

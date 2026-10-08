@@ -1,29 +1,41 @@
 <?php
-//
-//
-// Exec
-//
-//
+/*
+ *
+ *
+ *  Exec
+ *
+ *
+ */
 
 
-//
-// INCLUDE
-//
+/*
+ *
+ *  INCLUDE
+ *
+ */
 
 require_once ROOT . '/include/strings.php';
 require_once ROOT . '/include/version.php';
 
 
 
-//
-// Check version
-//
+/*
+ *
+ *  Check version
+ *
+ */
 
 function ExecShouldRestart( &$version )
 {
-    $source = file_get_contents( __DIR__ . '/version.php' );
-    $version = StringBetween( $source, "define( 'INCLUDE_VERSION', '", "'" );
-    if( $version !== INCLUDE_VERSION )
+    $source = @file_get_contents( __DIR__ . '/version.php' );
+
+    if( $source === false )
+    {
+        return false;
+    }
+
+    $version = StringBetween( $source, "define( 'PHPKIT_VERSION', '", "'" );
+    if( $version !== PHPKIT_VERSION )
     {
         return true;
     }
@@ -32,9 +44,11 @@ function ExecShouldRestart( &$version )
 
 
 
-//
-// Restart (with optional additional arguments)
-//
+/*
+ *
+ *  Restart (with optional additional arguments)
+ *
+ */
 
 function ExecRestart( $abs_path, $more_args = null )
 {

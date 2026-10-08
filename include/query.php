@@ -1,32 +1,39 @@
 <?php
 
-//
-// Includes
-//
+/*
+ *
+ *  Includes
+ *
+ */
 
 require_once ROOT . '/include/strings.php';
 
 
-//
-// Globals
-//
+/*
+ *
+ *  Globals
+ *
+ */
 
 $gQueryCache = []; // query files (not results) are cached
 
 
 
-//
-// QueryExecute
-//
-//
-// Execute a query; returns result as array of associative arrays.
-// For UPDATE, INSERT... returns the number of affected rows
-// Returns false on error
-//
+/*
+ *
+ *  QueryExecute
+ *
+ *
+ *  Execute a query; returns result as array of associative arrays.
+ *  For UPDATE, INSERT... returns the number of affected rows
+ *  Returns false on error
+ *
+ */
 
 function QueryExecute( $name, &$error, $params = null, $honorTypes = false )
 {
     $error = "";
+	$output = [];
 
     @$mysqli = new mysqli( DB_HOST, DB_USER, DB_PASS, DB_NAME );
     if( ! $mysqli )
@@ -57,12 +64,29 @@ function QueryExecute( $name, &$error, $params = null, $honorTypes = false )
     $query = QueryLoad( $mysqli, $name, $error, $params );
     if( $query === false )
     {
-        // Error set by QueryLoad
+        /*
+         *  Error set by QueryLoad
+         */
         $mysqli->close();
         return false;
     }
 
-    $result = $mysqli->query( $query );
+
+	/*
+	 *  excec query, catch errors
+	 */
+
+	$error = '';
+	try
+	{
+	    $result = $mysqli->query( $query );
+	}
+	catch( mysqli_sql_exception $exception )
+	{
+	    $error = $exception->getMessage();
+		$result = false;
+	}
+
     if( $result === false )
     {
         $error = "$name Unable to perform query: {$mysqli->error} | " . QueryMinify( $query );
@@ -85,15 +109,17 @@ function QueryExecute( $name, &$error, $params = null, $honorTypes = false )
 }
 
 
-//
-// QueryLoad
-//
-// Takes the parametrized query and substitute {{parameters}} with values in the passed array
-//
-// If a filename with extension `.sql` is passed the query is loaded from /sql
-//
-// WARNING: to be used only with trusted data!
-//
+/*
+ *
+ *  QueryLoad
+ *
+ *  Takes the parametrized query and substitute {{parameters}} with values in the passed array
+ *
+ *  If a filename with extension `.sql` is passed the query is loaded from /sql
+ *
+ *  WARNING: to be used only with trusted data!
+ *
+ */
 
 function QueryLoad( $mysqli, $name, &$error, $params = null )
 {
@@ -101,11 +127,15 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
 
     $error = "";
 
-    // Received the name of a query to load from disk
+    /*
+     *  Received the name of a query to load from disk
+     */
 
     if( substr( $name, -4, 4 ) == '.sql' )
     {
-        // Look in the cache first
+        /*
+         *  Look in the cache first
+         */
 
         $sql = false;
 
@@ -118,7 +148,9 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
             }
         }
 
-        // Load from disk
+        /*
+         *  Load from disk
+         */
 
         if( $sql === false )
         {
@@ -130,7 +162,9 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
                 return false;
             }
 
-            // Save in the cache
+            /*
+             *  Save in the cache
+             */
 
             $gQueryCache[] = [ 'name' => $name, 'sql' => $sql ];
         }
@@ -145,18 +179,24 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
         $params = array();
     }
 
-    // Inject params into the query
+    /*
+     *  Inject params into the query
+     */
 
     foreach( $params as $key => $value )
     {
-        // Leading :: in the param name means the value must be injected unescaped
+        /*
+         *  Leading :: in the param name means the value must be injected unescaped
+         */
         $escape = true;
         if( substr( $key, 0, 2 ) === '::' )
         {
             $escape = false;
         }
 
-        // Every passed parameter must be present
+        /*
+         *  Every passed parameter must be present
+         */
         $token = '{{' . $key . '}}';
         if( ! StringHas( $sql, $token ) )
         {
@@ -164,19 +204,37 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
             return false;
         }
 
-        // Strings are escaped then enclosed between double quotes
+        /*
+         *  PHP vaaues are turned into mySql values
+         */
         if( is_string( $value ) && $escape )
         {
             $value = '"' . $mysqli->real_escape_string( $value ) . '"';
         }
+		elseif( $value === true )
+		{
+			$value = 1;
+		}
+		elseif( $value === false )
+		{
+			$value = 0;
+		}
+		elseif( $value === null )
+		{
+			$value = 'NULL';
+		}
 
-        // Parameters are replaced with values
+        /*
+         *  Parameters are replaced with values
+         */
         $sql = str_replace( $token, $value, $sql );
     }
 
-    // Check for constants
+    /*
+     *  Check for constants
+     */
 
-    $cparams = StringsBetween( $sql, '{{' , '}}' );
+    $cparams = StringBetweenMany( $sql, '{{' , '}}' );
     foreach( $cparams as $cp )
     {
         if( ! defined( $cp ) )
@@ -187,20 +245,28 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
 
         $value = constant( $cp );
 
-        // Strings are escaped then enclosed between double quotes
+        /*
+         *  Strings are escaped then enclosed between double quotes
+         */
         if( is_string( $value ) )
         {
             $value = '"' . $mysqli->real_escape_string( $value ) . '"';
         }
 
-        // The token in the query
+        /*
+         *  The token in the query
+         */
         $token = '{{' . $cp  . '}}';
 
-        // Parameters are replaced with values
+        /*
+         *  Parameters are replaced with values
+         */
         $sql = str_replace( $token, $value, $sql );
     }
 
-    // There must be no tokens left
+    /*
+     *  There must be no tokens left
+     */
     $remainder = StringBetween( $sql, '{{' , '}}' );
     if( $remainder !== false)
     {
@@ -208,19 +274,23 @@ function QueryLoad( $mysqli, $name, &$error, $params = null )
         return false;
     }
 
-    // Done
+    /*
+     *  Done
+     */
 
     return $sql;
 }
 
 
 
-//
-// QueryMinify
-//
-// Shorten a query by eliminating linefeeds
-// and multiple spaces
-//
+/*
+ *
+ *  QueryMinify
+ *
+ *  Shorten a query by eliminating linefeeds
+ *  and multiple spaces
+ *
+ */
 
 function QueryMinify( $query )
 {

@@ -1,10 +1,12 @@
 <?php
 
-//
-//
-// CURL
-//
-//
+/*
+ *
+ *
+ *  CURL
+ *
+ *
+ */
 
 
 
@@ -14,20 +16,27 @@ require_once ROOT . '/include/3rd-parts/phpuri/phpuri.php';
 
 
 
-//
-// CONSTANTS
-//
+/*
+ *
+ *  CONSTANTS
+ *
+ */
 
-if( ! defined( 'CURL_USERAGENT' ) ) define( 'CURL_USERAGENT', "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0" );  // Pretend to be Firefox
+/*
+ *  if( ! defined( 'CURL_USERAGENT' ) ) define( 'CURL_USERAGENT', "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10.9; rv:45.0) Gecko/20100101 Firefox/45.0" );  // Pretend to be Firefox
+ */
+if( ! defined( 'CURL_USERAGENT' ) ) define( 'CURL_USERAGENT', "User-Agent: PHPKit-CURL ( https://www.kalei.com )" );
 if( ! defined( 'CURL_LANGUAGE' ) )  define( 'CURL_LANGUAGE',  "Accept-Language: it-IT,it;q=0.8,en-US;q=0.5,en;q=0.3" );
 if( ! defined( 'CURL_ACCEPT' ) )    define( 'CURL_ACCEPT',    "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" );
 if( ! defined( 'CURL_COOKIES' ) )   define( 'CURL_COOKIES',   ROOT . "/cookies.txt" );
 
 
 
-//
-// GLOBALS
-//
+/*
+ *
+ *  GLOBALS
+ *
+ */
 
 $g_CurlDebug = false;
 $g_CurlTimeout = 30;
@@ -36,11 +45,13 @@ $g_CurlMaxRedirs = 5;
 
 
 
-//
-// Set curl to use the cache directory at the specified path
-// The cache can be a simple directory or a zipped file
-// with the directory name and extension .zip
-//
+/*
+ *
+ *  Set curl to use the cache directory at the specified path
+ *  The cache can be a simple directory or a zipped file
+ *  with the directory name and extension .zip
+ *
+ */
 
 function CurlUseCache( $path )
 {
@@ -66,10 +77,12 @@ function CurlUseCache( $path )
 
 
 
-//
-// Archive the cache dir as a zip file
-// and disable cache use
-//
+/*
+ *
+ *  Archive the cache dir as a zip file
+ *  and disable cache use
+ *
+ */
 
 function CurlArchiveCache()
 {
@@ -92,11 +105,13 @@ function CurlArchiveCache()
 
 
 
-//
-// CurlDebug
-//
-// Set debug mode
-//
+/*
+ *
+ *  CurlDebug
+ *
+ *  Set debug mode
+ *
+ */
 
 function CurlDebug( $d )
 {
@@ -106,12 +121,14 @@ function CurlDebug( $d )
 
 
 
-//
-// CurlSetTimeout
-//
-// Set a custom timeout value
-//             (default = 30)
-//
+/*
+ *
+ *  CurlSetTimeout
+ *
+ *  Set a custom timeout value
+ *  (default = 30)
+ *
+ */
 
 function CurlSetTimeout( $s )
 {
@@ -121,17 +138,19 @@ function CurlSetTimeout( $s )
 
 
 
-//
-// CurlEncode
-//
-// Given a key value pairs array build a query string
-// without leading `?` to be appended to URL or used
-// as `$post` parameter.
-// Passing an array into `$post` to `Curl`
-// will encode the data as multipart/form-data,
-// while passing a URL-encoded string will encode the data
-// as application/x-www-form-urlencoded.
-//
+/*
+ *
+ *  CurlEncode
+ *
+ *  Given a key value pairs array build a query string
+ *  without leading `?` to be appended to URL or used
+ *  as `$post` parameter.
+ *  Passing an array into `$post` to `Curl`
+ *  will encode the data as multipart/form-data,
+ *  while passing a URL-encoded string will encode the data
+ *  as application/x-www-form-urlencoded.
+ *
+ */
 
 function CurlEncode( $params )
 {
@@ -147,9 +166,11 @@ function CurlEncode( $params )
 
 
 
-//
-// CurlDeleteCookiesFile
-//
+/*
+ *
+ *  CurlDeleteCookiesFile
+ *
+ */
 
 function CurlDeleteCookiesFile()
 {
@@ -157,19 +178,23 @@ function CurlDeleteCookiesFile()
 }
 
 
-//
-// Curl
-//
-// Execute a request via CURL
-// `$post` can be associative array, url-encoded string or `true`
-// `$headers` can be an array or a string of "\n" separated values
-// Call without parameters to discard cookies file and archives
-// the cache if enabled.
-//
+/*
+ *
+ *  Curl
+ *
+ *  Execute a request via CURL
+ *  `$post` can be associative array, url-encoded string or `true`
+ *  `$headers` can be an array or a string of "\n" separated values
+ *  Call without parameters to discard cookies file and archives
+ *  the cache if enabled.
+ *
+ */
 
 function Curl( $url = false, $post = null, $headers = null )
 {
-    // Globals
+    /*
+     *  Globals
+     */
 
     global $g_CurlCache;
     global $g_CurlMaxRedirs;
@@ -177,7 +202,9 @@ function Curl( $url = false, $post = null, $headers = null )
     global $g_CurlTimeout;
 
 
-    // Just discard cookies?
+    /*
+     *  Just discard cookies?
+     */
 
     if( $url === false )
     {
@@ -194,12 +221,16 @@ function Curl( $url = false, $post = null, $headers = null )
     }
 
 
-    // Some URLs have spaces
+    /*
+     *  Some URLs have spaces
+     */
 
     $url = str_replace( " ", "%20", $url );
 
 
-    // Retrieve from cache?
+    /*
+     *  Retrieve from cache?
+     */
 
     $urlhash = hash( "sha256", $url );
 
@@ -222,12 +253,16 @@ function Curl( $url = false, $post = null, $headers = null )
     }
 
 
-    // Init curl
+    /*
+     *  Init curl
+     */
 
     $handle = curl_init();
 
 
-    // Headers
+    /*
+     *  Headers
+     */
 
     if( is_string( $headers ) )
     {
@@ -235,7 +270,9 @@ function Curl( $url = false, $post = null, $headers = null )
     }
     elseif( is_array( $headers ) )
     {
-        // noop
+        /*
+         *  noop
+         */
     }
     else
     {
@@ -255,7 +292,9 @@ function Curl( $url = false, $post = null, $headers = null )
     }
 
 
-    // Set CURLOPTs
+    /*
+     *  Set CURLOPTs
+     */
 
     curl_setopt( $handle, CURLOPT_URL,              $url );
     curl_setopt( $handle, CURLOPT_RETURNTRANSFER,   true );
@@ -272,7 +311,9 @@ function Curl( $url = false, $post = null, $headers = null )
     curl_setopt( $handle, CURLOPT_TIMEOUT,          $g_CurlTimeout );
 
 
-    // Pass `$post` as true to make a POST request without sending data
+    /*
+     *  Pass `$post` as true to make a POST request without sending data
+     */
 
     if( $post !== null && $post !== false )
     {
@@ -285,7 +326,9 @@ function Curl( $url = false, $post = null, $headers = null )
     }
 
 
-    // Retrieve headers
+    /*
+     *  Retrieve headers
+     */
 
     $response_headers = [];
 
@@ -305,23 +348,31 @@ function Curl( $url = false, $post = null, $headers = null )
     while( $redirect_count < $g_CurlMaxRedirs ) // loop throught redirects
     {
 
-        // Send request, get response
+        /*
+         *  Send request, get response
+         */
 
         $response = curl_exec( $handle );
 
 
-        // Catch error
+        /*
+         *  Catch error
+         */
 
         $errnum = curl_errno( $handle );
         $error = $errnum == 0 ? '' : curl_strerror( $errnum );
 
 
-        // Get status
+        /*
+         *  Get status
+         */
 
         $status = curl_getinfo( $handle, CURLINFO_HTTP_CODE );
 
 
-        // Exit if no redir
+        /*
+         *  Exit if no redir
+         */
 
         if( $status < 300 || $status > 399 )
         {
@@ -331,7 +382,9 @@ function Curl( $url = false, $post = null, $headers = null )
         }
 
 
-        // Manage redir
+        /*
+         *  Manage redir
+         */
 
         $redirect_count++;
         if( ! isset( $response_headers['location'] ) )
@@ -350,12 +403,16 @@ function Curl( $url = false, $post = null, $headers = null )
         curl_setopt( $handle, CURLOPT_URL, $url );
     }
 
-    // Cleanup
+    /*
+     *  Cleanup
+     */
 
-    curl_close( $handle );
+    // curl_close( $handle );
 
 
-    // Debug
+    /*
+     *  Debug
+     */
 
     if( $g_CurlDebug )
     {
@@ -371,7 +428,9 @@ function Curl( $url = false, $post = null, $headers = null )
     }
 
 
-    // Store data into cache?
+    /*
+     *  Store data into cache?
+     */
 
     if( $g_CurlCache !== false && $errnum == 0 && $status >= 200 && $status < 300 )
     {
@@ -386,7 +445,9 @@ function Curl( $url = false, $post = null, $headers = null )
     }
 
 
-    // Build and return result
+    /*
+     *  Build and return result
+     */
 
     $result = [];
     $result[ 'response' ] = $response;
@@ -401,13 +462,17 @@ function Curl( $url = false, $post = null, $headers = null )
 
 
 
-//
-// Private
-//
+/*
+ *
+ *  Private
+ *
+ */
 
 
 
-// Add/Remove header
+/*
+ *  Add/Remove header
+ */
 
 function CurlSetHeaderPrivate( $headers, $entry )
 {
@@ -448,7 +513,9 @@ function CurlSetHeaderPrivate( $headers, $entry )
 
 
 
-// Split a header entry in name and value
+/*
+ *  Split a header entry in name and value
+ */
 
 function CurlHeaderNameValuePrivate( $h )
 {

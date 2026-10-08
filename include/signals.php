@@ -1,34 +1,42 @@
 <?php
-//
-//
-// Signals
-//
-//
+/*
+ *
+ *
+ *  Signals
+ *
+ *
+ */
 
 
-//
-// INCLUDE
-//
+/*
+ *
+ *  INCLUDE
+ *
+ */
 
 require_once ROOT . '/include/error.php';
 
 
 
 
-//
-// Global
-//
+/*
+ *
+ *  Global
+ *
+ */
 
 $g_signal_shutdown = false;
 $g_signal_installed = false;
 
 
 
-//
-// Listen for quit (from ActivityMonitor)
-// kill -s 15 <pid> from terminal
-// or CTRL-C from terminal
-//
+/*
+ *
+ *  Listen for quit (from ActivityMonitor)
+ *  kill -s 15 <pid> from terminal
+ *  or CTRL-C from terminal
+ *
+ */
 
 function SignalInstall()
 {
@@ -60,9 +68,11 @@ function SignalInstall()
 
 
 
-//
-// Are signals installed
-//
+/*
+ *
+ *  Are signals installed
+ *
+ */
 
 function SignalIsInstalled()
 {
@@ -72,9 +82,11 @@ function SignalIsInstalled()
 
 
 
-//
-// A "quit" signal has been received
-//
+/*
+ *
+ *  A "quit" signal has been received
+ *
+ */
 
 function SignalQuitReceived()
 {
@@ -84,9 +96,11 @@ function SignalQuitReceived()
 
 
 
-//
-// PRIVATE
-//
+/*
+ *
+ *  PRIVATE
+ *
+ */
 
 function SignalHandlerPrivate( $signo, $siginfo )
 {

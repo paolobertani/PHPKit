@@ -1,2 +1,3 @@
 .DS_Store
-.git.nosync
+_Git.nosync
+include/3rd-parts/

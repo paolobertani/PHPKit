@@ -1,10 +1,12 @@
 <?php
 
-//
-//
-// ARRAYS
-//
-//
+/*
+ *
+ *
+ *  ARRAYS
+ *
+ *
+ */
 
 
 
@@ -13,32 +15,36 @@ require_once ROOT . '/include/3rd-parts/phpspreadsheet/autoload.php';
 
 
 
-//
-// CONSTANTS
-//
+/*
+ *
+ *  CONSTANTS
+ *
+ */
 
 define( 'ARRAY_ASC',    1 );
 define( 'ARRAY_DESC',   2 );
 
 
 
-//
-// ArrayFromFile
-//
-// Read an array of associative arrays from  a tab
-// separated text file: first row   must   contain
-// column names that  will  become  array's  keys;
-// every row must contain all the columns;
-// an eventuyally trailing empty row (extra   "\n"
-// at the end of the file) will be ignored;
-// `$null_on_empty`   will  let  non-string  empty
-// values to become `null` on file parsing;
-// column  names  ending  with  `::`  followed  by
-// `i`,  `b`,  `s`  or  `f`  do specify the column
-// values' type  (if unspecified then `string`  is
-// assumed). Casting to specified types does occur
-// on file parsing
-//                                              \x
+/*
+ *
+ *  ArrayFromFile
+ *
+ *  Read an array of associative arrays from  a tab
+ *  separated text file: first row   must   contain
+ *  column names that  will  become  array's  keys;
+ *  every row must contain all the columns;
+ *  an eventuyally trailing empty row (extra   "\n"
+ *  at the end of the file) will be ignored;
+ *  `$null_on_empty`   will  let  non-string  empty
+ *  values to become `null` on file parsing;
+ *  column  names  ending  with  `::`  followed  by
+ *  `i`,  `b`,  `s`  or  `f`  do specify the column
+ *  values' type  (if unspecified then `string`  is
+ *  assumed). Casting to specified types does occur
+ *  on file parsing
+ *  \x
+ */
 
 function ArrayFromFile( $path, $null_on_empty = false )
 {
@@ -60,7 +66,9 @@ function ArrayFromFile( $path, $null_on_empty = false )
     $cols = count( $keys );
 
 
-    // Assign arbitrary column names where missing
+    /*
+     *  Assign arbitrary column names where missing
+     */
 
     $i = 1;
     foreach( $keys as &$key )
@@ -74,7 +82,9 @@ function ArrayFromFile( $path, $null_on_empty = false )
     } unset( $key );
 
 
-    // Attempt to get key types
+    /*
+     *  Attempt to get key types
+     */
 
     $types = [];
     foreach( $keys as &$key )
@@ -100,12 +110,16 @@ function ArrayFromFile( $path, $null_on_empty = false )
     } unset( $key );
 
 
-    // Skip JUST last line if empty
+    /*
+     *  Skip JUST last line if empty
+     */
 
     if( $lines[ $n - 1 ] === '' ) $n--;
 
 
-    // Parse rows
+    /*
+     *  Parse rows
+     */
 
     for( $i = 1; $i < $n; $i++ )
     {
@@ -151,20 +165,22 @@ function ArrayFromFile( $path, $null_on_empty = false )
 
 
 
-//
-// ArrayToFile
-//
-// Write an array of associative arrays to  a  tab
-// separated text file; the first row will contain
-// the inner arrays' keys; every associative array
-// into the main array must contain the same  keys
-// The first row is used to  determine  the  value
-// types  that  will  be stored on the column name
-// unless `$save_types is set to false`
-//
-// Note  that  tabs  and  newlines are turned into
-// spaces.
-//                                              \x
+/*
+ *
+ *  ArrayToFile
+ *
+ *  Write an array of associative arrays to  a  tab
+ *  separated text file; the first row will contain
+ *  the inner arrays' keys; every associative array
+ *  into the main array must contain the same  keys
+ *  The first row is used to  determine  the  value
+ *  types  that  will  be stored on the column name
+ *  unless `$save_types is set to false`
+ *
+ *  Note  that  tabs  and  newlines are turned into
+ *  spaces.
+ *  \x
+ */
 
 function ArrayToFile( $path, $array, $store_types = true )
 {
@@ -233,25 +249,27 @@ function ArrayToFile( $path, $array, $store_types = true )
 }
 
 
-//
-// ArrayToCSV
-//
-// Turn an array into a CSV string
-//
-// options and the defaults are
-//
-// "delimiter"     => ";",
-// "enclosure"     => "\"",
-// "decimal"       => ".",
-// "null"          => "",
-// "true"          => "1",
-// "false"         => "0"
-//
-// "null" tells what to do in case a null value is encountered
-// default is no value, you may prefer `0` or empty string
-// to specify an empty string use the text separator you have choosen:
-// "\"\"" - the exact string you write will be put in the CSV string
-//
+/*
+ *
+ *  ArrayToCSV
+ *
+ *  Turn an array into a CSV string
+ *
+ *  options and the defaults are
+ *
+ *  "delimiter"     => ";",
+ *  "enclosure"     => "\"",
+ *  "decimal"       => ".",
+ *  "null"          => "",
+ *  "true"          => "1",
+ *  "false"         => "0"
+ *
+ *  "null" tells what to do in case a null value is encountered
+ *  default is no value, you may prefer `0` or empty string
+ *  to specify an empty string use the text separator you have choosen:
+ *  "\"\"" - the exact string you write will be put in the CSV string
+ *
+ */
 
 function ArrayToCSV( $array, $options = [] )
 {
@@ -302,25 +320,31 @@ function ArrayToCSV( $array, $options = [] )
 
 
 
-//
-// ArrayFromCSV
-//
-// Turn a CSV string into an array
-//
-// set `is_header` to true when parsing the CSV file header passing also the wanted columns along with their type [ [ 'name' => '...', 'type' => 'i|f|s'], [ ... ], ... ]
-// the header is then parsed and the extra columns found will be added with type `x`. With this mode a `columns` array is returned so it can be passed to subsequent calls
-//
+/*
+ *
+ *  ArrayFromCSV
+ *
+ *  Turn a CSV string into an array
+ *
+ *  set `is_header` to true when parsing the CSV file header passing also the wanted columns along with their type [ [ 'name' => '...', 'type' => 'i|f|s'], [ ... ], ... ]
+ *  the header is then parsed and the extra columns found will be added with type `x`. With this mode a `columns` array is returned so it can be passed to subsequent calls
+ *
+ */
 
 function ArrayFromCSV( &$str, $options, $columns, $is_header = false )
 {
-    // Manage params
+    /*
+     *  Manage params
+     */
 
     if( ! is_string( $str     ) ) Error( "Expected `str` as string, "    . gettype( $str     ) . " given" );
     if( ! is_array ( $options ) ) Error( "Expected `options` as array, " . gettype( $options ) . " given" );
     if( ! is_array ( $columns ) ) Error( "Expected `columns` as array, " . gettype( $columns ) . " given" );
 
 
-    // Manage options and defaults
+    /*
+     *  Manage options and defaults
+     */
 
     $defaults = [
         "delimiter"     => ";",
@@ -340,7 +364,9 @@ function ArrayFromCSV( &$str, $options, $columns, $is_header = false )
     $nul = $options[ 'null' ];
 
 
-    // Detect columns from first row? In case `columns` array is returned
+    /*
+     *  Detect columns from first row? In case `columns` array is returned
+     */
 
     if( $is_header )
     {
@@ -379,20 +405,28 @@ function ArrayFromCSV( &$str, $options, $columns, $is_header = false )
         /*--- EXIT POINT ---*/
     }
 
-    // ---
+    /*
+     *  ---
+     */
 
 
-    // Output
+    /*
+     *  Output
+     */
 
     $array = [];
 
 
-    // End of file?
+    /*
+     *  End of file?
+     */
 
     if( $str === "" || $str === "\n" ) return false;
 
 
-    // Vars
+    /*
+     *  Vars
+     */
 
     $colCnt = count( $columns );
     $colIdx = 0;
@@ -492,19 +526,23 @@ function ArrayFromCSV( &$str, $options, $columns, $is_header = false )
 
 
 
-//
-// ArrayFromFileCSV
-//
-// Read array of associative arrays from CSV  text
-// file: first row  should  contain  column  names
-// that will become array's keys; every  row  must
-// contain all the columns; only a trailing  empty
-// row is allowed (extra "\n" at the  end  of  the
-// file)                                        \x
+/*
+ *
+ *  ArrayFromFileCSV
+ *
+ *  Read array of associative arrays from CSV  text
+ *  file: first row  should  contain  column  names
+ *  that will become array's keys; every  row  must
+ *  contain all the columns; only a trailing  empty
+ *  row is allowed (extra "\n" at the  end  of  the
+ *  file)                                        \x
+ */
 
 function ArrayFromFileCSV( $path, $options = null, $requestedColumns = null )
 {
-    // manage params
+    /*
+     *  manage params
+     */
 
     if( $requestedColumns === null ) $requestedColumns = [];
     if( $options === null ) $options = [];
@@ -513,7 +551,9 @@ function ArrayFromFileCSV( $path, $options = null, $requestedColumns = null )
     if( ! is_array( $requestedColumns ) ) Error( "Expected array as `columns` parameter, " . gettype( $requestedColumns ) . "given" );
 
 
-    // load file
+    /*
+     *  load file
+     */
 
     $text = file_get_contents( $path );
 
@@ -523,7 +563,9 @@ function ArrayFromFileCSV( $path, $options = null, $requestedColumns = null )
     }
 
 
-    // normalize line terminators
+    /*
+     *  normalize line terminators
+     */
 
     $text = str_replace( "\r\n", "\n", $text );
     $text = str_replace( "\r", "\n", $text );
@@ -532,12 +574,16 @@ function ArrayFromFileCSV( $path, $options = null, $requestedColumns = null )
     $pro = isset( $options[ 'progress' ] ) && $options[ 'progress' ] === true;
 
 
-    // manage header
+    /*
+     *  manage header
+     */
 
     $columns = ArrayFromCSV( $text, $options, $requestedColumns, true );
 
 
-    // load data
+    /*
+     *  load data
+     */
 
     $array = [];
 
@@ -558,12 +604,14 @@ function ArrayFromFileCSV( $path, $options = null, $requestedColumns = null )
 
 
 
-//
-// ArrayToFileCSV
-//
-// Write an array of associative arrays to  a  CSV
-// text file; every  associative  array  into  the
-// main array must contain the same keys        \x
+/*
+ *
+ *  ArrayToFileCSV
+ *
+ *  Write an array of associative arrays to  a  CSV
+ *  text file; every  associative  array  into  the
+ *  main array must contain the same keys        \x
+ */
 
 function ArrayToFileCSV( $path, $array, $options = [] )
 {
@@ -597,11 +645,13 @@ function ArrayToFileCSV( $path, $array, $options = [] )
 
 
 
-//
-// ArrayToXLS
-//
-// Write array to XLS file
-//
+/*
+ *
+ *  ArrayToXLS
+ *
+ *  Write array to XLS file
+ *
+ */
 
 function ArrayToXLS( $xlsPath, $array )
 {
@@ -626,7 +676,7 @@ function ArrayToXLS( $xlsPath, $array )
     $x = 1;
     foreach( $keys as $k )
     {
-        $spreadsheet->getActiveSheet()->setCellValueByColumnAndRow( $x, 1, $k );
+        $spreadsheet->getActiveSheet()->setCellValue( [ $x, 1 ], $k );
         $x++;
     }
 
@@ -672,13 +722,15 @@ function ArrayToXLS( $xlsPath, $array )
 
 
 
-//
-// ArrayFromXLS
-//
-// Read array from XLS or XLSX file
-//
-// Only one sheet can be selected, default 0 (first)
-//
+/*
+ *
+ *  ArrayFromXLS
+ *
+ *  Read array from XLS or XLSX file
+ *
+ *  Only one sheet can be selected, default 0 (first)
+ *
+ */
 
 function ArrayFromXLS( $xlsPath, $sheet = 0 )
 {
@@ -698,8 +750,10 @@ function ArrayFromXLS( $xlsPath, $sheet = 0 )
     $reader->setReadDataOnly( true );
     $spreadsheet = $reader->load( $xlsPath );
 
-    // Read only first sheet
-    // Assume columns names are in the first row
+    /*
+     *  Read only first sheet
+     *  Assume columns names are in the first row
+     */
 
     $columns = [];
 
@@ -711,7 +765,9 @@ function ArrayFromXLS( $xlsPath, $sheet = 0 )
     }
 
 
-    // Assume data ends on the first row with all cells empty
+    /*
+     *  Assume data ends on the first row with all cells empty
+     */
 
     $array = [];
     $n = count( $columns );
@@ -746,19 +802,21 @@ function ArrayFromXLS( $xlsPath, $sheet = 0 )
 
 
 
-//
-// ArraySortByKey
-//
-// Sort an array  of  associative  arrays  by  the
-// values of the specified key(s):  a  single  key
-// may be specified as string, multiple keys  must
-// be specified with an array  of  strings;  every
-// associative array must  contain  all  the  keys
-// used to sort the main array; sorting order  can
-// be  specified  by  appending  `ASC`   (default,
-// optional) or `DESC` to  one  ore  more  sorting
-// keys;
-//                                              \x
+/*
+ *
+ *  ArraySortByKey
+ *
+ *  Sort an array  of  associative  arrays  by  the
+ *  values of the specified key(s):  a  single  key
+ *  may be specified as string, multiple keys  must
+ *  be specified with an array  of  strings;  every
+ *  associative array must  contain  all  the  keys
+ *  used to sort the main array; sorting order  can
+ *  be  specified  by  appending  `ASC`   (default,
+ *  optional) or `DESC` to  one  ore  more  sorting
+ *  keys;
+ *  \x
+ */
 
 function ArraySortByKey( &$array, $keys )
 {
@@ -832,14 +890,16 @@ function ArraySortByKey( &$array, $keys )
 
 
 
-//
-// ArraySortByArray
-//
-// Sort two arrays based  on  the  values  of  the
-// second; option parameter may be used to specify
-// sort order: `ARRAY_ASC` (default, optional)  or
-// `ARRAY_DESC`
-//                                              \x
+/*
+ *
+ *  ArraySortByArray
+ *
+ *  Sort two arrays based  on  the  values  of  the
+ *  second; option parameter may be used to specify
+ *  sort order: `ARRAY_ASC` (default, optional)  or
+ *  `ARRAY_DESC`
+ *  \x
+ */
 
 function ArraySortByArray( &$a1, &$a2, $options = ARRAY_ASC )
 {
@@ -856,17 +916,19 @@ function ArraySortByArray( &$a1, &$a2, $options = ARRAY_ASC )
 
 
 
-//
-// ArrayHasDuplicates
-//
-// given an array of  associative  arrays  returns
-// true if two (or more) items have the same value
-// for  the  specified  key;  the  array  will  be
-// ordered by the specified key;
-// optionally a `$flagKey`  may  be  specified  in
-// which case the corresponding value in duplicate
-// records will be flagged with `$flag`
-//                                              \x
+/*
+ *
+ *  ArrayHasDuplicates
+ *
+ *  given an array of  associative  arrays  returns
+ *  true if two (or more) items have the same value
+ *  for  the  specified  key;  the  array  will  be
+ *  ordered by the specified key;
+ *  optionally a `$flagKey`  may  be  specified  in
+ *  which case the corresponding value in duplicate
+ *  records will be flagged with `$flag`
+ *  \x
+ */
 
 function ArrayHasDuplicates( &$array, $key, $flagKey = false, $flag = "@" )
 {
@@ -896,48 +958,54 @@ function ArrayHasDuplicates( &$array, $key, $flagKey = false, $flag = "@" )
 
 
 
-//
-// ArrayRemoveDuplicates
-//
-// the  function  receives  the  `$array`  to   be
-// processed and  the  `$key`  for  the  duplicate
-// values; `$chooser`  is  a  function  (callable)
-// whose purpose is described later;
-//
-// the function has two operative  modes:  chooser
-// and manager
-//
-// chooser:
-// items with the same value for the specified key
-// are aggregated into an array and passed to  the
-// `$chooser` function; the "chooser" must  add  a
-// value for the key  specificed  as  `$score_key`
-// (default: 'score'); for every  group  of  items
-// with the same key only  the  one  with  highest
-// score will be kept
-//
-// manager:
-// to enable `manager` mode `$score_key` is set to
-// `false`; items with  the  same  value  for  the
-// specified key are aggregated into an array  and
-// passed to the  "duplicate  manager"  `$chooser`
-// function; the duplicate manager may  alter  any
-// values of the received array that will  replace
-// the values in the original array (normally  the
-// manager will alter the key with  duplicates  to
-// make them unique but this is not mandatory)  \x
-//
+/*
+ *
+ *  ArrayRemoveDuplicates
+ *
+ *  the  function  receives  the  `$array`  to   be
+ *  processed and  the  `$key`  for  the  duplicate
+ *  values; `$chooser`  is  a  function  (callable)
+ *  whose purpose is described later;
+ *
+ *  the function has two operative  modes:  chooser
+ *  and manager
+ *
+ *  chooser:
+ *  items with the same value for the specified key
+ *  are aggregated into an array and passed to  the
+ *  `$chooser` function; the "chooser" must  add  a
+ *  value for the key  specificed  as  `$score_key`
+ *  (default: 'score'); for every  group  of  items
+ *  with the same key only  the  one  with  highest
+ *  score will be kept
+ *
+ *  manager:
+ *  to enable `manager` mode `$score_key` is set to
+ *  `false`; items with  the  same  value  for  the
+ *  specified key are aggregated into an array  and
+ *  passed to the  "duplicate  manager"  `$chooser`
+ *  function; the duplicate manager may  alter  any
+ *  values of the received array that will  replace
+ *  the values in the original array (normally  the
+ *  manager will alter the key with  duplicates  to
+ *  make them unique but this is not mandatory)  \x
+ *
+ */
 
 function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
 {
-    // manage score key
+    /*
+     *  manage score key
+     */
 
     if( $score_key === null || $score_key === '' )
     {
         $score_key = false;
     }
 
-    // item count
+    /*
+     *  item count
+     */
 
     $n = count( $array );
     if( $n < 2 )
@@ -946,26 +1014,36 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
         /*--- EXIT POINT ---*/
     }
 
-    // sort array
+    /*
+     *  sort array
+     */
 
     ArraySortByKey( $array, $key );
 
-    // init output
+    /*
+     *  init output
+     */
 
     $out = [];
 
-    // add NULL item at the end of the array to let the last block flush
+    /*
+     *  add NULL item at the end of the array to let the last block flush
+     */
 
     $array[][ $key ] = NULL;
     $n++;
 
-    // init the first block with the first item
+    /*
+     *  init the first block with the first item
+     */
 
     if( $score_key !== false ) { $array[ 0 ][ $score_key ] = 0; }
     $block = [ $array[ 0 ]  ];
     $last  = $array[ 0 ][ $key ];
 
-    // start from the second item
+    /*
+     *  start from the second item
+     */
 
     for( $i = 1; $i < $n; $i++ )
     {
@@ -974,13 +1052,17 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
 
         if( $item[ $key ] === $last )
         {
-            // duplicate: add the item to the block
+            /*
+             *  duplicate: add the item to the block
+             */
 
             $block[] = $item;
         }
         else // not a duplicate
         {
-            // if the block have more than one item run the chooser and sort by score desc.
+            /*
+             *  if the block have more than one item run the chooser and sort by score desc.
+             */
 
             if( count( $block ) > 1 )
             {
@@ -988,7 +1070,9 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
                 if( $score_key !== false ) { ArraySortByKey( $block, $score_key."DESC" ); }
             }
 
-            // chooser: add to output the first item of the block
+            /*
+             *  chooser: add to output the first item of the block
+             */
 
             if( $score_key !== false )
             {
@@ -996,7 +1080,9 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
                 $out[] = $block[ 0 ];
             }
 
-            // manager: add to output the block
+            /*
+             *  manager: add to output the block
+             */
 
             if( $score_key === false )
             {
@@ -1006,28 +1092,34 @@ function ArrayRemoveDuplicates( &$array, $key, $chooser, $score_key = 'score' )
                 }
             }
 
-            // initialize a new block with the new item
+            /*
+             *  initialize a new block with the new item
+             */
 
             $last = $item[ $key ];
             $block = [ $item  ];
         }
     }
 
-    // set the array passed by reference to output array
+    /*
+     *  set the array passed by reference to output array
+     */
 
     $array = $out;
 }
 
 
 
-//
-// ArrayFind
-//
-// returns  the  index  of  the  item   with   the
-// specified key and value; returns false in  case
-// of  no  match;  optionally  `$offset`  may   be
-// specified                                    \x
-//
+/*
+ *
+ *  ArrayFind
+ *
+ *  returns  the  index  of  the  item   with   the
+ *  specified key and value; returns false in  case
+ *  of  no  match;  optionally  `$offset`  may   be
+ *  specified                                    \x
+ *
+ */
 
 function ArrayFind( $array, $key, $value, $offset = 0 )
 {
@@ -1058,13 +1150,15 @@ function ArrayFind( $array, $key, $value, $offset = 0 )
 
 
 
-//
-// ArraySet
-//
-// set keys/values for the item at  the  specified
-// index; if index  is  `false`  then  the  passed
-// record is added to the array
-//                                              \x
+/*
+ *
+ *  ArraySet
+ *
+ *  set keys/values for the item at  the  specified
+ *  index; if index  is  `false`  then  the  passed
+ *  record is added to the array
+ *  \x
+ */
 
 function ArraySet( &$array, $index, $record )
 {
@@ -1083,12 +1177,14 @@ function ArraySet( &$array, $index, $record )
 
 
 
-//
-// ArrayFix
-//
-// fixes an array  setting  a  default  value  for
-// missing keys in every record
-//                                              \x
+/*
+ *
+ *  ArrayFix
+ *
+ *  fixes an array  setting  a  default  value  for
+ *  missing keys in every record
+ *  \x
+ */
 
 function ArrayFix( &$array, $fix = '' )
 {
@@ -1113,11 +1209,13 @@ function ArrayFix( &$array, $fix = '' )
 
 
 
-//
-// ArrayRemoveColumn
-//
-// Remove all the values with a given key
-//
+/*
+ *
+ *  ArrayRemoveColumn
+ *
+ *  Remove all the values with a given key
+ *
+ */
 
 function ArrayRemoveColumn( &$array, $key )
 {
@@ -1131,11 +1229,13 @@ function ArrayRemoveColumn( &$array, $key )
 }
 
 
-//
-// ArraySplit
-//
-// Split the array in sub-arrays by the given key
-//
+/*
+ *
+ *  ArraySplit
+ *
+ *  Split the array in sub-arrays by the given key
+ *
+ */
 
 function ArraySplit( &$array, $key )
 {
@@ -1167,11 +1267,13 @@ function ArraySplit( &$array, $key )
 
 
 
-//
-// ArrayInsertOrUpdate
-//
-// Insert or update a record
-//
+/*
+ *
+ *  ArrayInsertOrUpdate
+ *
+ *  Insert or update a record
+ *
+ */
 
 function ArrayInsertOrUpdate( &$array, $key, $value, $record )
 {
@@ -1206,11 +1308,13 @@ function ArrayInsertOrUpdate( &$array, $key, $value, $record )
 
 
 
-//
-// ArrayInsertOrReplace
-//
-// Insert or replace a record
-//
+/*
+ *
+ *  ArrayInsertOrReplace
+ *
+ *  Insert or replace a record
+ *
+ */
 
 function ArrayInsertOrReplace( &$array, $key, $record )
 {
@@ -1230,11 +1334,13 @@ function ArrayInsertOrReplace( &$array, $key, $record )
 
 
 
-//
-// ArrayRequire
-//
-// Check the array of arrays have all the keys per each row
-//
+/*
+ *
+ *  ArrayRequire
+ *
+ *  Check the array of arrays have all the keys per each row
+ *
+ */
 
 function ArrayRequire( $array, $keys )
 {
@@ -1258,11 +1364,13 @@ function ArrayRequire( $array, $keys )
 
 
 
-//
-// ArrayRowRequire
-//
-// Check the array have all the keys
-//
+/*
+ *
+ *  ArrayRowRequire
+ *
+ *  Check the array have all the keys
+ *
+ */
 
 function ArrayRowRequire( $row, $keys )
 {
@@ -1274,11 +1382,13 @@ function ArrayRowRequire( $row, $keys )
 
 
 
-//
-// ArrayJoin
-//
-// Join the second array to the first by key
-//
+/*
+ *
+ *  ArrayJoin
+ *
+ *  Join the second array to the first by key
+ *
+ */
 
 function ArrayJoin( &$arrayLeft, $arrayRight, $keyLeft, $keyRight, $missing = NULL )
 {
